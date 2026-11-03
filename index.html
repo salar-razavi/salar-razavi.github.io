@@ -220,6 +220,39 @@ details.skipped ul{margin:6px 0 0;padding-inline-start:18px;font-size:13px}
   .paper-grid>div+div{border-inline-start:0;border-top:1px solid var(--line2)}
 }
 
+/* guide */
+.guide{max-width:820px;margin:0 auto;padding:6px 22px 26px}
+.guide h2{font-size:22px;font-weight:800;margin:18px 0 6px}
+.guide h3{font-size:17px;font-weight:800;margin:26px 0 8px;display:flex;align-items:center;gap:10px;scroll-margin-top:80px}
+.guide h3 .n{display:inline-grid;place-items:center;min-width:26px;height:26px;border-radius:50%;background:var(--accent-soft);color:var(--accent);font-size:13px;font-family:var(--f-num)}
+.guide p,.guide li{font-size:15px;line-height:1.95}
+.guide p{margin:6px 0}
+.guide ul,.guide ol{margin:6px 0;padding-inline-start:22px}
+.guide li{margin:3px 0}
+.guide b{font-weight:700}
+.toc{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0 4px}
+.toc button{border:1px solid var(--line);background:var(--sunk);border-radius:99px;padding:2px 12px;font-size:13px;cursor:pointer;color:var(--ink)}
+.toc button:hover{border-color:var(--accent);color:var(--accent)}
+.callout{border-inline-start:4px solid var(--accent);background:var(--accent-soft);border-radius:8px;padding:10px 14px;margin:12px 0}
+.callout .tag{display:inline-block;font-size:12px;font-weight:800;padding:0 8px;border-radius:5px;margin-inline-end:6px;background:var(--panel)}
+.callout.must{border-color:var(--down);background:var(--down-soft)} .callout.must .tag{color:var(--down)}
+.callout.imp{border-color:var(--warn);background:var(--warn-soft)} .callout.imp .tag{color:var(--warn)}
+.callout.tip .tag{color:var(--accent)}
+.callout p{margin:4px 0}
+.golden{border:2px solid var(--down);border-radius:12px;padding:12px 16px 6px;margin:14px 0;background:var(--panel)}
+.golden h4{margin:0 0 6px;font-size:15px;color:var(--down)}
+.golden ol{margin:0;padding-inline-start:22px}
+.golden li{font-weight:600}
+.tl{list-style:none;margin:8px 0;padding:0;border-inline-start:2px solid var(--line);}
+.tl li{position:relative;padding:4px 16px 8px;display:flex;gap:12px;align-items:baseline}
+.tl li::before{content:"";position:absolute;inset-inline-start:-7px;top:12px;width:12px;height:12px;border-radius:50%;background:var(--panel);border:2px solid var(--accent)}
+.tl li.hot::before{border-color:var(--down);background:var(--down)}
+.tl .t{flex:none;min-width:104px;font-weight:700}
+.oco{display:grid;grid-template-columns:auto 1fr;gap:4px 16px;background:var(--sunk);border:1px dashed var(--line);border-radius:8px;padding:10px 14px;margin:8px 0;font-size:14px}
+.oco dt{color:var(--muted)} .oco dd{margin:0}
+.gl{display:grid;grid-template-columns:auto 1fr;gap:6px 16px;margin:8px 0}
+.gl dt{font-weight:700} .gl dd{margin:0}
+
 /* toasts */
 .toasts{position:fixed;z-index:20;bottom:calc(16px + env(safe-area-inset-bottom,0px));left:max(16px,env(safe-area-inset-left,0px));display:flex;flex-direction:column;gap:8px;max-width:min(420px,calc(100vw - 32px))}
 .toast{background:var(--ink);color:var(--bg);padding:10px 14px;border-radius:10px;font-size:14px;box-shadow:0 8px 24px rgba(0,0,0,.25);display:flex;gap:10px;align-items:flex-start}
@@ -258,6 +291,9 @@ a{color:var(--accent)}
   .stat b{font-size:19px}
   .odd{grid-template-columns:92px 1fr 50px}
   .brand .sub{display:none}
+  .guide{padding:2px 14px 20px}
+  .tl li{flex-direction:column;align-items:stretch;gap:0;padding-bottom:10px}
+  .tl .t{min-width:0;text-align:start}
 }
 @media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
 </style>
@@ -272,6 +308,7 @@ a{color:var(--accent)}
     <div class="seg" role="group" aria-label="صفحه" id="viewSeg">
       <button type="button" data-view="dash" aria-pressed="true">داشبورد</button>
       <button type="button" data-view="paper" aria-pressed="false">حساب مجازی</button>
+      <button type="button" data-view="guide" aria-pressed="false">راهنما</button>
     </div>
     <div class="seg" role="group" aria-label="بازار" id="mktSeg">
       <button type="button" data-mkt="crypto" aria-pressed="true">کریپتو</button>
@@ -297,6 +334,7 @@ a{color:var(--accent)}
       <section class="card" id="journalCard" aria-labelledby="journalH"></section>
     </div>
   </div>
+  <div class="stack" id="viewGuide" hidden><section class="card" id="guideCard" aria-labelledby="guideH"></section></div>
   <div class="stack" id="viewPaper" hidden>
     <section class="card">
       <div class="sec-h"><h2 id="paperH">حساب مجازی</h2><p id="paperSub"></p></div>
@@ -1447,13 +1485,16 @@ function renderAll() {
   renderSug();
   $('#viewDash').hidden = ui.view !== 'dash';
   $('#viewPaper').hidden = ui.view !== 'paper';
+  $('#viewGuide').hidden = ui.view !== 'guide';
+  $('#sugCard').hidden = ui.view === 'guide';
   if (ui.view === 'dash') { renderReality(); renderBoard(); renderFocus(); renderScore(); renderJournal(); }
-  else renderPaper();
+  else if (ui.view === 'paper') renderPaper();
+  else renderGuide();
 }
 function renderTop() {
   document.querySelectorAll('#mktSeg button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.mkt === market)));
   document.querySelectorAll('#viewSeg button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.view === ui.view)));
-  $('#mktSeg').hidden = ui.view === 'paper';
+  $('#mktSeg').hidden = ui.view !== 'dash';
   const list = Array.from(insts[market].values());
   const busy = list.filter(i => i.status === 'loading').length, bad = list.filter(i => i.status === 'error').length, ok = list.filter(i => i.status === 'ready').length;
   const chip = $('#dataChip');
@@ -2153,18 +2194,163 @@ document.addEventListener('click', e => {
   if (vg) { setView(vg.dataset.viewGo); if (vg.dataset.scroll) setTimeout(() => document.getElementById(vg.dataset.scroll).scrollIntoView({ block: 'start' }), 80); }
 });
 
+// ------------------------------------------------------------------ the guide (numbers come from the user's own settings)
+function renderGuide() {
+  const S = sessFor('crypto'), W = windowFor(S), ph = phaseOf(Date.now(), S);
+  const at = m => tm(ph.start + m * 60000);
+  const tOpen = at(0), tOR = at(cfg.orMinutes), tLast = at((W.entryLast + 1) * 5), tExit = at((W.exitLast + 1) * 5), tEnd = at(S.bars * 5);
+  const riskPct = (cfg.maxLoss / cfg.account * 100).toFixed(1);
+  const C = (kind, label, html) => `<div class="callout ${kind}"><p><span class="tag">${label}</span>${html}</p></div>`;
+  const MUST = 'خیلی مهم', IMP = 'مهم', TIP = 'نکته';
+  const sec = (id, num, title) => `<h3 id="g-${id}"><span class="n">${num}</span>${title}</h3>`;
+  const toc = [['golden', 'قانون‌های طلایی'], ['what', 'این صفحه چیست'], ['setup', 'تنظیم اول'], ['day', 'روال روزانه'], ['sug', 'پیشنهادها'], ['before', 'قبل از خرید'],
+    ['buy', 'خرید و OCO'], ['sell', 'کی بفروشم'], ['journal', 'ژورنال و سقف روزانه'], ['paper', 'حساب مجازی'], ['tm', 'خواندن آمار'], ['alerts', 'هشدارها'], ['fix', 'عیب‌یابی'], ['risk', 'ریسک‌ها'], ['words', 'واژه‌ها']];
+  const html = `<div class="guide">
+  <h2 id="guideH">راهنمای دیده‌بان ترید روزانه</h2>
+  <p class="small">عددهای این راهنما از تنظیمات فعلی خودت خوانده می‌شوند: سرمایه ${n(usd(cfg.account, 0))}، سقف ضرر هر معامله ${n(usd(cfg.maxLoss))}، جلسه‌ی ${esc(S.name)}، کارمزد رفت و برگشت ${n(cfg.crypto.costPct + '%')}. ساعت‌ها به وقت خودت است.</p>
+  <div class="toc">${toc.map(([id, t]) => `<button type="button" data-goto="g-${id}">${t}</button>`).join('')}</div>
+
+  <div class="golden" id="g-golden"><h4>قانون‌های طلایی: اگر فقط یک بخش را می‌خوانی، این را بخوان</h4><ol>
+    <li>این صفحه آینده را پیش‌بینی نمی‌کند و هیچ سفارشی ثبت نمی‌کند. خروجی‌اش یک قانون است، نه توصیه‌ی مالی.</li>
+    <li>فقط با پولی معامله کن که از دست دادنش زندگی‌ات را به هم نمی‌زند.</li>
+    <li>حد ضرر و حد سود را <u>قبل از خرید</u> تعیین کن و بعد از خرید، حد ضرر را هرگز پایین‌تر نبر.</li>
+    <li>درست بعد از هر خرید، در نوبیتکس سفارش فروش OCO بگذار.</li>
+    <li>ساعت ${n(tExit)} هر چیزی که باز است را بفروش؛ شب نگه ندار.</li>
+    <li>وقتی سقف ضرر روزانه (${n(usd(cfg.maxDailyLoss, 0))}) یا سقف ${n(cfg.maxTrades)} معامله پر شد، آن روز تمام است.</li>
+    <li>قبل از پول واقعی، چند هفته با حساب مجازی کار کن.</li>
+    <li>روزهایی که پیشنهادی نیست، معامله نکردن خودش بهترین معامله است.</li></ol></div>
+
+  ${sec('what', 1, 'این صفحه چیست و چه نیست')}
+  <p>دیده‌بان، روش «شکست رنج اول جلسه» از اسکیل day-trader-skill را روی بازار تتری نوبیتکس اجرا می‌کند: قیمت‌های ۱۵ دقیقه‌ی اول جلسه یک «رنج» می‌سازند؛ اگر یک کندل ۵ دقیقه‌ای بالای سقف این رنج <b>بسته شود</b>، قانون فعال می‌شود. بعد حد ضرر، حد سود، حجم و چک ریسک حساب می‌شود و آمار گذشته‌ی همین قانون روی همین ارز نشان داده می‌شود.</p>
+  ${C('must', MUST, 'این صفحه نمی‌داند قیمت فردا چه می‌شود. «فعال شدن قانون» یعنی یک الگو دیده شده، نه این‌که سود حتمی است. بیشتر کسانی که ترید روزانه می‌کنند ضرر می‌کنند.')}
+  ${C('imp', IMP, `هدف ۵۰ دلار در روز با ۱۰۰۰ دلار یعنی ۵٪ در روز؛ این عدد واقع‌بینانه نیست. کارت «هدف تو در برابر حساب و کتاب» در داشبورد همیشه نشان می‌دهد این قانون در گذشته واقعاً چقدر داده است.`)}
+
+  ${sec('setup', 2, 'تنظیم اول (یک بار)')}
+  <ol>
+    <li>صفحه را باز کن. بار اول، کامل شدن تاریخچه‌ی ۴۵ روزه از نوبیتکس حدود ۱۰ دقیقه طول می‌کشد (نوبیتکس فقط ۲۰ درخواست در دقیقه می‌دهد). قیمت‌ها و وضعیت امروز از همان اول درست‌اند. دفعه‌های بعد چند ثانیه.</li>
+    <li>«تنظیمات» را باز کن و این‌ها را با واقعیت خودت پر کن: <b>سرمایه</b>، <b>حداکثر ضرر هر معامله</b> (پیشنهاد: حداکثر ۱٪ سرمایه؛ الان ${n(riskPct + '%')})، <b>سقف ضرر روزانه</b> و <b>حداکثر معامله در روز</b>.</li>
+    <li><b>هزینه‌ی رفت و برگشت:</b> کارمزد خرید به‌علاوه‌ی فروش در سطح کاربری خودت در نوبیتکس. پیش‌فرض ${n(cfg.crypto.costPct + '%')} است.</li>
+    <li>منبع داده را روی «نوبیتکس» و جلسه را روی «لندن» نگه دار.</li>
+  </ol>
+  ${C('imp', IMP, 'کارمزد اشتباه همه‌ی آمارها را خراب می‌کند. در معاملات کوتاه، کارمزد بخش بزرگی از سود را می‌خورد؛ عدد واقعی‌ات را از صفحه‌ی کارمزدهای نوبیتکس بخوان.')}
+  ${C('tip', TIP, 'تنظیمات، ژورنال و حساب مجازی فقط در همین مرورگر ذخیره می‌شوند. اگر مرورگر یا گوشی را عوض کنی، از صفر شروع می‌شود.')}
+
+  ${sec('day', 3, 'روال روزانه')}
+  <ul class="tl">
+    <li><span class="t">${n(tOpen)}</span>جلسه‌ی لندن باز می‌شود. رنج اول جلسه شروع به شکل گرفتن می‌کند.</li>
+    <li><span class="t">${n(tOR)}</span>رنج کامل است. از این لحظه هر کندلی که بیرون رنج بسته شود، قانون را فعال می‌کند.</li>
+    <li><span class="t">${n(tOR)} تا ${n(tLast)}</span>پنجره‌ی ورود. صفحه را باز نگه دار؛ پیشنهادها خودکار می‌آیند و صفحه بوق می‌زند.</li>
+    <li class="hot"><span class="t">${n(tLast)}</span>آخرین زمان ورود. بعد از این، معامله‌ی تازه نه.</li>
+    <li class="hot"><span class="t">${n(tExit)}</span>خروج اجباری: هر چیزی باز است، به قیمت بازار بفروش.</li>
+    <li><span class="t">${n(tEnd)}</span>پایان جلسه. نتیجه‌ها را در ژورنال ثبت کن.</li>
+  </ul>
+  ${C('tip', TIP, 'وقتی در اروپا ساعت تابستانی شروع یا تمام می‌شود، این ساعت‌ها به وقت تهران یک ساعت جابه‌جا می‌شوند. ساعت دقیق هر روز همیشه بالای «تابلوی نمادها» نوشته شده است.')}
+  ${C('imp', IMP, 'خرید تتر با تومان در صرافی‌های ایرانی فعلاً از ۲۳:۳۰ تا ۱۱:۳۰ بسته است و سقف خرید روزانه ۲۰۰۰ تتر است (طبق خبرهای مهر ۱۴۰۵؛ ممکن است عوض شود). تتر را قبل از شروع جلسه آماده داشته باش.')}
+
+  ${sec('sug', 4, 'پیشنهادها: چی بخرم')}
+  <p>کارت «پیشنهادهای الان» بالای داشبورد خودکار به‌روز می‌شود. هر پیشنهاد اول باید از <b>همه‌ی قانون‌های ریسک</b> تو رد شود: سقف ضرر هر معامله، حداقل نسبت سود به ضرر، سقف روزانه، پنجره‌ی ورود و تازه بودن داده. این‌ها در هیچ سطحی کم نمی‌شوند. بعد پنج شرط کیفیت شمرده می‌شود:</p>
+  <ol><li>سیگنال تازه است (حداکثر یک کندل پیش).</li><li>همین قانون روی همین ارز حداقل ${n(SUG_MIN_N)} بار در گذشته فعال شده.</li><li>میانگین نتیجه‌ی گذشته بعد از کارمزد مثبت است.</li><li>میانگین شبیه‌سازی‌های ماشین زمان مثبت است.</li><li>قیمت بالای میانگین ۲۰ روزه است (هم‌جهت با روند).</li></ol>
+  <p><b>بخش سبز (۵ از ۵):</b> همه‌ی شرط‌ها برقرار است. <b>بخش نارنجی (۴ از ۵، ۸۰٪):</b> یکی کم است و روی کارت با ✕ مشخص شده.</p>
+  ${C('imp', IMP, 'پیشنهادهای ۸۰٪ طبق تعریف ضعیف‌ترند. اول فقط روی حساب مجازی امتحانشان کن و جدول «نتیجه به تفکیک نوع پیشنهاد» را ببین.')}
+  ${C('tip', TIP, 'بیشتر روزها هیچ پیشنهادی نمی‌آید. این ایراد نیست؛ یعنی شرط‌ها سخت‌گیرند.')}
+
+  ${sec('before', 5, 'قبل از خرید: پنج قدم جزئیات')}
+  <p>روی «جزئیات و سفارش واقعی» یا روی ردیف نماد در تابلو بزن. پایین صفحه پنج قدم به ترتیب می‌آید:</p>
+  <ol>
+    <li><b>برنامه‌ی خروج:</b> قیمت ورود، حد ضرر (پیش‌فرض: وسط رنج)، حد سود (پیش‌فرض: ${n(cfg.targetR + 'R')}) و ساعت خروج اجباری.</li>
+    <li><b>ماشین زمان:</b> ${n((+cfg.replays).toLocaleString('en-US'))} شبیه‌سازی از کندل‌های گذشته‌ی همین ارز، به‌علاوه‌ی نتیجه‌ی واقعی همین قانون در روزهای گذشته.</li>
+    <li><b>حجم معامله:</b> چند واحد بخری تا اگر حد ضرر خورد، ضررت از ${n(usd(cfg.maxLoss))} بیشتر نشود.</li>
+    <li><b>چک ریسک:</b> اگر حتی یک مورد ✕ قرمز باشد، معامله نکن.</li>
+    <li><b>سفارش دستی:</b> متن آماده‌ی سفارش برای کپی.</li>
+  </ol>
+  ${C('must', MUST, 'اگر کارت «چک ریسک» حتی یک ✕ قرمز دارد، آن معامله را نگیر. قبول شدن همه‌ی چک‌ها هم یعنی قانون‌های خودت رعایت شده، نه این‌که معامله سود می‌دهد.')}
+
+  ${sec('buy', 6, 'خرید در نوبیتکس و گذاشتن OCO')}
+  <ol>
+    <li>در بازار تتری همان ارز (مثلاً BTC/USDT) به قیمت بازار، <b>همان حجمی را بخر که داشبورد گفته</b>؛ نه بیشتر.</li>
+    <li><b>بلافاصله</b> یک سفارش فروش OCO ثبت کن. OCO دو سفارش است: اگر یکی اجرا شود، دیگری خودکار لغو می‌شود.</li>
+    <li>در قسمت ۵ داشبورد «این معامله را گرفتم، ثبت کن» را بزن.</li>
+  </ol>
+  <p>فیلدهای OCO فروش، با یک مثال (خرید بیت‌کوین در 77,000، حد ضرر 76,400، حد سود 78,200):</p>
+  <dl class="oco"><dt>مقدار</dt><dd>همان حجمی که خریدی</dd><dt>قیمت (معین)</dt><dd>حد سود: ${n('78,200')}</dd><dt>قیمت توقف</dt><dd>حد ضرر: ${n('76,400')}</dd><dt>قیمت حد ضرر</dt><dd>کمی پایین‌تر از حد ضرر، مثلاً ۰٫۲٪: ${n('76,250')}</dd></dl>
+  ${C('must', MUST, 'OCO مهم‌ترین قدم است. با آن، حتی اگر کامپیوترت خاموش شود یا اینترنت قطع شود، فروش در حد سود یا حد ضرر انجام می‌شود.')}
+  ${C('imp', IMP, 'در ریزش خیلی تند، قیمت ممکن است از قیمت توقف و قیمت حد ضرر هر دو رد شود و سفارش پر نشود. آن‌وقت باید دستی به قیمت بازار بفروشی. حد ضرر یک برنامه است، نه تضمین.')}
+
+  ${sec('sell', 7, 'کی بفروشم')}
+  <p>هر خرید سه راه خروج دارد که قبل از خرید تعیین شده‌اند. <b>هر کدام زودتر برسد</b>، می‌فروشی:</p>
+  <ol><li><b>حد سود:</b> قیمت به هدف رسید. OCO خودش می‌فروشد.</li><li><b>حد ضرر:</b> قیمت به حد ضرر رسید. OCO خودش می‌فروشد، حتی اگر حس کنی «برمی‌گردد».</li><li><b>ساعت ${n(tExit)}:</b> اگر هنوز هیچ‌کدام نشده، OCO را لغو کن و به قیمت بازار بفروش.</li></ol>
+  <p>اگر معامله را در ژورنال ثبت کرده باشی، وقتی یکی از این سه برسد، بالای صفحه کارت قرمز «بفروش» با دلیلش می‌آید و صفحه بوق می‌زند.</p>
+  ${C('must', MUST, 'حد ضرر را بعد از خرید هرگز پایین‌تر نبر و شب نگه ندار. بیشترِ ضررهای بزرگ از همین دو کار می‌آیند.')}
+
+  ${sec('journal', 8, 'ژورنال و سقف‌های روزانه')}
+  <p>هر معامله‌ی واقعی را ثبت کن و بعد از فروش، نتیجه را بزن: «حد سود»، «حد ضرر» یا قیمت خروج دستی. کارت ژورنال تعداد معاملات امروز، ریسک مصرف‌شده و نتیجه‌ی روز را نشان می‌دهد.</p>
+  ${C('must', MUST, `وقتی ریسک مصرف‌شده‌ی امروز به ${n(usd(cfg.maxDailyLoss, 0))} یا تعداد معاملات به ${n(cfg.maxTrades)} رسید، داشبورد معامله‌ی تازه را رد می‌کند. آن روز را تمام کن؛ «جبران ضرر» با معامله‌ی بیشتر معمولاً ضرر را بزرگ‌تر می‌کند.`)}
+
+  ${sec('paper', 9, 'حساب مجازی')}
+  <p>دکمه‌ی «حساب مجازی» بالای صفحه. با ${n(usd(cfg.account, 0))} تتر مجازی شروع می‌شود و با قیمت لحظه‌ای نوبیتکس و کارمزد واقعی معامله می‌کند. از روی هر پیشنهاد «باز کردن مجازی» را بزن یا از فرم «خرید دستی» استفاده کن. حد ضرر، حد سود و ساعت خروج خودکار اجرا می‌شوند؛ اگر صفحه بسته بوده، دفعه‌ی بعد از روی کندل‌ها حساب می‌شوند. همان سقف‌های ریسک حساب واقعی اینجا هم هست.</p>
+  ${C('imp', IMP, 'پیشنهاد: حداقل ۳ تا ۴ هفته و حداقل ۲۰ معامله‌ی بسته فقط مجازی. اگر منحنی رشد حساب مجازی بعد از کارمزد مثبت نشد، با پول واقعی هم مثبت نمی‌شود.')}
+
+  ${sec('tm', 10, 'خواندن آمار: ماشین زمان و کارنامه')}
+  <ul>
+    <li><b>اول حد سود / اول حد ضرر / هیچ‌کدام:</b> در چند درصد شبیه‌سازی‌ها قیمت اول به حد سود رسید، اول به حد ضرر، یا تا ساعت خروج به هیچ‌کدام.</li>
+    <li><b>جمله‌ی رنگی زیرش (حکم):</b> با در نظر گرفتن اندازه‌ی حد سود و کارمزد می‌گوید نتیجه «نزدیک به سر به سر» است یا به سمت سود یا ضرر می‌رود.</li>
+    <li><b>کارنامه‌ی گذشته:</b> همین قانون روی روزهای واقعی گذشته چند بار فعال شد و چند بار حد سود خورد. مربع‌های سبز و قرمز همان روزها هستند.</li>
+    <li><b>میانگین R خالص:</b> میانگین نتیجه‌ی هر معامله بر حسب ریسک، بعد از کارمزد. مثبت یعنی در گذشته در مجموع سود داده.</li>
+  </ul>
+  ${C('imp', IMP, 'وقتی نمونه کمتر از ۲۰ بار است، به عددها زیاد تکیه نکن؛ فرقشان با شانس معلوم نیست. شبیه‌سازی هم از گذشته ساخته شده و خبر، تحریم یا ریزش ناگهانی را نمی‌بیند.')}
+
+  ${sec('alerts', 11, 'هشدارها و باز بودن صفحه')}
+  <p>هشدار صوتی و پیام‌ها فقط تا وقتی کار می‌کنند که صفحه باز است. یک بار روی صفحه کلیک کن تا مرورگر اجازه‌ی پخش صدا بدهد. کامپیوتر را در ساعت جلسه روی حالت خواب نگذار.</p>
+  ${C('tip', TIP, 'برای همین است که OCO مهم است: OCO در خود صرافی اجرا می‌شود و به باز بودن این صفحه وابسته نیست.')}
+
+  ${sec('fix', 12, 'عیب‌یابی')}
+  <ul>
+    <li><b>داده نمی‌آید:</b> «تنظیمات» و بعد «عیب‌یابی اتصال» را بزن تا معلوم شود کدام منبع از اینترنت تو باز است.</li>
+    <li><b>بعد از به‌روزرسانی سایت چیزی عوض نشد:</b> صفحه را با Ctrl+F5 دوباره باز کن.</li>
+    <li><b>کارنامه خالی است:</b> بار اول تاریخچه هنوز در حال تکمیل است؛ چند دقیقه صبر کن.</li>
+    <li><b>«داده‌ی تازه نیست»:</b> اینترنت یا نوبیتکس قطع شده؛ تا درست نشده، معامله‌ی تازه نگیر.</li>
+    <li><b>فارکس:</b> کلید رایگان Twelve Data لازم است و ممکن است از اینترنت ایران باز نشود.</li>
+  </ul>
+
+  ${sec('risk', 13, 'ریسک‌هایی که باید بدانی')}
+  <ul>
+    <li><b>کارمزد:</b> در هر معامله‌ی رفت و برگشت حدود ${n(cfg.crypto.costPct + '%')} از مبلغ کم می‌شود.</li>
+    <li><b>لغزش قیمت:</b> قیمتی که واقعاً پر می‌شود ممکن است کمی بدتر از عدد صفحه باشد، مخصوصاً در ارزهای کم‌معامله.</li>
+    <li><b>صرافی:</b> نوبیتکس و چند صرافی بزرگ ایرانی در خرداد ۱۴۰۵ تحریم آمریکا شده‌اند و بانک مرکزی هم گاهی برداشت ریالی را محدود می‌کند.</li>
+  </ul>
+  ${C('must', MUST, 'بیشتر از پولی که همان روز با آن معامله می‌کنی را روی صرافی نگه ندار. اگر تتر را به صرافی خارجی بفرستی، ممکن است به خاطر منشأ ایرانی بررسی یا محدود شود.')}
+
+  ${sec('words', 14, 'واژه‌ها')}
+  <dl class="gl">
+    <dt>رنج اول جلسه</dt><dd>بالاترین و پایین‌ترین قیمت ${n(cfg.orMinutes)} دقیقه‌ی اول جلسه.</dd>
+    <dt>فعال شدن قانون</dt><dd>یک کندل ۵ دقیقه‌ای بالای سقف رنج <b>بسته شود</b>. عبور لحظه‌ای قیمت حساب نیست.</dd>
+    <dt>R</dt><dd>واحد ریسک: فاصله‌ی ورود تا حد ضرر. ${n('2R')} یعنی حد سود دو برابر فاصله‌ی حد ضرر است. ${n('+1R')} یعنی به اندازه‌ی ریسکت سود کردی.</dd>
+    <dt>حد ضرر</dt><dd>قیمتی که اگر رسید، می‌فروشی چون قانون شکست خورده.</dd>
+    <dt>حد سود</dt><dd>قیمتی که اگر رسید، می‌فروشی و سود را برمی‌داری.</dd>
+    <dt>OCO</dt><dd>دو سفارش فروش با هم (حد سود و حد ضرر)؛ اجرای یکی، دیگری را لغو می‌کند.</dd>
+    <dt>کارمزد رفت و برگشت</dt><dd>کارمزد خرید به‌علاوه‌ی کارمزد فروش.</dd>
+    <dt>ماشین زمان</dt><dd>شبیه‌سازی هزاران حالت از بقیه‌ی روز، ساخته‌شده از کندل‌های گذشته‌ی خود همان ارز. پیش‌بینی نیست.</dd>
+    <dt>حساب مجازی</dt><dd>تمرین با پول غیرواقعی و قیمت واقعی.</dd>
+  </dl>
+  <p class="small" style="margin-top:18px">روش: day-trader-skill از Jake Schincariol (MIT). این راهنما توصیه‌ی مالی نیست.</p>
+  </div>`;
+  put('guideCard', html);
+}
+
 // ------------------------------------------------------------------ views
-ui.view = location.hash === '#paper' ? 'paper' : 'dash';
+const viewFromHash = () => location.hash === '#paper' ? 'paper' : location.hash === '#guide' ? 'guide' : 'dash';
+ui.view = viewFromHash();
 function setView(v) {
   if (v === ui.view && !(v === 'paper' && market !== 'crypto')) return;
   ui.view = v;
-  try { history.replaceState(null, '', v === 'paper' ? '#paper' : location.pathname + location.search); } catch (e) { /* the frame may refuse it */ }
+  try { history.replaceState(null, '', v === 'dash' ? location.pathname + location.search : '#' + v); } catch (e) { /* the frame may refuse it */ }
   if (v === 'paper' && market !== 'crypto') { market = 'crypto'; store.set('dtw.market', market); loadMarket('crypto'); }
   Object.keys(last).forEach(k => delete last[k]);
   scheduleRender();
   window.scrollTo(0, 0);
 }
-window.addEventListener('hashchange', () => setView(location.hash === '#paper' ? 'paper' : 'dash'));
+window.addEventListener('hashchange', () => setView(viewFromHash()));
+document.addEventListener('click', e => { const g = e.target.closest('[data-goto]'); if (g) { const t = document.getElementById(g.dataset.goto); if (t) t.scrollIntoView({ block: 'start', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' }); } });
 $('#viewSeg').addEventListener('click', e => { const b = e.target.closest('button[data-view]'); if (b) setView(b.dataset.view); });
 
 // ------------------------------------------------------------------ the chart

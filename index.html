@@ -940,7 +940,7 @@ function syncInsts(mkt) {
 const source = { crypto: 'Binance', forex: 'Twelve Data' };
 async function fetchJSON(url, ms) {
   const ctl = new AbortController();
-  const timer = setTimeout(() => ctl.abort(), ms || 15000);
+  const timer = setTimeout(() => ctl.abort(), ms || 9000);
   try {
     const r = await fetch(url, { signal: ctl.signal, cache: 'no-store' });
     const txt = await r.text();
@@ -955,7 +955,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 // Crypto sources, tried in this order until one answers. A whole history is always read from ONE
 // source, so a chart never mixes two exchanges' prices. Binance and Bybit refuse some countries;
 // MEXC and Gate are global; Nobitex and Wallex are Iranian exchanges (their USDT markets).
-const BIN = ['https://data-api.binance.vision', 'https://api.binance.com', 'https://api1.binance.com', 'https://api3.binance.com'];
+const BIN = ['https://data-api.binance.vision', 'https://api.binance.com'];
 let binIdx = 0;
 function dataErr(msg) { const e = new Error(msg); e.kind = 'data'; return e; }
 async function udfHistory(base, inst, end, limit) {
@@ -1002,8 +1002,11 @@ const CRYPTO_SRC = {
   wallex: { name: 'Wallex', get: (inst, end, limit) => udfHistory('https://api.wallex.ir/v1/udf/history', inst, end, limit) }
 };
 const SRC_ORDER = ['binance', 'bybit', 'mexc', 'gate', 'nobitex', 'wallex'];
-const srcState = {};
-let cryptoPick = null;
+// which sources answered or failed last time, kept so a reload starts with one that works
+const srcState = store.get('dtw.srcState', {});
+let cryptoPick = store.get('dtw.cryptoPick', null);
+if (!CRYPTO_SRC[cryptoPick]) cryptoPick = null;
+function saveSrc() { store.set('dtw.srcState', srcState); store.set('dtw.cryptoPick', cryptoPick); }
 // the newest `limit` 5-minute bars ending at endTime (or now), oldest first, and the source id
 async function klines(inst, endTime, limit, onlyId) {
   const forced = onlyId || (cfg.crypto.source !== 'auto' && CRYPTO_SRC[cfg.crypto.source] ? cfg.crypto.source : null);
@@ -1017,12 +1020,12 @@ async function klines(inst, endTime, limit, onlyId) {
       const bars = (await CRYPTO_SRC[id].get(inst, endTime, limit))
         .filter(b => isFinite(b.t) && b.c > 0 && b.h >= b.l && b.t % MIN5 === 0).sort((a, b) => a.t - b.t);
       st.err = null; st.downUntil = 0; st.ok = Date.now();
-      if (!forced) cryptoPick = id;
+      if (!forced && cryptoPick !== id) { cryptoPick = id; saveSrc(); }
       source.crypto = CRYPTO_SRC[id].name;
       return { bars, id };
     } catch (e) {
       lastErr = e;
-      if (e.kind !== 'data') { network++; st.err = e; st.downUntil = Date.now() + 10 * 60000; }
+      if (e.kind !== 'data') { network++; st.err = String(e.message || e.name); st.downUntil = Date.now() + 2 * 3600000; saveSrc(); }
     }
   }
   const x = new Error('no source');
@@ -1910,7 +1913,7 @@ $('#setForm').addEventListener('submit', e => {
 // ------------------------------------------------------------------ connection check
 function why(e) {
   if (!e) return '';
-  if (e.name === 'AbortError') return 'جواب نداد (۱۵ ثانیه گذشت)';
+  if (e.name === 'AbortError') return 'جواب نداد (۹ ثانیه گذشت)';
   if (e.kind === 'data') return 'وصل شد ولی جواب قابل استفاده نداد';
   if (e.status === 451 || e.status === 403) return `HTTP ${e.status}: این سرور دسترسی از منطقه‌ی تو را بسته`;
   if (e.status) return `HTTP ${e.status}`;
@@ -1920,13 +1923,13 @@ function why(e) {
 let diagText = '';
 async function runDiag() {
   const body = $('#diagBody');
-  const rows = SRC_ORDER.map(id => ({ id, name: CRYPTO_SRC[id].name, state: '…', ok: null }));
-  rows.push({ id: 'td', name: 'Twelve Data (فارکس)', state: cfg.tdKey ? '…' : 'کلید وارد نشده', ok: cfg.tdKey ? null : false });
+  const rows = SRC_ORDER.map(id => ({ id, name: CRYPTO_SRC[id].name, state: 'هنوز جواب نداده…', ok: null }));
+  rows.push({ id: 'td', name: 'Twelve Data (فارکس)', state: cfg.tdKey ? 'هنوز جواب نداده…' : 'کلید وارد نشده', ok: cfg.tdKey ? null : false });
   const draw = () => {
     body.innerHTML = `<p class="small">هر منبع با چند کندل BTC/USDT (و EUR/USD برای فارکس) از همین مرورگر امتحان می‌شود.</p>
       <table class="list"><tbody>${rows.map(r => `<tr><td><b>${esc(r.name)}</b></td><td>${r.ok === true ? '<span class="pos">✓ باز است</span>' : r.ok === false ? '<span class="neg">✕</span>' : ''} ${esc(r.state)}</td></tr>`).join('')}</tbody></table>
       <p class="small">داده‌ی فعلی: ${esc(source.crypto)}${cryptoPick ? '' : ' (هنوز وصل نشده)'} · ساعت ${new Date().toLocaleTimeString('en-GB')}</p>`;
-    diagText = rows.map(r => `${r.name}: ${r.ok === true ? 'OK' : 'FAIL'} ${r.state}`).join('\n');
+    diagText = rows.map(r => `${r.name}: ${r.ok === true ? 'OK' : r.ok === false ? 'FAIL' : 'WAIT'} ${r.state}`).join('\n');
   };
   draw();
   const probe = { src: 'BTCUSDT', base: 'BTC', quote: 'USDT' };
@@ -1942,14 +1945,18 @@ async function runDiag() {
     try {
       const b = await CRYPTO_SRC[r.id].get(probe, null, 3);
       r.ok = b.length > 0; r.state = r.ok ? `${Date.now() - t0} ms · آخرین قیمت ${fmtP(b.sort((x, y) => x.t - y.t)[b.length - 1].c, 2)}` : 'داده‌ای برنگشت';
-      if (r.ok && srcState[r.id]) srcState[r.id].downUntil = 0;
-    } catch (e) { r.ok = false; r.state = why(e); }
+      if (r.ok) { srcState[r.id] = Object.assign(srcState[r.id] || {}, { downUntil: 0 }); saveSrc(); }
+    } catch (e) {
+      r.ok = false; r.state = why(e);
+      if (e.kind !== 'data') { srcState[r.id] = Object.assign(srcState[r.id] || {}, { downUntil: Date.now() + 2 * 3600000 }); saveSrc(); }
+    }
     draw();
   }));
   const okIds = rows.filter(r => r.ok && r.id !== 'td').map(r => r.id);
   if (okIds.length) {
     body.insertAdjacentHTML('beforeend', `<p style="font-size:14px">باز: ${okIds.map(id => esc(CRYPTO_SRC[id].name)).join('، ')}. داشبورد خودکار از اولی استفاده می‌کند؛ در تنظیمات می‌توانی یکی را ثابت کنی.</p>`);
-    if (insts.crypto.size && Array.from(insts.crypto.values()).every(i => i.status === 'error')) { cryptoPick = okIds[0]; loadMarket('crypto', true); }
+    if (!okIds.includes(cryptoPick)) { cryptoPick = okIds[0]; saveSrc(); }
+    if (insts.crypto.size && Array.from(insts.crypto.values()).every(i => i.status === 'error')) loadMarket('crypto', true);
   } else {
     body.insertAdjacentHTML('beforeend', `<p style="font-size:14px">هیچ منبع کریپتویی از این اینترنت باز نیست. اگر از فیلترشکن استفاده می‌کنی، مطمئن شو روی همین مرورگر روشن است؛ اگر نه، با فیلترشکن یا اینترنت دیگری امتحان کن و دوباره این‌جا را بزن.</p>`);
   }

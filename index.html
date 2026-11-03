@@ -190,7 +190,11 @@ select,input[type=text],input[type=number],input[type=password]{background:var(-
 .sug-list{display:flex;flex-direction:column;gap:10px;padding:12px 18px 4px}
 .sug{display:grid;grid-template-columns:minmax(130px,auto) minmax(0,1fr) auto;gap:8px 18px;align-items:center;padding:12px 14px;border:1px solid var(--line);border-radius:10px;background:var(--sunk)}
 .sug.go{border-color:var(--up);background:var(--up-soft)}
-.sug.exit{border-color:var(--warn);background:var(--warn-soft)}
+.sug.near{border-color:var(--warn);background:var(--warn-soft)}
+.sug.exit{border-color:var(--down);background:var(--down-soft)}
+.sug .conds{display:inline-flex;flex-wrap:wrap;gap:4px 10px;font-size:12px}
+.tier-h{font-size:13px;font-weight:700;padding:12px 18px 0;color:var(--up)}
+.tier-h.near{color:var(--warn)}
 .sug .who b{font-size:16px;font-weight:800;display:block}
 .sug .nums{display:flex;flex-wrap:wrap;gap:4px 18px;font-size:13px;min-width:0}
 .sug .nums span{white-space:nowrap}
@@ -297,6 +301,8 @@ a{color:var(--accent)}
     <section class="card">
       <div class="sec-h"><h2 id="paperH">حساب مجازی</h2><p id="paperSub"></p></div>
       <div id="paperStats"></div>
+      <h3 class="sub-h">نتیجه به تفکیک نوع پیشنهاد</h3>
+      <div id="paperTiers"></div>
       <div class="paper-grid">
         <div><h3 style="font-size:14px;margin-bottom:6px">رشد حساب</h3><div id="paperCurve"></div></div>
         <div>
@@ -1305,7 +1311,9 @@ function analyze(inst) {
     inst.full = fs.full; inst.pool = null;
     inst.filled = fs.filled + fs.full.reduce((n, S) => n + S.D.filter(b => b.fill).length, 0);
     inst.hist = { buy: E.historyReplay(fs.full, rule, Object.assign({ side: 'buy' }, o)), sell: allowShort ? E.historyReplay(fs.full, rule, Object.assign({ side: 'sell' }, o)) : null };
-    inst.setups = E.findSetups(E.dailyCloses(inst.bars, now));
+    const dc = E.dailyCloses(inst.bars, now);
+    inst.setups = E.findSetups(dc);
+    inst.ma20 = dc.length >= 20 ? dc.slice(-20).reduce((t, x) => t + x, 0) / 20 : null;
     inst._hk = hk;
   }
   a.hist = inst.hist;
@@ -1845,12 +1853,30 @@ function renderFocus() {
 function selectText(el) { if (!el) return; const r = document.createRange(); r.selectNodeContents(el); const s = getSelection(); s.removeAllRanges(); s.addRange(r); toast('متن انتخاب شد؛ کپی کن.'); }
 
 // ------------------------------------------------------------------ suggestions: what the rule says right now
-// A symbol is suggested only when ALL hold: the rule triggered at most one bar ago, every risk check passes,
-// the same rule on the same symbol fired at least SUG_MIN_N times in the past with a positive net average,
-// and the Time Machine's net average is positive. Otherwise it is listed with the reason it is not suggested.
+// Two tiers. The risk rules are never relaxed: a symbol is listed only when the rule triggered and EVERY risk
+// check passes (max loss, reward:risk, daily limits, entry window, fresh data...). On top of that, five quality
+// conditions are scored:
+//   fresh   the trigger is at most one 5-minute bar old
+//   sample  the same rule on the same symbol fired at least SUG_MIN_N times in the stored history
+//   hist    its past net average (after fees) is positive
+//   mc      the Time Machine's net average is positive
+//   trend   the price is on the trade's side of the 20-day average
+// Tier A: 5 of 5. Tier B: 4 of 5 (80 %), with the missing condition named.
 const SUG_MIN_N = 15;
+const COND_FA = { fresh: 'سیگنال تازه', sample: 'نمونه‌ی کافی', hist: 'گذشته‌ی مثبت', mc: 'شبیه‌سازی مثبت', trend: 'هم‌جهت با روند' };
+function qualityConds(inst, plan, mc, h) {
+  const a = inst.a, ma = inst.ma20;
+  const histOk = !inst.partial && h && h.triggered > 0;
+  return [
+    { key: 'fresh', ok: plan.ago <= 1, fail: `${n(plan.ago)} کندل پیش فعال شد؛ ورود دیر` },
+    { key: 'sample', ok: histOk && h.triggered >= SUG_MIN_N, fail: inst.partial ? 'تاریخچه هنوز کامل نشده' : `نمونه‌ی گذشته کم است (${n(h ? h.triggered : 0)} بار از ${n(SUG_MIN_N)})` },
+    { key: 'hist', ok: histOk && h.avgRnet > 0, fail: inst.partial ? 'تاریخچه هنوز کامل نشده' : `همین قانون روی این نماد در گذشته ضرر داده (${n(rr(h && h.avgRnet))})` },
+    { key: 'mc', ok: !mc.err && mc.avgRnet > 0, fail: mc.err ? 'شبیه‌سازی اجرا نشد' : `میانگین شبیه‌سازی منفی است (${n(rr(mc.avgRnet))})` },
+    { key: 'trend', ok: ma > 0 && (plan.long ? a.price > ma : a.price < ma), fail: ma > 0 ? `قیمت ${plan.long ? 'زیر' : 'بالای'} میانگین 20 روزه (${n(fmtP(ma, plan.dec))}) است` : 'روند روزانه هنوز معلوم نیست' }
+  ];
+}
 function buildSuggestions(mkt) {
-  const go = [], skip = [], watch = [];
+  const A = [], B = [], skip = [], watch = [];
   insts[mkt].forEach(inst => {
     const a = inst.a;
     if (!a || !a.st || inst.status !== 'ready') return;
@@ -1866,20 +1892,20 @@ function buildSuggestions(mkt) {
     const mc = ensureMC(inst, plan);
     const ev = evaluate(inst, plan, mc, st.side);
     const h = inst.hist && inst.hist[st.side];
-    const why = [];
-    if (plan.ago >= 2) why.push(`${n(plan.ago)} کندل پیش فعال شد؛ برای ورود دیر است`);
-    ev.blocked.forEach(c => { if (c.key !== 'trigger') why.push(checkText(c, plan)); });
-    if (inst.partial) why.push('تاریخچه هنوز کامل نشده');
-    else if (!h || h.triggered < SUG_MIN_N) why.push(`نمونه‌ی گذشته کم است (${n(h ? h.triggered : 0)} بار؛ حداقل ${n(SUG_MIN_N)})`);
-    else if (!(h.avgRnet > 0)) why.push(`همین قانون روی این نماد در گذشته ضرر داده (${n(rr(h.avgRnet))})`);
-    if (mc.pending) why.push('شبیه‌سازی در حال اجراست');
-    else if (mc.err) why.push('شبیه‌سازی اجرا نشد');
-    else if (!(mc.avgRnet > 0)) why.push(`میانگین شبیه‌سازی منفی است (${n(rr(mc.avgRnet))})`);
-    (why.length ? skip : go).push({ inst, plan, mc, ev, h, why });
+    const hard = ev.blocked.filter(c => c.key !== 'trigger').map(c => checkText(c, plan));
+    if (mc.pending) { skip.push({ inst, plan, why: ['شبیه‌سازی در حال اجراست'] }); return; }
+    const conds = qualityConds(inst, plan, mc, h);
+    const passed = conds.filter(c => c.ok).length;
+    const item = { inst, plan, mc, ev, h, conds, passed };
+    if (hard.length) skip.push(Object.assign(item, { why: hard.map(t => 'قانون ریسک: ' + t).concat(conds.filter(c => !c.ok).map(c => c.fail)) }));
+    else if (passed === conds.length) A.push(item);
+    else if (passed === conds.length - 1) B.push(item);
+    else skip.push(Object.assign(item, { why: conds.filter(c => !c.ok).map(c => c.fail) }));
   });
-  go.sort((x, y) => y.h.avgRnet - x.h.avgRnet);
+  const byHist = (x, y) => ((y.h && y.h.avgRnet) || -9) - ((x.h && x.h.avgRnet) || -9);
+  A.sort(byHist); B.sort(byHist);
   watch.sort((x, y) => x.d - y.d);
-  return { go, skip, watch: watch.slice(0, 4) };
+  return { A, B, skip, watch: watch.slice(0, 4) };
 }
 // open real trades (journal) and their exit signals
 function exitSignals() {
@@ -1897,39 +1923,51 @@ function exitSignals() {
   return out;
 }
 const sugSeen = new Set();
+function sugItemHTML(g, mkt, tier) {
+  const { inst, plan, ev, h, mc, conds } = g, sz = ev.sz;
+  const condHTML = conds.map(c => `<span class="${c.ok ? 'pos' : 'neg'}">${c.ok ? '✓' : '✕'} ${COND_FA[c.key]}</span>`).join('');
+  const miss = conds.filter(c => !c.ok).map(c => c.fail).join('؛ ');
+  const open = paper.positions.some(p => p.key === inst.key);
+  return `<div class="sug ${tier === 'A' ? 'go' : 'near'}"><div class="who"><b>${esc(inst.label)}</b><span class="state ${plan.long ? 'up' : 'down'}">${plan.long ? '↑ خرید' : '↓ فروش'}</span></div>
+    <div class="nums"><span>ورود ≈ ${n(fmtP(inst.a.price, plan.dec))}</span><span>حد ضرر <span class="num neg">${fmtP(plan.stop, plan.dec)}</span></span><span>حد سود <span class="num pos">${fmtP(plan.target, plan.dec)}</span></span>
+      <span>حجم ${n(sz.units.toLocaleString('en-US', { maximumFractionDigits: 8 }))} (${n(usd(sz.notional, 0))})</span><span>ضرر ممکن <span class="num neg">${usd(-sz.lossAtStop)}</span></span><span>سود ممکن <span class="num pos">${usd(sz.gainAtTarget)}</span></span>
+      <span>خروج تا ${n(tm(plan.exitAt))}</span>${h && h.triggered ? `<span>گذشته: ${n(h.target + '/' + h.triggered)} حد سود، میانگین <span class="num ${h.avgRnet > 0 ? 'pos' : 'neg'}">${rr(h.avgRnet)}</span></span>` : ''}<span>شبیه‌سازی: اول حد سود ${n(pc(mc.pTarget, 0))}</span>
+      <span class="conds">${condHTML}</span>${tier === 'B' ? `<span><b>شرطی که ندارد:</b> ${miss}</span>` : ''}</div>
+    <div class="acts">${mkt !== 'crypto' ? '' : open ? `<button type="button" class="btn ghost sm" data-view-go="paper">روی حساب مجازی باز است</button>` : `<button type="button" class="btn sm" data-paper-open="${esc(inst.key)}" data-tier="${tier}">باز کردن مجازی</button>`}<button type="button" class="btn ghost sm" data-focus="${esc(inst.key)}" data-mkt="${mkt}">جزئیات و سفارش واقعی</button></div></div>`;
+}
 function renderSug() {
   const mkt = ui.view === 'paper' ? 'crypto' : market;
   if (mkt === 'forex' && !cfg.tdKey) { put('sugCard', `<div class="sec-h"><h2 id="sugH">پیشنهادهای الان</h2></div><p class="sug-empty">برای فارکس اول کلید Twelve Data لازم است.</p>`); return; }
   const list = Array.from(insts[mkt].values());
   const ready = list.filter(i => i.status === 'ready');
-  const { go, skip, watch } = buildSuggestions(mkt);
+  const { A, B, skip, watch } = buildSuggestions(mkt);
   const exits = exitSignals();
-  go.forEach(g => {
-    const k = g.inst.key + g.inst.a.ph.date + g.plan.side;
-    if (!sugSeen.has(k)) { sugSeen.add(k); if (ui.booted) toast(`<b>پیشنهاد تازه:</b> ${esc(g.inst.label)}، ${sideFa(g.plan.side)} حدود ${n(fmtP(g.inst.a.price, g.plan.dec))}`, 'up'); }
-  });
+  [['A', A], ['B', B]].forEach(([tier, arr]) => arr.forEach(g => {
+    const k = g.inst.key + g.inst.a.ph.date + g.plan.side + tier;
+    if (!sugSeen.has(k)) {
+      sugSeen.add(k);
+      if (ui.booted) toast(`<b>${tier === 'A' ? 'پیشنهاد تازه (۵ از ۵ شرط)' : 'پیشنهاد ۸۰٪ (۴ از ۵ شرط)'}:</b> ${esc(g.inst.label)}، ${sideFa(g.plan.side)} حدود ${n(fmtP(g.inst.a.price, g.plan.dec))}`, 'up');
+    }
+  }));
   const last = Math.max(0, ...ready.map(i => i.lastFetch || 0));
-  const goHTML = go.map(g => {
-    const { inst, plan, ev, h, mc } = g, sz = ev.sz;
-    return `<div class="sug go"><div class="who"><b>${esc(inst.label)}</b><span class="state ${plan.long ? 'up' : 'down'}">${plan.long ? '↑ خرید' : '↓ فروش'}</span></div>
-      <div class="nums"><span>ورود ≈ ${n(fmtP(inst.a.price, plan.dec))}</span><span>حد ضرر <span class="num neg">${fmtP(plan.stop, plan.dec)}</span></span><span>حد سود <span class="num pos">${fmtP(plan.target, plan.dec)}</span></span>
-        <span>حجم ${n(sz.units.toLocaleString('en-US', { maximumFractionDigits: 8 }))} (${n(usd(sz.notional, 0))})</span><span>ضرر ممکن <span class="num neg">${usd(-sz.lossAtStop)}</span></span><span>سود ممکن <span class="num pos">${usd(sz.gainAtTarget)}</span></span>
-        <span>خروج تا ${n(tm(plan.exitAt))}</span><span>گذشته: ${n(h.target + '/' + h.triggered)} حد سود، میانگین <span class="num pos">${rr(h.avgRnet)}</span></span><span>شبیه‌سازی: اول حد سود ${n(pc(mc.pTarget, 0))}</span></div>
-      <div class="acts">${mkt !== 'crypto' ? '' : paper.positions.some(p => p.key === inst.key) ? `<button type="button" class="btn ghost sm" data-view-go="paper">روی حساب مجازی باز است</button>` : `<button type="button" class="btn sm" data-paper-open="${esc(inst.key)}">باز کردن مجازی</button>`}<button type="button" class="btn ghost sm" data-focus="${esc(inst.key)}" data-mkt="${mkt}">جزئیات و سفارش واقعی</button></div></div>`;
-  }).join('');
-  const exitHTML = exits.map(x => `<div class="sug exit"><div class="who"><b>${esc(x.j.label)}</b><span class="state warn">بفروش</span></div>
+  const exitHTML = exits.map(x => `<div class="sug exit"><div class="who"><b>${esc(x.j.label)}</b><span class="state down">بفروش</span></div>
       <div class="nums"><span>${x.why}</span><span>قیمت الان ${n(fmtP(x.p, x.j.dec))}</span><span>معامله‌ی واقعی تو از ${n(tm(x.j.takenAt))}</span></div>
       <div class="acts"><button type="button" class="btn ghost sm" data-view-go="dash" data-scroll="journalCard">ثبت نتیجه در ژورنال</button></div></div>`).join('');
   let body = '';
   if (!ready.length) body = `<p class="sug-empty mut">منتظر داده…</p>`;
   else {
-    body = (exitHTML || goHTML) ? `<div class="sug-list">${exitHTML}${goHTML}</div>` : '';
-    if (!go.length) body += `<p class="sug-empty">الان هیچ نمادی همه‌ی شرط‌ها را ندارد، پس پیشنهاد خریدی نیست. این حالت عادی است؛ بیشتر وقت‌ها بهترین کار، معامله نکردن است.</p>`;
+    if (exitHTML) body += `<div class="sug-list">${exitHTML}</div>`;
+    body += `<h3 class="tier-h">همه‌ی شرط‌ها (۵ از ۵)</h3>`;
+    body += A.length ? `<div class="sug-list">${A.map(g => sugItemHTML(g, mkt, 'A')).join('')}</div>`
+      : `<p class="sug-empty">الان هیچ نمادی هر پنج شرط را ندارد. این حالت عادی است؛ بیشتر وقت‌ها بهترین کار، معامله نکردن است.</p>`;
+    body += `<h3 class="tier-h near">۴ از ۵ شرط (۸۰٪)</h3>`;
+    body += B.length ? `<div class="sug-list">${B.map(g => sugItemHTML(g, mkt, 'B')).join('')}</div>`
+      : `<p class="sug-empty">الان نمادی با چهار شرط از پنج هم نیست.</p>`;
     if (watch.length) body += `<div class="watch"><span>نزدیک به فعال شدن:</span>${watch.map(w => `<span><b>${esc(w.inst.label)}</b> ${n((w.d * 100).toFixed(2) + '%')} تا ${w.side === 'buy' ? 'سقف' : 'کف'} رنج</span>`).join('')}</div>`;
     if (skip.length) body += `<details class="skipped"><summary>${n(skip.length)} نماد فعال شده ولی پیشنهاد نمی‌شود؛ دلیلش را ببین</summary><ul>${skip.map(x => `<li><b>${esc(x.inst.label)}</b> ${x.plan.long ? '↑' : '↓'}: ${x.why.join('؛ ')}</li>`).join('')}</ul></details>`;
   }
   const html = `<div class="sec-h"><h2 id="sugH">پیشنهادهای الان</h2><p>${mkt === 'crypto' ? esc(source.crypto) : 'فارکس'} · خودکار به‌روز می‌شود${last ? ` · آخرین داده ${n(tm(last))}` : ''}</p></div>${body}
-    <p class="small crit">پیشنهاد فقط وقتی می‌آید که قانون شکست رنج همین الان فعال شده باشد، همه‌ی چک‌های ریسک قبول شوند، همین قانون روی همین نماد در گذشته حداقل ${n(SUG_MIN_N)} بار فعال شده و به‌طور میانگین بعد از کارمزد سود داده باشد، و شبیه‌سازی هم مثبت باشد. این خروجی یک قانون است، نه پیش‌بینی و نه توصیه‌ی مالی؛ حتی وقتی همه‌ی شرط‌ها برقرارند، معامله می‌تواند به حد ضرر بخورد.</p>`;
+    <p class="small crit">هر پیشنهاد اول باید از همه‌ی قانون‌های ریسک تو رد شود (سقف ضرر، نسبت سود به ضرر، سقف روزانه، پنجره‌ی ورود، تازه بودن داده)؛ این‌ها در هیچ سطحی کم نمی‌شوند. بعد پنج شرط کیفیت شمرده می‌شود: سیگنال تازه (حداکثر ۱ کندل)، حداقل ${n(SUG_MIN_N)} بار نمونه‌ی گذشته، میانگین گذشته‌ی مثبت بعد از کارمزد، میانگین شبیه‌سازی مثبت، و قیمت هم‌جهت با میانگین 20 روزه. پیشنهادهای ۸۰٪ یکی از این پنج را ندارند، پس طبق تعریف ضعیف‌ترند؛ نتیجه‌ی هر سطح جدا در حساب مجازی ثبت می‌شود تا ببینی ارزشش را دارد یا نه. این خروجی یک قانون است، نه پیش‌بینی و نه توصیه‌ی مالی.</p>`;
   put('sugCard', html);
 }
 
@@ -1948,7 +1986,7 @@ function nextExitAt(inst) {
 }
 function paperToday() { return paper.positions.concat(paper.closed).filter(p => dayKey(p.openedAt) === dayKey(Date.now())); }
 // open a long at the live price; returns an error text or null
-function paperOpen(inst, units, stop, target, exitAt, fromSug) {
+function paperOpen(inst, units, stop, target, exitAt, tier) {
   const a = inst.a, price = a && a.price;
   if (!(price > 0) || inst.status !== 'ready') return 'قیمت این نماد هنوز نرسیده.';
   if (!(stop < price)) return 'حد ضرر باید زیر قیمت باشد.';
@@ -1967,7 +2005,7 @@ function paperOpen(inst, units, stop, target, exitAt, fromSug) {
   if (used + risk > cfg.maxDailyLoss + 0.005) return `ریسک امروز از سقف ${usd(cfg.maxDailyLoss)} بیشتر می‌شود.`;
   paper.cash -= notional + fee;
   paper.positions.push({ id: Date.now(), key: inst.key, label: inst.label, src: source.crypto, units, entry: price, stop, target, exitAt,
-    openedAt: Date.now(), feeIn: fee, risk, dec: E.decimalsFor(price), checkedTo: Math.ceil(Date.now() / MIN5) * MIN5, sug: !!fromSug });
+    openedAt: Date.now(), feeIn: fee, risk, dec: E.decimalsFor(price), checkedTo: Math.ceil(Date.now() / MIN5) * MIN5, tier: tier || null });
   savePaper();
   toast(`خرید مجازی: ${n(units.toLocaleString('en-US', { maximumFractionDigits: 8 }))} ${esc(inst.base)} در ${n(fmtP(price, E.decimalsFor(price)))}`, 'up');
   return null;
@@ -2004,13 +2042,14 @@ function paperTick() {
   });
   savePaper();
 }
-function paperOpenFromSuggestion(key) {
+function paperOpenFromSuggestion(key, tier) {
   const inst = insts.crypto.get(key);
   if (!inst || !inst.a) return;
   const plan = planFor(inst, 'buy');
   if (plan.none || plan.kind !== 'triggered') { toast('این نماد الان سیگنال فعال ندارد.'); return; }
   const mc = ensureMC(inst, plan), ev = evaluate(inst, plan, mc, 'buy');
-  const err = paperOpen(inst, ev.sz.units, plan.stop, plan.target, plan.exitAt, true);
+  if (ev.blocked.some(c => c.key !== 'trigger')) { toast('یکی از قانون‌های ریسک الان رد می‌شود؛ جزئیات را در داشبورد ببین.', 'down'); return; }
+  const err = paperOpen(inst, ev.sz.units, plan.stop, plan.target, plan.exitAt, tier || null);
   if (err) toast(esc(err), 'down');
   scheduleRender();
 }
@@ -2023,6 +2062,8 @@ function paperPreview() {
   const units = amt / price, risk = units * (price - stop) + amt * feeSide() * 2;
   el.innerHTML = `قیمت ${n(fmtP(price, dec))} · حد ضرر ${n(fmtP(stop, dec))} · حد سود ${n(fmtP(target, dec))} · ضرر در حد ضرر حدود <span class="num ${risk > cfg.maxLoss ? 'neg' : ''}">${usd(risk)}</span> (سقف ${n(usd(cfg.maxLoss))}) · نقد ${n(usd(paper.cash))}`;
 }
+const tierOf = x => x.tier || (x.sug ? 'A' : null);
+const tierTag = x => { const t = tierOf(x); return t === 'A' ? ' <span class="small pos">۵/۵</span>' : t === 'B' ? ' <span class="small" style="color:var(--warn)">۸۰٪</span>' : ' <span class="small">دستی</span>'; };
 function renderPaper() {
   const list = Array.from(insts.crypto.values());
   const sel = $('#p_sym'), keys = list.map(i => i.key).join(',');
@@ -2039,6 +2080,13 @@ function renderPaper() {
     <div class="stat"><span class="lbl">سود و زیان کل</span><b class="num ${total >= 0 ? 'pos' : 'neg'}">${usd(total)}</b><small>${n(spc(total / paper.start))}</small></div>
     <div class="stat"><span class="lbl">امروز</span><b class="num ${today >= 0 ? 'pos' : 'neg'}">${usd(today)}</b><small>هدف تو ${n(usd(cfg.dailyTarget, 0))}</small></div>
     <div class="stat"><span class="lbl">معاملات بسته</span><b class="num">${paper.closed.length}</b><small>${paper.closed.length ? `${n(pc(wins / paper.closed.length, 0))} برد · میانگین ${n(rr(Rs.reduce((t, c) => t + c.R, 0) / Math.max(1, Rs.length)))}` : 'هنوز معامله‌ای بسته نشده'}</small></div></div>`);
+  const tiers = [['A', 'پیشنهادهای ۵ از ۵'], ['B', 'پیشنهادهای ۸۰٪'], [null, 'خرید دستی']].map(([t, name]) => {
+    const cs = paper.closed.filter(c => tierOf(c) === t), w = cs.filter(c => c.pnl > 0).length, Rr = cs.filter(c => c.R != null);
+    const pnl = cs.reduce((x, c) => x + c.pnl, 0);
+    return `<tr><td><b>${name}</b></td><td>${n(cs.length)}</td><td>${n(cs.length ? pc(w / cs.length, 0) : '–')}</td><td><span class="num ${pnl >= 0 ? 'pos' : 'neg'}">${cs.length ? usd(pnl) : '–'}</span></td><td>${n(Rr.length ? rr(Rr.reduce((x, c) => x + c.R, 0) / Rr.length) : '–')}</td></tr>`;
+  }).join('');
+  put('paperTiers', `<div class="tbl"><table class="list"><thead><tr><th>نوع معامله</th><th>بسته‌شده</th><th>برد</th><th>جمع سود و زیان</th><th>میانگین R</th></tr></thead><tbody>${tiers}</tbody></table></div>
+    <p class="small" style="padding:0 18px 10px">با کمتر از ۲۰ معامله در هر ردیف، فرق‌ها بیشتر شانس است تا نشانه.</p>`);
   // equity curve over closed trades
   const pts = [paper.start];
   paper.closed.forEach(c => pts.push(pts[pts.length - 1] + c.pnl));
@@ -2055,12 +2103,12 @@ function renderPaper() {
   const RS = { stop: 'حد ضرر', target: 'حد سود', time: 'زمان خروج', manual: 'دستی' };
   put('paperOpen', paper.positions.length ? `<div class="tbl"><table class="list"><thead><tr><th>نماد</th><th>حجم</th><th>ورود</th><th>الان</th><th>حد ضرر</th><th>حد سود</th><th>سود/زیان</th><th>خروج تا</th><th></th></tr></thead><tbody>
     ${paper.positions.map(p => { const pr = priceOf(p), u = p.units * (pr - p.entry) - p.feeIn - p.units * pr * feeSide();
-      return `<tr><td><b>${esc(p.label)}</b>${p.sug ? ' <span class="small">پیشنهاد</span>' : ''}</td><td>${n(p.units.toLocaleString('en-US', { maximumFractionDigits: 8 }))}</td><td>${n(fmtP(p.entry, p.dec))}</td><td>${n(fmtP(pr, p.dec))}</td>
+      return `<tr><td><b>${esc(p.label)}</b>${tierTag(p)}</td><td>${n(p.units.toLocaleString('en-US', { maximumFractionDigits: 8 }))}</td><td>${n(fmtP(p.entry, p.dec))}</td><td>${n(fmtP(pr, p.dec))}</td>
         <td><span class="num neg">${fmtP(p.stop, p.dec)}</span></td><td><span class="num pos">${fmtP(p.target, p.dec)}</span></td><td><span class="num ${u >= 0 ? 'pos' : 'neg'}">${usd(u)}</span></td><td>${n(tm(p.exitAt))}</td>
         <td><button type="button" class="btn ghost sm" data-paper-sell="${p.id}">فروش</button></td></tr>`; }).join('')}</tbody></table></div>`
     : `<p class="empty">پوزیشن بازی نداری. از «پیشنهادهای الان» یا فرم خرید دستی شروع کن.</p>`);
   put('paperClosed', paper.closed.length ? `<div class="tbl"><table class="list"><thead><tr><th>بسته شد</th><th>نماد</th><th>ورود</th><th>خروج</th><th>دلیل</th><th>سود/زیان</th><th>R</th></tr></thead><tbody>
-    ${paper.closed.slice(-30).reverse().map(c => `<tr><td>${n(new Date(c.closedAt).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit' }) + ' ' + tm(c.closedAt))}</td><td><b>${esc(c.label)}</b>${c.sug ? ' <span class="small">پیشنهاد</span>' : ''}</td>
+    ${paper.closed.slice(-30).reverse().map(c => `<tr><td>${n(new Date(c.closedAt).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit' }) + ' ' + tm(c.closedAt))}</td><td><b>${esc(c.label)}</b>${tierTag(c)}</td>
       <td>${n(fmtP(c.entry, c.dec))}</td><td>${n(fmtP(c.exit, c.dec))}</td><td>${RS[c.reason] || ''}</td><td><span class="num ${c.pnl >= 0 ? 'pos' : 'neg'}">${usd(c.pnl)}</span></td><td>${n(c.R != null ? rr(c.R) : '–')}</td></tr>`).join('')}</tbody></table></div>`
     : `<p class="empty">هنوز معامله‌ی بسته‌ای نیست.</p>`);
   paperPreview();
@@ -2085,7 +2133,7 @@ $('#paperReset').onclick = e => {
 };
 document.addEventListener('click', e => {
   const po = e.target.closest('[data-paper-open]');
-  if (po) { paperOpenFromSuggestion(po.dataset.paperOpen); return; }
+  if (po) { paperOpenFromSuggestion(po.dataset.paperOpen, po.dataset.tier); return; }
   const ps = e.target.closest('[data-paper-sell]');
   if (ps) {
     const pos = paper.positions.find(p => String(p.id) === ps.dataset.paperSell), inst = pos && insts.crypto.get(pos.key);

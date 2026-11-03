@@ -256,7 +256,7 @@ a{color:var(--accent)}
   </div>
   <footer>
     <p><b>توصیه‌ی مالی نیست.</b> این صفحه داده‌ی عمومی می‌خواند و حساب می‌کند. آینده را نمی‌بیند و هیچ سفارشی ثبت نمی‌کند؛ هر سفارشی را خودت در صرافی یا کارگزار می‌گذاری. بیشتر کسانی که ترید روزانه می‌کنند ضرر می‌کنند. حد ضرر یک برنامه است، نه تضمین: در بازار تند ممکن است بدتر پر شود.</p>
-    <p>داده: کریپتو از API عمومی Binance (و Bybit اگر Binance در دسترس نبود)، فارکس از Twelve Data. کندل‌های ۵ دقیقه‌ای، نه تیک به تیک؛ ممکن است با تأخیر باشد. روش: <a href="https://github.com/Jakeschincariol/day-trader-skill" target="_blank" rel="noopener">day-trader-skill</a> از Jake Schincariol (MIT)، بازنویسی‌شده برای بازارهای ۲۴ ساعته با سمت فروش و هزینه‌ی معامله.</p>
+    <p>داده: کریپتو از API عمومی Binance، و اگر باز نبود Bybit، MEXC، Gate، نوبیتکس یا والکس؛ فارکس از Twelve Data. کندل‌های ۵ دقیقه‌ای، نه تیک به تیک؛ ممکن است با تأخیر باشد. روش: <a href="https://github.com/Jakeschincariol/day-trader-skill" target="_blank" rel="noopener">day-trader-skill</a> از Jake Schincariol (MIT)، بازنویسی‌شده برای بازارهای ۲۴ ساعته با سمت فروش و هزینه‌ی معامله.</p>
   </footer>
 </main>
 
@@ -290,6 +290,7 @@ a{color:var(--accent)}
         <legend>کریپتو</legend>
         <label class="fld wide"><span>نمادها (جفت‌های بایننس، با کاما)</span><input type="text" id="s_crypto_symbols" dir="ltr"></label>
         <label class="fld"><span>جلسه</span><select id="s_crypto_session" class="sessSel"></select></label>
+        <label class="fld"><span>منبع داده</span><select id="s_crypto_source"><option value="auto">خودکار (اولین منبعی که جواب بدهد)</option><option value="binance">Binance</option><option value="bybit">Bybit</option><option value="mexc">MEXC</option><option value="gate">Gate</option><option value="nobitex">نوبیتکس</option><option value="wallex">والکس</option></select><small class="hint">اگر در نوبیتکس یا والکس معامله می‌کنی، داده‌ی همان صرافی دقیق‌تر است</small></label>
         <label class="fld"><span>هزینه‌ی رفت و برگشت (٪)</span><input type="number" id="s_crypto_costPct" min="0" step="0.01"><small class="hint">کارمزد اسپات بایننس 0.1٪ هر طرف = 0.2</small></label>
         <label class="fld check"><input type="checkbox" id="s_crypto_allowShort"><span>سمت فروش (شورت) هم نشان بده (نیاز به فیوچرز/مارجین)</span></label>
       </fieldset>
@@ -315,8 +316,14 @@ a{color:var(--accent)}
         <label class="fld check"><input type="checkbox" id="s_sound"><span>صدای هشدار</span></label>
       </fieldset>
     </div>
-    <div class="dlg-f"><button type="submit" class="btn" id="setSave">ذخیره</button><button type="button" class="btn ghost" id="setReset">برگرداندن پیش‌فرض‌ها</button></div>
+    <div class="dlg-f"><button type="submit" class="btn" id="setSave">ذخیره</button><button type="button" class="btn ghost" id="setReset">برگرداندن پیش‌فرض‌ها</button><button type="button" class="btn ghost" data-diag="1">عیب‌یابی اتصال</button></div>
   </form>
+</dialog>
+
+<dialog id="diag" aria-labelledby="diagH">
+  <div class="dlg-h"><h2 id="diagH" style="font-size:16px">عیب‌یابی اتصال</h2><button type="button" class="btn ghost sm" id="diagClose">بستن</button></div>
+  <div class="dlg-b" id="diagBody"></div>
+  <div class="dlg-f"><button type="button" class="btn" id="diagRun">دوباره امتحان کن</button><button type="button" class="btn ghost" id="diagCopy">کپی نتیجه</button></div>
 </dialog>
 
 <script>
@@ -839,7 +846,7 @@ const DEFAULTS = {
   cashBufferPct: 10, maxPositionPct: 90, maxLeverage: 3, minOrderUSD: 5,
   orMinutes: 15, stopRule: 'or_mid', atrK: 1.5, stopPct: 0.5, targetR: 2,
   historyDays: 60, replays: 10000, seed: 19, sound: true, tdKey: '',
-  crypto: { symbols: 'BTCUSDT, ETHUSDT, SOLUSDT, BNBUSDT, XRPUSDT, DOGEUSDT, ADAUSDT, LINKUSDT', session: 'newyork', costPct: 0.2, allowShort: false },
+  crypto: { symbols: 'BTCUSDT, ETHUSDT, SOLUSDT, BNBUSDT, XRPUSDT, DOGEUSDT, ADAUSDT, LINKUSDT', session: 'newyork', costPct: 0.2, allowShort: false, source: 'auto' },
   forex: { symbols: 'EUR/USD, GBP/USD, USD/JPY, XAU/USD', session: 'london', costPct: 0.012, allowShort: true },
   custom: { tz: 'Asia/Tehran', open: '09:00', hours: 8 }
 };
@@ -945,36 +952,82 @@ async function fetchJSON(url, ms) {
   } finally { clearTimeout(timer); }
 }
 const sleep = ms => new Promise(r => setTimeout(r, ms));
+// Crypto sources, tried in this order until one answers. A whole history is always read from ONE
+// source, so a chart never mixes two exchanges' prices. Binance and Bybit refuse some countries;
+// MEXC and Gate are global; Nobitex and Wallex are Iranian exchanges (their USDT markets).
 const BIN = ['https://data-api.binance.vision', 'https://api.binance.com', 'https://api1.binance.com', 'https://api3.binance.com'];
-let binIdx = 0, binDownUntil = 0;
-// the newest `limit` 5-minute bars ending at endTime (or now), oldest first
-async function klines(sym, endTime, limit) {
-  let err = null;
-  if (Date.now() >= binDownUntil) {
+let binIdx = 0;
+function dataErr(msg) { const e = new Error(msg); e.kind = 'data'; return e; }
+async function udfHistory(base, inst, end, limit) {
+  const to = Math.floor((end != null ? end : Date.now()) / 1000), from = to - Math.min(1000, limit) * 300;
+  const j = await fetchJSON(`${base}?symbol=${encodeURIComponent(inst.src)}&resolution=5&from=${from}&to=${to}`);
+  if (j && j.s === 'no_data') return [];
+  if (!j || j.s !== 'ok' || !Array.isArray(j.t)) throw dataErr('udf ' + (j && j.s));
+  return j.t.map((t, i) => ({ t: t * 1000, o: +j.o[i], h: +j.h[i], l: +j.l[i], c: +j.c[i], v: +(j.v ? j.v[i] : 0) }));
+}
+const CRYPTO_SRC = {
+  binance: { name: 'Binance', async get(inst, end, limit) {
+    let err = null;
     for (let a = 0; a < BIN.length; a++) {
       const host = BIN[(binIdx + a) % BIN.length];
       try {
-        const j = await fetchJSON(`${host}/api/v3/klines?symbol=${encodeURIComponent(sym)}&interval=5m&limit=${limit}${endTime != null ? '&endTime=' + endTime : ''}`);
-        if (!Array.isArray(j)) throw new Error('shape');
+        const j = await fetchJSON(`${host}/api/v3/klines?symbol=${encodeURIComponent(inst.src)}&interval=5m&limit=${Math.min(1000, limit)}${end != null ? '&endTime=' + end : ''}`);
+        if (!Array.isArray(j)) throw dataErr('shape');
         binIdx = (binIdx + a) % BIN.length;
-        source.crypto = 'Binance';
         return j.map(k => ({ t: +k[0], o: +k[1], h: +k[2], l: +k[3], c: +k[4], v: +k[5] }));
       } catch (e) {
-        if (e.status === 400 && e.body && e.body.code === -1121) { const x = new Error('bad symbol'); x.kind = 'bad_symbol'; throw x; }
+        if (e.status === 400 && e.body && e.body.code === -1121) throw dataErr('bad symbol');
         err = e;
       }
     }
-    binDownUntil = Date.now() + 10 * 60000;
+    throw err;
+  } },
+  bybit: { name: 'Bybit', async get(inst, end, limit) {
+    const j = await fetchJSON(`https://api.bybit.com/v5/market/kline?category=spot&symbol=${encodeURIComponent(inst.src)}&interval=5&limit=${Math.min(1000, limit)}${end != null ? '&end=' + end : ''}`);
+    if (j.retCode !== 0 || !j.result || !Array.isArray(j.result.list)) throw dataErr('bybit ' + j.retCode);
+    return j.result.list.map(k => ({ t: +k[0], o: +k[1], h: +k[2], l: +k[3], c: +k[4], v: +k[5] }));
+  } },
+  mexc: { name: 'MEXC', async get(inst, end, limit) {
+    const j = await fetchJSON(`https://api.mexc.com/api/v3/klines?symbol=${encodeURIComponent(inst.src)}&interval=5m&limit=${Math.min(1000, limit)}${end != null ? '&endTime=' + end : ''}`);
+    if (!Array.isArray(j)) throw dataErr('shape');
+    return j.map(k => ({ t: +k[0], o: +k[1], h: +k[2], l: +k[3], c: +k[4], v: +k[5] }));
+  } },
+  gate: { name: 'Gate', async get(inst, end, limit) {
+    const to = Math.floor((end != null ? end : Date.now()) / 1000), from = to - Math.min(999, limit) * 300;
+    const j = await fetchJSON(`https://api.gateio.ws/api/v4/spot/candlesticks?currency_pair=${encodeURIComponent(inst.base + '_' + inst.quote)}&interval=5m&from=${from}&to=${to}`);
+    if (!Array.isArray(j)) throw dataErr('shape');
+    return j.map(k => ({ t: +k[0] * 1000, o: +k[5], h: +k[3], l: +k[4], c: +k[2], v: +k[6] }));
+  } },
+  nobitex: { name: 'Nobitex', get: (inst, end, limit) => udfHistory('https://apiv2.nobitex.ir/market/udf/history', inst, end, limit) },
+  wallex: { name: 'Wallex', get: (inst, end, limit) => udfHistory('https://api.wallex.ir/v1/udf/history', inst, end, limit) }
+};
+const SRC_ORDER = ['binance', 'bybit', 'mexc', 'gate', 'nobitex', 'wallex'];
+const srcState = {};
+let cryptoPick = null;
+// the newest `limit` 5-minute bars ending at endTime (or now), oldest first, and the source id
+async function klines(inst, endTime, limit, onlyId) {
+  const forced = onlyId || (cfg.crypto.source !== 'auto' && CRYPTO_SRC[cfg.crypto.source] ? cfg.crypto.source : null);
+  let order = forced ? [forced] : [cryptoPick].concat(SRC_ORDER.filter(x => x !== cryptoPick)).filter(Boolean);
+  if (!forced && order.every(id => (srcState[id] || {}).downUntil > Date.now())) order.forEach(id => { srcState[id].downUntil = 0; });
+  let lastErr = null, network = 0;
+  for (const id of order) {
+    const st = srcState[id] || (srcState[id] = {});
+    if (!forced && st.downUntil > Date.now()) continue;
+    try {
+      const bars = (await CRYPTO_SRC[id].get(inst, endTime, limit))
+        .filter(b => isFinite(b.t) && b.c > 0 && b.h >= b.l && b.t % MIN5 === 0).sort((a, b) => a.t - b.t);
+      st.err = null; st.downUntil = 0; st.ok = Date.now();
+      if (!forced) cryptoPick = id;
+      source.crypto = CRYPTO_SRC[id].name;
+      return { bars, id };
+    } catch (e) {
+      lastErr = e;
+      if (e.kind !== 'data') { network++; st.err = e; st.downUntil = Date.now() + 10 * 60000; }
+    }
   }
-  try {
-    const j = await fetchJSON(`https://api.bybit.com/v5/market/kline?category=spot&symbol=${encodeURIComponent(sym)}&interval=5&limit=${Math.min(1000, limit)}${endTime != null ? '&end=' + endTime : ''}`);
-    if (j.retCode !== 0 || !j.result) { const x = new Error('bybit ' + j.retCode); if (j.retCode === 10001) x.kind = 'bad_symbol'; throw x; }
-    source.crypto = 'Bybit';
-    return j.result.list.map(k => ({ t: +k[0], o: +k[1], h: +k[2], l: +k[3], c: +k[4], v: +k[5] })).sort((a, b) => a.t - b.t);
-  } catch (e) {
-    if (e.kind) throw e;
-    throw err || e;
-  }
+  const x = new Error('no source');
+  x.kind = network ? 'all_down' : (lastErr && lastErr.message === 'bad symbol' ? 'bad_symbol' : 'data');
+  throw x;
 }
 function mergeBars(a, b) {
   const m = new Map();
@@ -982,18 +1035,20 @@ function mergeBars(a, b) {
   b.forEach(x => { if (isFinite(x.t) && x.c > 0) m.set(x.t, x); });
   return Array.from(m.values()).sort((x, y) => x.t - y.t);
 }
-async function cryptoBack(sym, days, onp) {
+async function cryptoBack(inst, days, onp) {
   const need = Date.now() - days * DAY;
-  let end = null, out = [];
-  for (let page = 0; page < 60; page++) {
-    const chunk = await klines(sym, end, 1000);
-    if (!chunk.length) break;
-    out = chunk.concat(out);
-    onp && onp(Math.min(1, (Date.now() - chunk[0].t) / (days * DAY)));
-    if (chunk[0].t <= need || chunk.length < 1000) break;
-    end = chunk[0].t - 1;
+  const first = await klines(inst, null, 1000);
+  inst.srcId = first.id;
+  let out = first.bars, oldest = out.length ? out[0].t : null;
+  for (let page = 0; page < 80 && oldest != null && oldest > need; page++) {
+    onp && onp(Math.min(1, (Date.now() - oldest) / (days * DAY)));
+    let chunk;
+    try { chunk = (await klines(inst, oldest - 1, 1000, inst.srcId)).bars; } catch (e) { break; }
+    if (!chunk.length || chunk[0].t >= oldest) break;
+    out = mergeBars(chunk, out);
+    oldest = out[0].t;
   }
-  return mergeBars([], out).filter(b => b.t >= need - DAY);
+  return out.filter(b => b.t >= need - DAY);
 }
 // Twelve Data: 8 calls a minute and 800 a day on the free plan, so one call every 8 seconds
 let tdLast = 0;
@@ -1034,7 +1089,7 @@ async function loadHistory(inst) {
   scheduleRender();
   try {
     const onp = p => { inst.progress = p; scheduleRender(); };
-    const bars = inst.mkt === 'crypto' ? await cryptoBack(inst.src, cfg.historyDays, onp) : await forexBack(inst.src, cfg.historyDays, onp);
+    const bars = inst.mkt === 'crypto' ? await cryptoBack(inst, cfg.historyDays, onp) : await forexBack(inst.src, cfg.historyDays, onp);
     if (!bars.length) { const e = new Error('empty'); e.kind = 'empty'; throw e; }
     inst.bars = bars; inst.status = 'ready'; inst.lastFetch = Date.now(); inst.daysLoaded = cfg.historyDays;
     inst._sig = inst._hk = null;
@@ -1047,13 +1102,19 @@ async function refreshLatest(inst) {
   const lastT = inst.bars[inst.bars.length - 1].t;
   const need = Math.min(1000, Math.ceil((Date.now() - lastT) / MIN5) + 3);
   try {
-    const fresh = inst.mkt === 'crypto' ? await klines(inst.src, null, need) : await tdCall({ symbol: inst.src, outputsize: Math.max(5, need) });
+    const fresh = inst.mkt === 'crypto' ? (await klines(inst, null, need, inst.srcId)).bars : await tdCall({ symbol: inst.src, outputsize: Math.max(5, need) });
     const keepFrom = Date.now() - (cfg.historyDays + 3) * DAY;
     inst.bars = mergeBars(inst.bars, fresh).filter(b => b.t >= keepFrom);
-    inst.lastFetch = Date.now(); inst.err = null;
-  } catch (e) { inst.err = explainErr(e); }
+    inst.lastFetch = Date.now(); inst.err = null; inst.fails = 0;
+  } catch (e) {
+    inst.err = explainErr(e);
+    inst.fails = (inst.fails || 0) + 1;
+    if (inst.fails >= 3) { inst.status = 'error'; inst.fails = 0; } // the next poll reloads it, from any source
+  }
 }
 function explainErr(e) {
+  if (e.kind === 'all_down') return 'به هیچ‌کدام از منبع‌های داده‌ی کریپتو وصل نشد (Binance، Bybit، MEXC، Gate، نوبیتکس، والکس). بعضی صرافی‌ها دسترسی از بعضی کشورها، از جمله ایران، را می‌بندند و بعضی‌ها فقط از داخل ایران باز می‌شوند. «عیب‌یابی اتصال» را بزن تا ببینیم کدام باز است.';
+  if (e.kind === 'data') return 'منبع داده جواب نامعتبر داد یا این نماد را ندارد.';
   if (e.kind === 'bad_symbol') return 'این نماد در صرافی پیدا نشد. اسمش را در تنظیمات چک کن.';
   if (e.code === 401 || e.code === 403 || /api ?key/i.test(e.message || '')) return 'کلید Twelve Data قبول نشد. در تنظیمات دوباره واردش کن.';
   if (e.code === 429) return 'سهمیه‌ی رایگان Twelve Data پر شده. چند دقیقه بعد «به‌روزرسانی» را بزن.';
@@ -1368,7 +1429,7 @@ function renderBoard() {
     list.sort((x, y) => rank(x) - rank(y));
     const fk = ui.focus[mkt];
     const errs = Array.from(new Set(list.filter(i => i.status === 'error' && !i.bars.length).map(i => i.err)));
-    body = (errs.length ? `<div class="notice" style="padding-bottom:0">${errs.map(e => `<p class="status-line" style="margin:0">${esc(e)}</p>`).join('')}</div>` : '') + `<div class="board-wrap"><table class="board"><thead><tr>
+    body = (errs.length ? `<div class="notice" style="padding-bottom:0">${errs.map(e => `<p class="status-line" style="margin:0">${esc(e)}</p>`).join('')}<div class="row-btns" style="margin-top:0"><button type="button" class="btn sm" data-diag="1">عیب‌یابی اتصال</button></div></div>` : '') + `<div class="board-wrap"><table class="board"><thead><tr>
       <th>نماد</th><th>وضعیت قانون</th><th>قیمت</th><th>تغییر جلسه</th><th>امروز</th><th>فاصله</th><th>ستاپ روزانه</th><th title="حد سود اول / دفعات فعال شدن · میانگین R خالص">کارنامه‌ی گذشته</th>
       </tr></thead><tbody>${list.map(inst => {
         const a = inst.a || {};
@@ -1791,7 +1852,7 @@ function renderJournal() {
 // ------------------------------------------------------------------ settings dialog
 const FIELDS = ['account', 'dailyTarget', 'maxLoss', 'maxDailyLoss', 'maxTrades', 'minRR', 'cashBufferPct', 'maxPositionPct', 'maxLeverage',
   'orMinutes', 'stopRule', 'atrK', 'stopPct', 'targetR', 'tdKey', 'historyDays', 'replays', 'seed', 'sound',
-  'crypto.symbols', 'crypto.session', 'crypto.costPct', 'crypto.allowShort', 'forex.symbols', 'forex.session', 'forex.costPct', 'forex.allowShort',
+  'crypto.symbols', 'crypto.session', 'crypto.costPct', 'crypto.allowShort', 'crypto.source', 'forex.symbols', 'forex.session', 'forex.costPct', 'forex.allowShort',
   'custom.tz', 'custom.open', 'custom.hours'];
 const getP = (o, p) => p.split('.').reduce((x, k) => x[k], o);
 const setP = (o, p, v) => { const ks = p.split('.'); const last = ks.pop(); ks.reduce((x, k) => x[k], o)[last] = v; };
@@ -1836,13 +1897,67 @@ $('#setForm').addEventListener('submit', e => {
   $('#settings').close();
   mcCache.clear();
   ['crypto', 'forex'].forEach(m => {
-    const refetch = prev[m].symbols !== next[m].symbols || next.historyDays > prev.historyDays || (m === 'forex' && prev.tdKey !== next.tdKey);
+    const srcChanged = m === 'crypto' && prev.crypto.source !== next.crypto.source;
+    if (srcChanged) { cryptoPick = null; insts.crypto.forEach(i => { i.status = 'idle'; i.bars = []; }); }
+    const refetch = srcChanged || prev[m].symbols !== next[m].symbols || next.historyDays > prev.historyDays || (m === 'forex' && prev.tdKey !== next.tdKey);
     insts[m].forEach(i => { i._hk = null; i._sig = null; });
     if (refetch && (m === market || insts[m].size)) loadMarket(m, m === 'forex' && prev.tdKey !== next.tdKey);
   });
   Object.keys(last).forEach(k => delete last[k]);
   scheduleRender();
 });
+
+// ------------------------------------------------------------------ connection check
+function why(e) {
+  if (!e) return '';
+  if (e.name === 'AbortError') return 'جواب نداد (۱۵ ثانیه گذشت)';
+  if (e.kind === 'data') return 'وصل شد ولی جواب قابل استفاده نداد';
+  if (e.status === 451 || e.status === 403) return `HTTP ${e.status}: این سرور دسترسی از منطقه‌ی تو را بسته`;
+  if (e.status) return `HTTP ${e.status}`;
+  if (e.code) return `خطای ${e.code}: ${e.message || ''}`;
+  return 'مسدود است: اتصال برقرار نشد یا مرورگر اجازه نداد (فیلتر، تحریم یا CORS)';
+}
+let diagText = '';
+async function runDiag() {
+  const body = $('#diagBody');
+  const rows = SRC_ORDER.map(id => ({ id, name: CRYPTO_SRC[id].name, state: '…', ok: null }));
+  rows.push({ id: 'td', name: 'Twelve Data (فارکس)', state: cfg.tdKey ? '…' : 'کلید وارد نشده', ok: cfg.tdKey ? null : false });
+  const draw = () => {
+    body.innerHTML = `<p class="small">هر منبع با چند کندل BTC/USDT (و EUR/USD برای فارکس) از همین مرورگر امتحان می‌شود.</p>
+      <table class="list"><tbody>${rows.map(r => `<tr><td><b>${esc(r.name)}</b></td><td>${r.ok === true ? '<span class="pos">✓ باز است</span>' : r.ok === false ? '<span class="neg">✕</span>' : ''} ${esc(r.state)}</td></tr>`).join('')}</tbody></table>
+      <p class="small">داده‌ی فعلی: ${esc(source.crypto)}${cryptoPick ? '' : ' (هنوز وصل نشده)'} · ساعت ${new Date().toLocaleTimeString('en-GB')}</p>`;
+    diagText = rows.map(r => `${r.name}: ${r.ok === true ? 'OK' : 'FAIL'} ${r.state}`).join('\n');
+  };
+  draw();
+  const probe = { src: 'BTCUSDT', base: 'BTC', quote: 'USDT' };
+  await Promise.all(rows.map(async r => {
+    if (r.id === 'td') {
+      if (!cfg.tdKey) return;
+      const t0 = Date.now();
+      try { const b = await tdCall({ symbol: 'EUR/USD', outputsize: 2 }); r.ok = b.length > 0; r.state = r.ok ? `${Date.now() - t0} ms` : 'داده‌ای برنگشت'; }
+      catch (e) { r.ok = false; r.state = why(e); }
+      draw(); return;
+    }
+    const t0 = Date.now();
+    try {
+      const b = await CRYPTO_SRC[r.id].get(probe, null, 3);
+      r.ok = b.length > 0; r.state = r.ok ? `${Date.now() - t0} ms · آخرین قیمت ${fmtP(b.sort((x, y) => x.t - y.t)[b.length - 1].c, 2)}` : 'داده‌ای برنگشت';
+      if (r.ok && srcState[r.id]) srcState[r.id].downUntil = 0;
+    } catch (e) { r.ok = false; r.state = why(e); }
+    draw();
+  }));
+  const okIds = rows.filter(r => r.ok && r.id !== 'td').map(r => r.id);
+  if (okIds.length) {
+    body.insertAdjacentHTML('beforeend', `<p style="font-size:14px">باز: ${okIds.map(id => esc(CRYPTO_SRC[id].name)).join('، ')}. داشبورد خودکار از اولی استفاده می‌کند؛ در تنظیمات می‌توانی یکی را ثابت کنی.</p>`);
+    if (insts.crypto.size && Array.from(insts.crypto.values()).every(i => i.status === 'error')) { cryptoPick = okIds[0]; loadMarket('crypto', true); }
+  } else {
+    body.insertAdjacentHTML('beforeend', `<p style="font-size:14px">هیچ منبع کریپتویی از این اینترنت باز نیست. اگر از فیلترشکن استفاده می‌کنی، مطمئن شو روی همین مرورگر روشن است؛ اگر نه، با فیلترشکن یا اینترنت دیگری امتحان کن و دوباره این‌جا را بزن.</p>`);
+  }
+}
+document.addEventListener('click', e => { if (e.target.closest('[data-diag]')) { if ($('#settings').open) $('#settings').close(); $('#diag').showModal(); runDiag(); } });
+$('#diagClose').onclick = () => $('#diag').close();
+$('#diagRun').onclick = () => runDiag();
+$('#diagCopy').onclick = () => { try { navigator.clipboard.writeText(diagText).then(() => toast('نتیجه کپی شد.'), () => selectText($('#diagBody'))); } catch (e) { selectText($('#diagBody')); } };
 
 // ------------------------------------------------------------------ orchestration
 async function loadMarket(mkt, force) {

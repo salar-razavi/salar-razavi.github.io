@@ -40,6 +40,7 @@
   color-scheme:dark;
 }
 *{box-sizing:border-box}
+[hidden]{display:none!important}
 html{-webkit-text-size-adjust:100%}
 body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.7 var(--f-text);padding-bottom:env(safe-area-inset-bottom,0px)}
 .wrap{max-width:1320px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
@@ -184,6 +185,37 @@ select,input[type=text],input[type=number],input[type=password]{background:var(-
 .meter{height:7px;background:var(--line2);border-radius:4px;overflow:hidden;margin-top:6px}
 .meter i{display:block;height:100%;background:var(--warn)}
 
+/* suggestions */
+.stack{display:flex;flex-direction:column;gap:18px}
+.sug-list{display:flex;flex-direction:column;gap:10px;padding:12px 18px 4px}
+.sug{display:grid;grid-template-columns:minmax(130px,auto) minmax(0,1fr) auto;gap:8px 18px;align-items:center;padding:12px 14px;border:1px solid var(--line);border-radius:10px;background:var(--sunk)}
+.sug.go{border-color:var(--up);background:var(--up-soft)}
+.sug.exit{border-color:var(--warn);background:var(--warn-soft)}
+.sug .who b{font-size:16px;font-weight:800;display:block}
+.sug .nums{display:flex;flex-wrap:wrap;gap:4px 18px;font-size:13px;min-width:0}
+.sug .nums span{white-space:nowrap}
+.sug .acts{display:flex;gap:6px;flex-wrap:wrap}
+.sug-empty{padding:14px 18px 6px;font-size:14px}
+.watch{display:flex;flex-wrap:wrap;gap:6px 14px;padding:4px 18px 10px;font-size:13px;color:var(--muted)}
+details.skipped{padding:0 18px 12px}
+details.skipped summary{cursor:pointer;color:var(--muted);font-size:13px}
+details.skipped ul{margin:6px 0 0;padding-inline-start:18px;font-size:13px}
+.crit{padding:0 18px 14px}
+
+/* paper account */
+.paper-grid{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);border-top:1px solid var(--line2)}
+.paper-grid>div{padding:14px 18px;min-width:0}
+.paper-grid>div+div{border-inline-start:1px solid var(--line2)}
+.pform{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 14px}
+.pform .full{grid-column:1/-1}
+.curve{width:100%;height:120px;display:block}
+.sub-h{font-size:14px;font-weight:700;padding:12px 18px 0}
+@media (max-width: 820px){
+  .sug{grid-template-columns:minmax(0,1fr)}
+  .paper-grid{grid-template-columns:minmax(0,1fr)}
+  .paper-grid>div+div{border-inline-start:0;border-top:1px solid var(--line2)}
+}
+
 /* toasts */
 .toasts{position:fixed;z-index:20;bottom:calc(16px + env(safe-area-inset-bottom,0px));left:max(16px,env(safe-area-inset-left,0px));display:flex;flex-direction:column;gap:8px;max-width:min(420px,calc(100vw - 32px))}
 .toast{background:var(--ink);color:var(--bg);padding:10px 14px;border-radius:10px;font-size:14px;box-shadow:0 8px 24px rgba(0,0,0,.25);display:flex;gap:10px;align-items:flex-start}
@@ -233,6 +265,10 @@ a{color:var(--accent)}
       <svg width="30" height="30" viewBox="0 0 30 30" aria-hidden="true"><rect x="0.5" y="0.5" width="29" height="29" rx="7" fill="var(--accent-soft)" stroke="var(--line)"/><path d="M8 9v12M15 6v9M22 12v11" stroke="var(--faint)" stroke-width="1.4"/><rect x="5.5" y="12" width="5" height="6" rx="1" fill="var(--down)"/><rect x="12.5" y="8" width="5" height="5" rx="1" fill="var(--up)"/><rect x="19.5" y="14" width="5" height="7" rx="1" fill="var(--up)"/><path d="M4 11.5h22" stroke="var(--warn)" stroke-width="1.2" stroke-dasharray="2 2"/></svg>
       <div><h1>دیده‌بان ترید روزانه</h1><p class="sub">شکست رنج اول جلسه · کریپتو و فارکس · بر پایه‌ی day-trader-skill</p></div>
     </div>
+    <div class="seg" role="group" aria-label="صفحه" id="viewSeg">
+      <button type="button" data-view="dash" aria-pressed="true">داشبورد</button>
+      <button type="button" data-view="paper" aria-pressed="false">حساب مجازی</button>
+    </div>
     <div class="seg" role="group" aria-label="بازار" id="mktSeg">
       <button type="button" data-mkt="crypto" aria-pressed="true">کریپتو</button>
       <button type="button" data-mkt="forex" aria-pressed="false">فارکس</button>
@@ -247,12 +283,40 @@ a{color:var(--accent)}
 </header>
 
 <main class="wrap">
-  <section class="card" id="realityCard" aria-labelledby="realityH"></section>
-  <section class="card" id="boardCard" aria-labelledby="boardH"></section>
-  <section class="card" id="focusCard" aria-label="نماد انتخاب‌شده"></section>
-  <div class="two">
-    <section class="card" id="scoreCard" aria-labelledby="scoreH"></section>
-    <section class="card" id="journalCard" aria-labelledby="journalH"></section>
+  <section class="card" id="sugCard" aria-labelledby="sugH"></section>
+  <div class="stack" id="viewDash">
+    <section class="card" id="realityCard" aria-labelledby="realityH"></section>
+    <section class="card" id="boardCard" aria-labelledby="boardH"></section>
+    <section class="card" id="focusCard" aria-label="نماد انتخاب‌شده"></section>
+    <div class="two">
+      <section class="card" id="scoreCard" aria-labelledby="scoreH"></section>
+      <section class="card" id="journalCard" aria-labelledby="journalH"></section>
+    </div>
+  </div>
+  <div class="stack" id="viewPaper" hidden>
+    <section class="card">
+      <div class="sec-h"><h2 id="paperH">حساب مجازی</h2><p id="paperSub"></p></div>
+      <div id="paperStats"></div>
+      <div class="paper-grid">
+        <div><h3 style="font-size:14px;margin-bottom:6px">رشد حساب</h3><div id="paperCurve"></div></div>
+        <div>
+          <h3 style="font-size:14px;margin-bottom:10px">خرید دستی</h3>
+          <form class="pform" id="pForm">
+            <label class="fld"><span>نماد</span><select id="p_sym"></select></label>
+            <label class="fld"><span>مبلغ (تتر)</span><input type="number" id="p_amt" min="1" step="1" value="100"></label>
+            <label class="fld"><span>حد ضرر (٪ زیر قیمت)</span><input type="number" id="p_stop" min="0.1" step="0.1" value="1"></label>
+            <label class="fld"><span>حد سود (چند برابر ریسک)</span><input type="number" id="p_tr" min="0.5" step="0.5" value="2"></label>
+            <p class="small full" id="p_preview"></p>
+            <div class="full row-btns" style="margin-top:0"><button type="submit" class="btn">خرید مجازی</button></div>
+          </form>
+        </div>
+      </div>
+      <h3 class="sub-h">پوزیشن‌های باز</h3>
+      <div id="paperOpen"></div>
+      <h3 class="sub-h">معاملات بسته</h3>
+      <div id="paperClosed"></div>
+      <div class="row-btns" style="padding:0 18px 16px"><button type="button" class="btn ghost sm" id="paperReset">شروع دوباره‌ی حساب مجازی</button></div>
+    </section>
   </div>
   <footer>
     <p><b>توصیه‌ی مالی نیست.</b> این صفحه داده‌ی عمومی می‌خواند و حساب می‌کند. آینده را نمی‌بیند و هیچ سفارشی ثبت نمی‌کند؛ هر سفارشی را خودت در صرافی یا کارگزار می‌گذاری. بیشتر کسانی که ترید روزانه می‌کنند ضرر می‌کنند. حد ضرر یک برنامه است، نه تضمین: در بازار تند ممکن است بدتر پر شود.</p>
@@ -1328,6 +1392,7 @@ function toast(html, kind) {
   beep(kind);
 }
 function checkAlerts() {
+  try { if (insts.crypto.size) paperTick(); } catch (e) { /* a broken position must not stop the alerts */ }
   ['crypto', 'forex'].forEach(mkt => insts[mkt].forEach(inst => {
     const a = inst.a;
     if (!a || !a.st) return;
@@ -1371,14 +1436,16 @@ function put(id, html) { if (last[id] !== html) { last[id] = html; document.getE
 function renderAll() {
   insts[market].forEach(inst => { if (inst.bars.length || inst.status !== 'idle') analyze(inst); });
   renderTop();
-  renderReality();
-  renderBoard();
-  renderFocus();
-  renderScore();
-  renderJournal();
+  renderSug();
+  $('#viewDash').hidden = ui.view !== 'dash';
+  $('#viewPaper').hidden = ui.view !== 'paper';
+  if (ui.view === 'dash') { renderReality(); renderBoard(); renderFocus(); renderScore(); renderJournal(); }
+  else renderPaper();
 }
 function renderTop() {
   document.querySelectorAll('#mktSeg button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.mkt === market)));
+  document.querySelectorAll('#viewSeg button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.view === ui.view)));
+  $('#mktSeg').hidden = ui.view === 'paper';
   const list = Array.from(insts[market].values());
   const busy = list.filter(i => i.status === 'loading').length, bad = list.filter(i => i.status === 'error').length, ok = list.filter(i => i.status === 'ready').length;
   const chip = $('#dataChip');
@@ -1595,6 +1662,71 @@ function histHTML(h, inst) {
     <div class="dots" aria-label="نتیجه‌ی هر بار فعال شدن، از قدیم به جدید">${dots}</div>
     <p class="small" style="margin-top:4px">هر مربع یک روز: سبز حد سود، قرمز حد ضرر، خاکستری هیچ‌کدام.${inst.filled ? ` ${n(inst.filled)} کندل خالی با قیمت قبلی پر شد.` : ''}</p>`;
 }
+// ------------------------------------------------------------------ shared: Time Machine, size and gate for one plan
+const mcQueued = new Set();
+function ensureMC(inst, plan) {
+  const mc = mcFor(inst, plan);
+  if (mc.pending && !mcQueued.has(mc.pending)) {
+    const key = mc.pending;
+    mcQueued.add(key);
+    setTimeout(() => {
+      mcQueued.delete(key);
+      if (mcCache.has(key)) return;
+      try { runMC(inst, plan, key); } catch (e) { mcCache.set(key, { err: 'fail' }); }
+      scheduleRender();
+    }, 20);
+  }
+  return mc;
+}
+function evaluate(inst, plan, mc, side) {
+  const a = inst.a, mkt = inst.mkt;
+  const sizedPlan = Object.assign({}, plan);
+  let moved = false;
+  if (plan.kind === 'triggered' && a.price != null) {
+    sizedPlan.entry = plan.long ? Math.max(plan.entry, a.price) : Math.min(plan.entry, a.price);
+    moved = plan.long ? a.price >= plan.target : a.price <= plan.target;
+  }
+  const sz = E.size(sizedPlan, { account: cfg.account, maxLoss: cfg.maxLoss, maxPositionPct: cfg.maxPositionPct, cashBufferPct: cfg.cashBufferPct,
+    maxLeverage: cfg.maxLeverage, costPct: cfg[mkt].costPct, minOrderUSD: cfg.minOrderUSD }, { cls: mkt, base: inst.base, quote: inst.quote, contract: inst.contract });
+  if (moved) sz.refuse = 'moved';
+  const tEntries = todayEntries();
+  const inWindow = a.ph.phase === 'open' && plan.kind !== 'review' && a.ph.since >= a.rule.orBars * 5 && a.ph.since < (a.win.entryLast + 1) * 5;
+  const h = inst.hist && inst.hist[side];
+  const ctx = {
+    allowShort: cfg[mkt].allowShort, cls: mkt, inWindow,
+    tradesToday: tEntries.length, todayRisk: tEntries.reduce((t, j) => t + (j.lossAtStop || 0), 0),
+    alreadyToday: tEntries.some(j => j.key === inst.key && j.mkt === mkt),
+    dataAgeMin: a.age, freshLimit: mkt === 'forex' ? 16 : 11, histAvgRnet: h && h.triggered ? h.avgRnet : null,
+    histN: h ? h.triggered : 0, mcAvgRnet: mc && !mc.pending && !mc.err ? mc.avgRnet : null
+  };
+  const checks = E.riskCheck(sizedPlan, sz, { maxLoss: cfg.maxLoss, minRR: cfg.minRR, maxDailyLoss: cfg.maxDailyLoss, maxTrades: cfg.maxTrades, maxLeverage: cfg.maxLeverage }, ctx);
+  checks.unshift({ key: 'trigger', level: plan.kind === 'triggered' ? 'pass' : 'block' });
+  if (plan.kind === 'triggered' && plan.ago >= 1) checks.splice(1, 0, { key: 'late', level: 'warn', v: plan.ago });
+  const blocked = checks.filter(c => c.level === 'block');
+  return { sizedPlan, sz, checks, blocked, canTake: !blocked.length && plan.kind === 'triggered' };
+}
+function checkText(c, plan) {
+  switch (c.key) {
+    case 'trigger': return plan.kind === 'triggered' ? 'قانون فعال شده (کندل بیرون رنج بسته شد)' : plan.kind === 'review' ? 'این جلسه تمام شده' : 'قانون هنوز فعال نشده';
+    case 'late': return `سیگنال ${n(c.v)} کندل پیش بود؛ ورود دیرتر یک معامله‌ی دیگر است`;
+    case 'stop': return c.level === 'pass' ? 'حد ضرر سمت درست ورود است' : 'حد ضرر سمت اشتباه است';
+    case 'short': return c.level === 'pass' ? 'سمت معامله مجاز است' : 'فروش در این بازار خاموش است';
+    case 'size': return c.level === 'pass' ? 'حجم معامله حساب شد' : ({ zero: 'حجم صفر شد: حد ضرر نسبت به سقف ضرر خیلی دور است', min_order: `سفارش کمتر از حداقل ${cfg.minOrderUSD} دلار صرافی است`, cross: 'تبدیل این جفت به دلار پشتیبانی نمی‌شود', moved: 'قیمت به حد سود رسیده؛ حرکت تمام شده', stop_side: 'حد ضرر سمت اشتباه است' }[c.why] || 'حجم قابل محاسبه نیست');
+    case 'loss': return `ضرر در حد ضرر ${n(usd(c.v))} از سقف ${n(usd(c.lim))}`;
+    case 'rr': return `سود به ضرر خالص ${n(c.v.toFixed(2))} (حداقل ${n(c.lim)})`;
+    case 'daily_loss': return `ریسک امروز با این معامله ${n(usd(c.v))} از سقف ${n(usd(c.lim))}`;
+    case 'leverage': return `اهرم ${n(c.v.toFixed(2) + '×')} (سقف ${n(c.lim + '×')})`;
+    case 'cost': return c.level === 'pass' ? 'کارمزد بخش کوچکی از ریسک است' : `کارمزد ${n(pc(c.v, 0))} ریسک را می‌خورد`;
+    case 'trades': return `معاملات امروز ${n(c.v)} از ${n(c.lim)}`;
+    case 'window': return c.level === 'pass' ? 'داخل پنجره‌ی ورود' : 'بیرون پنجره‌ی ورود (بعد از رنج اول تا ۳۰ دقیقه قبل از پایان جلسه)';
+    case 'duplicate': return c.level === 'pass' ? 'امروز روی این نماد معامله‌ای ثبت نکرده‌ای' : 'امروز روی این نماد یک معامله ثبت کرده‌ای';
+    case 'fresh': return c.level === 'pass' ? `داده تازه است` : `داده کهنه است (${n(Math.round(c.v || 0))} دقیقه)`;
+    case 'history': return c.level === 'pass' ? `این قانون در ${n(c.n)} بار گذشته میانگین مثبت داشت (${n(rr(c.v))})` : `این قانون در ${n(c.n)} بار گذشته میانگین منفی داشت (${n(rr(c.v))})`;
+    case 'replays': return c.level === 'pass' ? `میانگین شبیه‌سازی مثبت است (${n(rr(c.v, 3))})` : `میانگین شبیه‌سازی منفی است (${n(rr(c.v, 3))})`;
+  }
+  return c.key;
+}
+
 let focusDraw = null;
 function renderFocus() {
   const inst = focusInst();
@@ -1603,18 +1735,7 @@ function renderFocus() {
   const side = focusSide(inst);
   const plan = a.st && a.D ? planFor(inst, side) : { none: 'nodata' };
   const [stCls, stTxt] = a.st ? statusText(inst, plan.none ? null : plan) : ['', ''];
-  let mc = null;
-  if (!plan.none) {
-    mc = mcFor(inst, plan);
-    if (mc.pending) {
-      const key = mc.pending;
-      setTimeout(() => {
-        if (mcCache.has(key)) return;
-        try { runMC(inst, plan, key); } catch (e) { mcCache.set(key, { err: 'fail' }); }
-        scheduleRender();
-      }, 20);
-    }
-  }
+  const mc = plan.none ? null : ensureMC(inst, plan);
   const dec = plan.dec || a.dec || 2;
   // step 1: the exit plan
   let s1;
@@ -1646,16 +1767,8 @@ function renderFocus() {
   let s3 = `<p class="small">بعد از برنامه.</p>`, s4 = `<p class="small">بعد از برنامه.</p>`, s5 = `<p class="small">سفارش فقط وقتی آماده می‌شود که قانون واقعاً فعال شده باشد و همه‌ی چک‌ها قبول شوند.</p>`;
   let ticketText = '', canTake = false, sz = null, sizedPlan = null;
   if (!plan.none) {
-    const instDef = { cls: market, base: inst.base, quote: inst.quote, contract: inst.contract };
-    sizedPlan = Object.assign({}, plan);
-    let moved = false;
-    if (plan.kind === 'triggered' && a.price != null) {
-      sizedPlan.entry = plan.long ? Math.max(plan.entry, a.price) : Math.min(plan.entry, a.price);
-      moved = plan.long ? a.price >= plan.target : a.price <= plan.target;
-    }
-    sz = E.size(sizedPlan, { account: cfg.account, maxLoss: cfg.maxLoss, maxPositionPct: cfg.maxPositionPct, cashBufferPct: cfg.cashBufferPct,
-      maxLeverage: cfg.maxLeverage, costPct: cfg[market].costPct, minOrderUSD: cfg.minOrderUSD }, instDef);
-    if (moved) sz.refuse = 'moved';
+    const ev = evaluate(inst, plan, mc, side);
+    sz = ev.sz; sizedPlan = ev.sizedPlan; canTake = ev.canTake;
     const unitName = market === 'crypto' ? esc(inst.base) : (inst.base === 'XAU' ? 'اونس' : 'واحد');
     if (sz.refuse === 'cross') s3 = `<p class="small">برای این جفت، تبدیل ضرر به دلار پشتیبانی نمی‌شود (فقط جفت‌های دلاری).</p>`;
     else {
@@ -1668,44 +1781,8 @@ function renderFocus() {
         <dt>تعیین‌کننده</dt><dd class="small">${LIM[sz.decidedBy] || ''}</dd></dl>
         ${sizedPlan.entry !== plan.entry ? `<p class="small" style="margin-top:6px">قیمت از ورود جلو رفته؛ با ${n(fmtP(sizedPlan.entry, dec))} حساب شد (ریسک بیشتر، حجم کمتر).</p>` : ''}`;
     }
-    const tEntries = todayEntries();
-    const nowMs = Date.now();
-    const inWindow = a.ph.phase === 'open' && plan.kind !== 'review' && a.ph.since >= a.rule.orBars * 5 && a.ph.since < (a.win.entryLast + 1) * 5;
-    const ctx = {
-      allowShort: cfg[market].allowShort, cls: market, inWindow,
-      tradesToday: tEntries.length, todayRisk: tEntries.reduce((s, j) => s + (j.lossAtStop || 0), 0),
-      alreadyToday: tEntries.some(j => j.key === inst.key && j.mkt === market),
-      dataAgeMin: a.age, freshLimit: market === 'forex' ? 16 : 11, histAvgRnet: inst.hist && inst.hist[side] && inst.hist[side].triggered ? inst.hist[side].avgRnet : null,
-      histN: inst.hist && inst.hist[side] ? inst.hist[side].triggered : 0, mcAvgRnet: mc && !mc.pending && !mc.err ? mc.avgRnet : null
-    };
-    const checks = E.riskCheck(sizedPlan, sz, { maxLoss: cfg.maxLoss, minRR: cfg.minRR, maxDailyLoss: cfg.maxDailyLoss, maxTrades: cfg.maxTrades, maxLeverage: cfg.maxLeverage }, ctx);
-    checks.unshift({ key: 'trigger', level: plan.kind === 'triggered' ? 'pass' : 'block' });
-    if (plan.kind === 'triggered' && plan.ago >= 1) checks.splice(1, 0, { key: 'late', level: 'warn', v: plan.ago });
-    const T = c => {
-      switch (c.key) {
-        case 'trigger': return plan.kind === 'triggered' ? 'قانون فعال شده (کندل بیرون رنج بسته شد)' : plan.kind === 'review' ? 'این جلسه تمام شده' : 'قانون هنوز فعال نشده';
-        case 'late': return `سیگنال ${n(c.v)} کندل پیش بود؛ ورود دیرتر یک معامله‌ی دیگر است`;
-        case 'stop': return c.level === 'pass' ? 'حد ضرر سمت درست ورود است' : 'حد ضرر سمت اشتباه است';
-        case 'short': return c.level === 'pass' ? 'سمت معامله مجاز است' : 'فروش در این بازار خاموش است';
-        case 'size': return c.level === 'pass' ? 'حجم معامله حساب شد' : ({ zero: 'حجم صفر شد: حد ضرر نسبت به سقف ضرر خیلی دور است', min_order: `سفارش کمتر از حداقل ${cfg.minOrderUSD} دلار صرافی است`, cross: 'تبدیل این جفت به دلار پشتیبانی نمی‌شود', moved: 'قیمت به حد سود رسیده؛ حرکت تمام شده', stop_side: 'حد ضرر سمت اشتباه است' }[c.why] || 'حجم قابل محاسبه نیست');
-        case 'loss': return `ضرر در حد ضرر ${n(usd(c.v))} از سقف ${n(usd(c.lim))}`;
-        case 'rr': return `سود به ضرر خالص ${n(c.v.toFixed(2))} (حداقل ${n(c.lim)})`;
-        case 'daily_loss': return `ریسک امروز با این معامله ${n(usd(c.v))} از سقف ${n(usd(c.lim))}`;
-        case 'leverage': return `اهرم ${n(c.v.toFixed(2) + '×')} (سقف ${n(c.lim + '×')})`;
-        case 'cost': return c.level === 'pass' ? 'کارمزد بخش کوچکی از ریسک است' : `کارمزد ${n(pc(c.v, 0))} ریسک را می‌خورد`;
-        case 'trades': return `معاملات امروز ${n(c.v)} از ${n(c.lim)}`;
-        case 'window': return c.level === 'pass' ? 'داخل پنجره‌ی ورود' : 'بیرون پنجره‌ی ورود (بعد از رنج اول تا ۳۰ دقیقه قبل از پایان جلسه)';
-        case 'duplicate': return c.level === 'pass' ? 'امروز روی این نماد معامله‌ای ثبت نکرده‌ای' : 'امروز روی این نماد یک معامله ثبت کرده‌ای';
-        case 'fresh': return c.level === 'pass' ? `داده تازه است` : `داده کهنه است (${n(Math.round(c.v || 0))} دقیقه)`;
-        case 'history': return c.level === 'pass' ? `این قانون در ${n(c.n)} بار گذشته میانگین مثبت داشت (${n(rr(c.v))})` : `این قانون در ${n(c.n)} بار گذشته میانگین منفی داشت (${n(rr(c.v))})`;
-        case 'replays': return c.level === 'pass' ? `میانگین شبیه‌سازی مثبت است (${n(rr(c.v, 3))})` : `میانگین شبیه‌سازی منفی است (${n(rr(c.v, 3))})`;
-      }
-      return c.key;
-    };
-    const blocked = checks.filter(c => c.level === 'block');
-    canTake = !blocked.length && plan.kind === 'triggered';
-    s4 = `<ul class="gate">${checks.map(c => `<li class="${c.level}"><span class="ic">${c.level === 'pass' ? '✓' : c.level === 'warn' ? '!' : '✕'}</span><span>${T(c)}</span></li>`).join('')}</ul>
-      <p class="gate-sum ${blocked.length ? 'block' : 'pass'}">${blocked.length ? `متوقف: ${n(blocked.length)} مورد قبول نشد` : 'همه‌ی چک‌ها قبول شد'}</p>
+    s4 = `<ul class="gate">${ev.checks.map(c => `<li class="${c.level}"><span class="ic">${c.level === 'pass' ? '✓' : c.level === 'warn' ? '!' : '✕'}</span><span>${checkText(c, plan)}</span></li>`).join('')}</ul>
+      <p class="gate-sum ${ev.blocked.length ? 'block' : 'pass'}">${ev.blocked.length ? `متوقف: ${n(ev.blocked.length)} مورد قبول نشد` : 'همه‌ی چک‌ها قبول شد'}</p>
       <p class="small">قبول شدن یعنی قانون‌های خودت رعایت شده، نه این‌که معامله خوب است.</p>`;
     if (canTake) {
       const verb = plan.long ? 'خرید' : 'فروش';
@@ -1715,7 +1792,7 @@ function renderFocus() {
 خروج اجباری: ساعت ${tm(plan.exitAt)} به وقت تو، سود یا ضرر
 ضرر در حد ضرر: ${usd(sz.lossAtStop)} · سود در حد سود: ${usd(sz.gainAtTarget)} (با کارمزد)`;
       s5 = `<pre class="ticket" id="ticketText">${esc(ticketText)}</pre>
-        <div class="row-btns"><button type="button" class="btn ghost sm" id="copyTicket">کپی</button><button type="button" class="btn sm" id="takeTrade">این معامله را گرفتم، ثبت کن</button></div>
+        <div class="row-btns"><button type="button" class="btn ghost sm" id="copyTicket">کپی</button><button type="button" class="btn sm" id="takeTrade">این معامله را گرفتم، ثبت کن</button>${market === 'crypto' ? `<button type="button" class="btn ghost sm" data-paper-open="${esc(inst.key)}">روی حساب مجازی باز کن</button>` : ''}</div>
         <p class="small" style="margin-top:8px">هیچ سفارشی از این‌جا ارسال نمی‌شود. سفارش و حد ضرر را خودت در صرافی یا کارگزار بگذار، بعد ثبت کن تا سقف‌های روزانه و هشدارها کار کنند.</p>`;
     }
   }
@@ -1766,6 +1843,281 @@ function renderFocus() {
   drawFocus();
 }
 function selectText(el) { if (!el) return; const r = document.createRange(); r.selectNodeContents(el); const s = getSelection(); s.removeAllRanges(); s.addRange(r); toast('متن انتخاب شد؛ کپی کن.'); }
+
+// ------------------------------------------------------------------ suggestions: what the rule says right now
+// A symbol is suggested only when ALL hold: the rule triggered at most one bar ago, every risk check passes,
+// the same rule on the same symbol fired at least SUG_MIN_N times in the past with a positive net average,
+// and the Time Machine's net average is positive. Otherwise it is listed with the reason it is not suggested.
+const SUG_MIN_N = 15;
+function buildSuggestions(mkt) {
+  const go = [], skip = [], watch = [];
+  insts[mkt].forEach(inst => {
+    const a = inst.a;
+    if (!a || !a.st || inst.status !== 'ready') return;
+    const st = a.st;
+    if (st.state === 'waiting') {
+      const d = a.allowShort ? Math.min(st.toHigh, st.toLow) : st.toHigh;
+      if (d != null && isFinite(d)) watch.push({ inst, d, side: a.allowShort && st.toLow < st.toHigh ? 'sell' : 'buy' });
+      return;
+    }
+    if (st.state !== 'triggered') return;
+    const plan = planFor(inst, st.side);
+    if (plan.none) return;
+    const mc = ensureMC(inst, plan);
+    const ev = evaluate(inst, plan, mc, st.side);
+    const h = inst.hist && inst.hist[st.side];
+    const why = [];
+    if (plan.ago >= 2) why.push(`${n(plan.ago)} کندل پیش فعال شد؛ برای ورود دیر است`);
+    ev.blocked.forEach(c => { if (c.key !== 'trigger') why.push(checkText(c, plan)); });
+    if (inst.partial) why.push('تاریخچه هنوز کامل نشده');
+    else if (!h || h.triggered < SUG_MIN_N) why.push(`نمونه‌ی گذشته کم است (${n(h ? h.triggered : 0)} بار؛ حداقل ${n(SUG_MIN_N)})`);
+    else if (!(h.avgRnet > 0)) why.push(`همین قانون روی این نماد در گذشته ضرر داده (${n(rr(h.avgRnet))})`);
+    if (mc.pending) why.push('شبیه‌سازی در حال اجراست');
+    else if (mc.err) why.push('شبیه‌سازی اجرا نشد');
+    else if (!(mc.avgRnet > 0)) why.push(`میانگین شبیه‌سازی منفی است (${n(rr(mc.avgRnet))})`);
+    (why.length ? skip : go).push({ inst, plan, mc, ev, h, why });
+  });
+  go.sort((x, y) => y.h.avgRnet - x.h.avgRnet);
+  watch.sort((x, y) => x.d - y.d);
+  return { go, skip, watch: watch.slice(0, 4) };
+}
+// open real trades (journal) and their exit signals
+function exitSignals() {
+  const out = [], now = Date.now();
+  journal.forEach(j => {
+    if (j.result) return;
+    const inst = insts[j.mkt] && insts[j.mkt].get(j.key);
+    const p = inst && inst.a && inst.a.price;
+    let why = null;
+    if (p != null && (j.side === 'buy' ? p >= j.target : p <= j.target)) why = `به حد سود ${n(fmtP(j.target, j.dec))} رسید`;
+    else if (p != null && (j.side === 'buy' ? p <= j.stop : p >= j.stop)) why = `به حد ضرر ${n(fmtP(j.stop, j.dec))} رسید`;
+    else if (now >= j.exitAt) why = `زمان خروج اجباری (${n(tm(j.exitAt))}) رسیده`;
+    if (why) out.push({ j, why, p });
+  });
+  return out;
+}
+const sugSeen = new Set();
+function renderSug() {
+  const mkt = ui.view === 'paper' ? 'crypto' : market;
+  if (mkt === 'forex' && !cfg.tdKey) { put('sugCard', `<div class="sec-h"><h2 id="sugH">پیشنهادهای الان</h2></div><p class="sug-empty">برای فارکس اول کلید Twelve Data لازم است.</p>`); return; }
+  const list = Array.from(insts[mkt].values());
+  const ready = list.filter(i => i.status === 'ready');
+  const { go, skip, watch } = buildSuggestions(mkt);
+  const exits = exitSignals();
+  go.forEach(g => {
+    const k = g.inst.key + g.inst.a.ph.date + g.plan.side;
+    if (!sugSeen.has(k)) { sugSeen.add(k); if (ui.booted) toast(`<b>پیشنهاد تازه:</b> ${esc(g.inst.label)}، ${sideFa(g.plan.side)} حدود ${n(fmtP(g.inst.a.price, g.plan.dec))}`, 'up'); }
+  });
+  const last = Math.max(0, ...ready.map(i => i.lastFetch || 0));
+  const goHTML = go.map(g => {
+    const { inst, plan, ev, h, mc } = g, sz = ev.sz;
+    return `<div class="sug go"><div class="who"><b>${esc(inst.label)}</b><span class="state ${plan.long ? 'up' : 'down'}">${plan.long ? '↑ خرید' : '↓ فروش'}</span></div>
+      <div class="nums"><span>ورود ≈ ${n(fmtP(inst.a.price, plan.dec))}</span><span>حد ضرر <span class="num neg">${fmtP(plan.stop, plan.dec)}</span></span><span>حد سود <span class="num pos">${fmtP(plan.target, plan.dec)}</span></span>
+        <span>حجم ${n(sz.units.toLocaleString('en-US', { maximumFractionDigits: 8 }))} (${n(usd(sz.notional, 0))})</span><span>ضرر ممکن <span class="num neg">${usd(-sz.lossAtStop)}</span></span><span>سود ممکن <span class="num pos">${usd(sz.gainAtTarget)}</span></span>
+        <span>خروج تا ${n(tm(plan.exitAt))}</span><span>گذشته: ${n(h.target + '/' + h.triggered)} حد سود، میانگین <span class="num pos">${rr(h.avgRnet)}</span></span><span>شبیه‌سازی: اول حد سود ${n(pc(mc.pTarget, 0))}</span></div>
+      <div class="acts">${mkt !== 'crypto' ? '' : paper.positions.some(p => p.key === inst.key) ? `<button type="button" class="btn ghost sm" data-view-go="paper">روی حساب مجازی باز است</button>` : `<button type="button" class="btn sm" data-paper-open="${esc(inst.key)}">باز کردن مجازی</button>`}<button type="button" class="btn ghost sm" data-focus="${esc(inst.key)}" data-mkt="${mkt}">جزئیات و سفارش واقعی</button></div></div>`;
+  }).join('');
+  const exitHTML = exits.map(x => `<div class="sug exit"><div class="who"><b>${esc(x.j.label)}</b><span class="state warn">بفروش</span></div>
+      <div class="nums"><span>${x.why}</span><span>قیمت الان ${n(fmtP(x.p, x.j.dec))}</span><span>معامله‌ی واقعی تو از ${n(tm(x.j.takenAt))}</span></div>
+      <div class="acts"><button type="button" class="btn ghost sm" data-view-go="dash" data-scroll="journalCard">ثبت نتیجه در ژورنال</button></div></div>`).join('');
+  let body = '';
+  if (!ready.length) body = `<p class="sug-empty mut">منتظر داده…</p>`;
+  else {
+    body = (exitHTML || goHTML) ? `<div class="sug-list">${exitHTML}${goHTML}</div>` : '';
+    if (!go.length) body += `<p class="sug-empty">الان هیچ نمادی همه‌ی شرط‌ها را ندارد، پس پیشنهاد خریدی نیست. این حالت عادی است؛ بیشتر وقت‌ها بهترین کار، معامله نکردن است.</p>`;
+    if (watch.length) body += `<div class="watch"><span>نزدیک به فعال شدن:</span>${watch.map(w => `<span><b>${esc(w.inst.label)}</b> ${n((w.d * 100).toFixed(2) + '%')} تا ${w.side === 'buy' ? 'سقف' : 'کف'} رنج</span>`).join('')}</div>`;
+    if (skip.length) body += `<details class="skipped"><summary>${n(skip.length)} نماد فعال شده ولی پیشنهاد نمی‌شود؛ دلیلش را ببین</summary><ul>${skip.map(x => `<li><b>${esc(x.inst.label)}</b> ${x.plan.long ? '↑' : '↓'}: ${x.why.join('؛ ')}</li>`).join('')}</ul></details>`;
+  }
+  const html = `<div class="sec-h"><h2 id="sugH">پیشنهادهای الان</h2><p>${mkt === 'crypto' ? esc(source.crypto) : 'فارکس'} · خودکار به‌روز می‌شود${last ? ` · آخرین داده ${n(tm(last))}` : ''}</p></div>${body}
+    <p class="small crit">پیشنهاد فقط وقتی می‌آید که قانون شکست رنج همین الان فعال شده باشد، همه‌ی چک‌های ریسک قبول شوند، همین قانون روی همین نماد در گذشته حداقل ${n(SUG_MIN_N)} بار فعال شده و به‌طور میانگین بعد از کارمزد سود داده باشد، و شبیه‌سازی هم مثبت باشد. این خروجی یک قانون است، نه پیش‌بینی و نه توصیه‌ی مالی؛ حتی وقتی همه‌ی شرط‌ها برقرارند، معامله می‌تواند به حد ضرر بخورد.</p>`;
+  put('sugCard', html);
+}
+
+// ------------------------------------------------------------------ paper account (virtual money, crypto spot)
+let paper = store.get('dtw.paper', null);
+function paperNew() { paper = { start: cfg.account, cash: cfg.account, positions: [], closed: [], created: Date.now() }; savePaper(); }
+function savePaper() { store.set('dtw.paper', paper); }
+if (!paper || !Array.isArray(paper.positions) || !Array.isArray(paper.closed)) paperNew();
+const feeSide = () => (cfg.crypto.costPct || 0) / 2 / 100;
+const qtyStep = price => Math.pow(10, -Math.max(0, Math.min(6, Math.floor(Math.log10(price)) + 1)));
+function nextExitAt(inst) {
+  const a = inst.a, end = a.ph.start + (a.win.exitLast + 1) * 300000;
+  if (a.ph.phase === 'open' && end > Date.now()) return end;
+  const base = a.ph.nextOpen || a.ph.start + DAY;
+  return base + (a.win.exitLast + 1) * 300000;
+}
+function paperToday() { return paper.positions.concat(paper.closed).filter(p => dayKey(p.openedAt) === dayKey(Date.now())); }
+// open a long at the live price; returns an error text or null
+function paperOpen(inst, units, stop, target, exitAt, fromSug) {
+  const a = inst.a, price = a && a.price;
+  if (!(price > 0) || inst.status !== 'ready') return 'قیمت این نماد هنوز نرسیده.';
+  if (!(stop < price)) return 'حد ضرر باید زیر قیمت باشد.';
+  if (paper.positions.some(p => p.key === inst.key)) return 'روی این نماد یک پوزیشن باز داری.';
+  const step = qtyStep(price);
+  units = Math.floor(units / step + 1e-9) * step;
+  const maxUnits = Math.floor(paper.cash / (price * (1 + feeSide())) / step + 1e-9) * step;
+  if (units > maxUnits) units = maxUnits;
+  const notional = units * price, fee = notional * feeSide();
+  if (!(units > 0) || notional < cfg.minOrderUSD) return `مبلغ کمتر از حداقل ${cfg.minOrderUSD} تتر است یا نقد کافی نداری.`;
+  const risk = units * (price - stop) + fee + units * stop * feeSide();
+  if (risk > cfg.maxLoss + 0.005) return `ضرر در حد ضرر ${usd(risk)} می‌شود که از سقف ${usd(cfg.maxLoss)} بیشتر است. مبلغ را کم کن یا حد ضرر را نزدیک‌تر بگذار.`;
+  const today = paperToday();
+  if (today.length >= cfg.maxTrades) return `سقف ${cfg.maxTrades} معامله در روز پر شده.`;
+  const used = today.reduce((t, p) => t + (p.risk || 0), 0);
+  if (used + risk > cfg.maxDailyLoss + 0.005) return `ریسک امروز از سقف ${usd(cfg.maxDailyLoss)} بیشتر می‌شود.`;
+  paper.cash -= notional + fee;
+  paper.positions.push({ id: Date.now(), key: inst.key, label: inst.label, src: source.crypto, units, entry: price, stop, target, exitAt,
+    openedAt: Date.now(), feeIn: fee, risk, dec: E.decimalsFor(price), checkedTo: Math.ceil(Date.now() / MIN5) * MIN5, sug: !!fromSug });
+  savePaper();
+  toast(`خرید مجازی: ${n(units.toLocaleString('en-US', { maximumFractionDigits: 8 }))} ${esc(inst.base)} در ${n(fmtP(price, E.decimalsFor(price)))}`, 'up');
+  return null;
+}
+function paperClose(pos, price, reason, at) {
+  const notional = pos.units * price, fee = notional * feeSide();
+  paper.cash += notional - fee;
+  const pnl = notional - fee - (pos.units * pos.entry + pos.feeIn);
+  const R = pos.risk > 0 ? pnl / pos.risk : null;
+  paper.positions = paper.positions.filter(p => p.id !== pos.id);
+  paper.closed.push(Object.assign({}, pos, { exit: price, closedAt: at || Date.now(), reason, pnl, R }));
+  if (paper.closed.length > 400) paper.closed = paper.closed.slice(-400);
+  savePaper();
+  const RS = { stop: 'حد ضرر', target: 'حد سود', time: 'زمان خروج', manual: 'فروش دستی' };
+  toast(`فروش مجازی ${esc(pos.label)} (${RS[reason]}): ${n(usd(pnl))}`, pnl >= 0 ? 'up' : 'down');
+}
+// stops, targets and the flat-by time; closed bars cover the time the page was shut
+function paperTick() {
+  const now = Date.now();
+  paper.positions.slice().forEach(pos => {
+    const inst = insts.crypto.get(pos.key);
+    if (!inst || inst.status !== 'ready' || !inst.a) return;
+    for (const b of inst.bars) {
+      if (b.t < pos.checkedTo || b.t + MIN5 > now) continue;
+      if (b.l <= pos.stop) { paperClose(pos, Math.min(pos.stop, b.o), 'stop', b.t + MIN5); return; }
+      if (b.h >= pos.target) { paperClose(pos, Math.max(pos.target, b.o), 'target', b.t + MIN5); return; }
+      pos.checkedTo = b.t + MIN5;
+      if (pos.checkedTo >= pos.exitAt) { paperClose(pos, b.c, 'time', pos.exitAt); return; }
+    }
+    const p = inst.a.price;
+    if (p <= pos.stop) paperClose(pos, p, 'stop');
+    else if (p >= pos.target) paperClose(pos, pos.target, 'target');
+    else if (now >= pos.exitAt) paperClose(pos, p, 'time');
+  });
+  savePaper();
+}
+function paperOpenFromSuggestion(key) {
+  const inst = insts.crypto.get(key);
+  if (!inst || !inst.a) return;
+  const plan = planFor(inst, 'buy');
+  if (plan.none || plan.kind !== 'triggered') { toast('این نماد الان سیگنال فعال ندارد.'); return; }
+  const mc = ensureMC(inst, plan), ev = evaluate(inst, plan, mc, 'buy');
+  const err = paperOpen(inst, ev.sz.units, plan.stop, plan.target, plan.exitAt, true);
+  if (err) toast(esc(err), 'down');
+  scheduleRender();
+}
+function paperPreview() {
+  const el = $('#p_preview'), inst = insts.crypto.get($('#p_sym').value);
+  if (!el) return;
+  if (!inst || !inst.a || !(inst.a.price > 0)) { el.textContent = 'قیمت این نماد هنوز نرسیده.'; return; }
+  const price = inst.a.price, dec = E.decimalsFor(price), amt = +$('#p_amt').value || 0, sp = +$('#p_stop').value || 0, R = +$('#p_tr').value || 0;
+  const stop = E.roundAway(price * (1 - sp / 100), true, dec), target = E.targetFrom(price, stop, R, true, dec);
+  const units = amt / price, risk = units * (price - stop) + amt * feeSide() * 2;
+  el.innerHTML = `قیمت ${n(fmtP(price, dec))} · حد ضرر ${n(fmtP(stop, dec))} · حد سود ${n(fmtP(target, dec))} · ضرر در حد ضرر حدود <span class="num ${risk > cfg.maxLoss ? 'neg' : ''}">${usd(risk)}</span> (سقف ${n(usd(cfg.maxLoss))}) · نقد ${n(usd(paper.cash))}`;
+}
+function renderPaper() {
+  const list = Array.from(insts.crypto.values());
+  const sel = $('#p_sym'), keys = list.map(i => i.key).join(',');
+  if (sel.dataset.keys !== keys) { const v = sel.value; sel.innerHTML = list.map(i => `<option value="${esc(i.key)}">${esc(i.label)}</option>`).join(''); sel.dataset.keys = keys; if (v) sel.value = v; }
+  const priceOf = pos => { const i = insts.crypto.get(pos.key); return i && i.a && i.a.price > 0 ? i.a.price : pos.entry; };
+  const openVal = paper.positions.reduce((t, p) => t + p.units * priceOf(p), 0);
+  const equity = paper.cash + openVal, total = equity - paper.start;
+  const today = paper.closed.filter(c => dayKey(c.closedAt) === dayKey(Date.now())).reduce((t, c) => t + c.pnl, 0)
+    + paper.positions.filter(p => dayKey(p.openedAt) === dayKey(Date.now())).reduce((t, p) => t + p.units * (priceOf(p) - p.entry) - p.feeIn, 0);
+  const wins = paper.closed.filter(c => c.pnl > 0).length, Rs = paper.closed.filter(c => c.R != null);
+  $('#paperSub').textContent = `قیمت لحظه‌ای ${source.crypto} و کارمزد ${cfg.crypto.costPct}٪ رفت و برگشت · سفارش واقعی ثبت نمی‌شود · فقط در همین مرورگر`;
+  put('paperStats', `<div class="reality" style="margin-top:12px">
+    <div class="stat"><span class="lbl">ارزش حساب</span><b class="num">${usd(equity)}</b><small>شروع ${n(usd(paper.start, 0))}</small></div>
+    <div class="stat"><span class="lbl">سود و زیان کل</span><b class="num ${total >= 0 ? 'pos' : 'neg'}">${usd(total)}</b><small>${n(spc(total / paper.start))}</small></div>
+    <div class="stat"><span class="lbl">امروز</span><b class="num ${today >= 0 ? 'pos' : 'neg'}">${usd(today)}</b><small>هدف تو ${n(usd(cfg.dailyTarget, 0))}</small></div>
+    <div class="stat"><span class="lbl">معاملات بسته</span><b class="num">${paper.closed.length}</b><small>${paper.closed.length ? `${n(pc(wins / paper.closed.length, 0))} برد · میانگین ${n(rr(Rs.reduce((t, c) => t + c.R, 0) / Math.max(1, Rs.length)))}` : 'هنوز معامله‌ای بسته نشده'}</small></div></div>`);
+  // equity curve over closed trades
+  const pts = [paper.start];
+  paper.closed.forEach(c => pts.push(pts[pts.length - 1] + c.pnl));
+  if (pts.length < 2) put('paperCurve', `<p class="small">بعد از اولین معامله‌ی بسته، منحنی رشد حساب این‌جا رسم می‌شود.</p>`);
+  else {
+    const lo = Math.min(...pts, paper.start), hi = Math.max(...pts, paper.start), W = 600, H = 120;
+    const x = i => (i / (pts.length - 1) * (W - 8) + 4).toFixed(1), y = v => (H - 6 - (v - lo) / ((hi - lo) || 1) * (H - 12)).toFixed(1);
+    const col = pts[pts.length - 1] >= paper.start ? 'var(--up)' : 'var(--down)';
+    put('paperCurve', `<svg class="curve" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="منحنی موجودی حساب مجازی" style="direction:ltr">
+      <line x1="0" x2="${W}" y1="${y(paper.start)}" y2="${y(paper.start)}" stroke="var(--line)" stroke-dasharray="4 4"/>
+      <polyline fill="none" stroke="${col}" stroke-width="2" vector-effect="non-scaling-stroke" points="${pts.map((v, i) => x(i) + ',' + y(v)).join(' ')}"/></svg>
+      <p class="small">از ${n(usd(paper.start, 0))} تا ${n(usd(pts[pts.length - 1]))} در ${n(paper.closed.length)} معامله (فقط معاملات بسته).</p>`);
+  }
+  const RS = { stop: 'حد ضرر', target: 'حد سود', time: 'زمان خروج', manual: 'دستی' };
+  put('paperOpen', paper.positions.length ? `<div class="tbl"><table class="list"><thead><tr><th>نماد</th><th>حجم</th><th>ورود</th><th>الان</th><th>حد ضرر</th><th>حد سود</th><th>سود/زیان</th><th>خروج تا</th><th></th></tr></thead><tbody>
+    ${paper.positions.map(p => { const pr = priceOf(p), u = p.units * (pr - p.entry) - p.feeIn - p.units * pr * feeSide();
+      return `<tr><td><b>${esc(p.label)}</b>${p.sug ? ' <span class="small">پیشنهاد</span>' : ''}</td><td>${n(p.units.toLocaleString('en-US', { maximumFractionDigits: 8 }))}</td><td>${n(fmtP(p.entry, p.dec))}</td><td>${n(fmtP(pr, p.dec))}</td>
+        <td><span class="num neg">${fmtP(p.stop, p.dec)}</span></td><td><span class="num pos">${fmtP(p.target, p.dec)}</span></td><td><span class="num ${u >= 0 ? 'pos' : 'neg'}">${usd(u)}</span></td><td>${n(tm(p.exitAt))}</td>
+        <td><button type="button" class="btn ghost sm" data-paper-sell="${p.id}">فروش</button></td></tr>`; }).join('')}</tbody></table></div>`
+    : `<p class="empty">پوزیشن بازی نداری. از «پیشنهادهای الان» یا فرم خرید دستی شروع کن.</p>`);
+  put('paperClosed', paper.closed.length ? `<div class="tbl"><table class="list"><thead><tr><th>بسته شد</th><th>نماد</th><th>ورود</th><th>خروج</th><th>دلیل</th><th>سود/زیان</th><th>R</th></tr></thead><tbody>
+    ${paper.closed.slice(-30).reverse().map(c => `<tr><td>${n(new Date(c.closedAt).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit' }) + ' ' + tm(c.closedAt))}</td><td><b>${esc(c.label)}</b>${c.sug ? ' <span class="small">پیشنهاد</span>' : ''}</td>
+      <td>${n(fmtP(c.entry, c.dec))}</td><td>${n(fmtP(c.exit, c.dec))}</td><td>${RS[c.reason] || ''}</td><td><span class="num ${c.pnl >= 0 ? 'pos' : 'neg'}">${usd(c.pnl)}</span></td><td>${n(c.R != null ? rr(c.R) : '–')}</td></tr>`).join('')}</tbody></table></div>`
+    : `<p class="empty">هنوز معامله‌ی بسته‌ای نیست.</p>`);
+  paperPreview();
+}
+$('#pForm').addEventListener('submit', e => {
+  e.preventDefault();
+  const inst = insts.crypto.get($('#p_sym').value);
+  if (!inst || !inst.a || !(inst.a.price > 0)) { toast('قیمت این نماد هنوز نرسیده.'); return; }
+  const price = inst.a.price, dec = E.decimalsFor(price);
+  const stop = E.roundAway(price * (1 - (+$('#p_stop').value || 1) / 100), true, dec);
+  const target = E.targetFrom(price, stop, +$('#p_tr').value || 2, true, dec);
+  const err = paperOpen(inst, (+$('#p_amt').value || 0) / price, stop, target, nextExitAt(inst), false);
+  if (err) toast(esc(err), 'down');
+  scheduleRender();
+});
+['p_sym', 'p_amt', 'p_stop', 'p_tr'].forEach(id => $('#' + id).addEventListener('input', paperPreview));
+$('#paperReset').onclick = e => {
+  const b = e.currentTarget;
+  if (b.dataset.armed !== '1') { b.dataset.armed = '1'; b.textContent = 'مطمئنی؟ همه‌ی معاملات مجازی پاک می‌شود. دوباره بزن.'; setTimeout(() => { b.dataset.armed = ''; b.textContent = 'شروع دوباره‌ی حساب مجازی'; }, 4000); return; }
+  b.dataset.armed = ''; b.textContent = 'شروع دوباره‌ی حساب مجازی';
+  paperNew(); Object.keys(last).forEach(k => delete last[k]); scheduleRender(); toast('حساب مجازی از نو شروع شد.');
+};
+document.addEventListener('click', e => {
+  const po = e.target.closest('[data-paper-open]');
+  if (po) { paperOpenFromSuggestion(po.dataset.paperOpen); return; }
+  const ps = e.target.closest('[data-paper-sell]');
+  if (ps) {
+    const pos = paper.positions.find(p => String(p.id) === ps.dataset.paperSell), inst = pos && insts.crypto.get(pos.key);
+    if (pos && inst && inst.a && inst.a.price > 0) { paperClose(pos, inst.a.price, 'manual'); scheduleRender(); }
+    return;
+  }
+  const fo = e.target.closest('[data-focus]');
+  if (fo) {
+    if (fo.dataset.mkt && fo.dataset.mkt !== market) { market = fo.dataset.mkt; store.set('dtw.market', market); }
+    ui.focus[market] = fo.dataset.focus; store.set('dtw.focus', ui.focus);
+    setView('dash');
+    scheduleRender();
+    setTimeout(() => $('#focusCard').scrollIntoView({ block: 'start' }), 80);
+    return;
+  }
+  const vg = e.target.closest('[data-view-go]');
+  if (vg) { setView(vg.dataset.viewGo); if (vg.dataset.scroll) setTimeout(() => document.getElementById(vg.dataset.scroll).scrollIntoView({ block: 'start' }), 80); }
+});
+
+// ------------------------------------------------------------------ views
+ui.view = location.hash === '#paper' ? 'paper' : 'dash';
+function setView(v) {
+  if (v === ui.view && !(v === 'paper' && market !== 'crypto')) return;
+  ui.view = v;
+  try { history.replaceState(null, '', v === 'paper' ? '#paper' : location.pathname + location.search); } catch (e) { /* the frame may refuse it */ }
+  if (v === 'paper' && market !== 'crypto') { market = 'crypto'; store.set('dtw.market', market); loadMarket('crypto'); }
+  Object.keys(last).forEach(k => delete last[k]);
+  scheduleRender();
+  window.scrollTo(0, 0);
+}
+window.addEventListener('hashchange', () => setView(location.hash === '#paper' ? 'paper' : 'dash'));
+$('#viewSeg').addEventListener('click', e => { const b = e.target.closest('button[data-view]'); if (b) setView(b.dataset.view); });
 
 // ------------------------------------------------------------------ the chart
 function niceStep(span, count) {
@@ -2052,6 +2404,7 @@ function loadMarket(mkt, force) {
   return loadChain[mkt];
 }
 async function runLoad(mkt, force) {
+  setTimeout(() => { ui.booted = true; }, 15000);
   syncInsts(mkt);
   scheduleRender();
   if (mkt === 'forex' && !cfg.tdKey) return;
@@ -2110,6 +2463,7 @@ $('#mktSeg').addEventListener('click', e => {
   const b = e.target.closest('button[data-mkt]');
   if (!b || b.dataset.mkt === market) return;
   market = b.dataset.mkt; store.set('dtw.market', market);
+  if (ui.view === 'paper') { ui.view = 'dash'; try { history.replaceState(null, '', location.pathname + location.search); } catch (err) { /* ignore */ } }
   Object.keys(last).forEach(k => delete last[k]);
   loadMarket(market);
   scheduleRender();
@@ -2128,6 +2482,7 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => draw
 
 // boot
 syncInsts('crypto'); syncInsts('forex');
+if (ui.view === 'paper') market = 'crypto';
 $('#clock').textContent = new Date().toLocaleTimeString('en-GB');
 renderAll();
 loadMarket(market);

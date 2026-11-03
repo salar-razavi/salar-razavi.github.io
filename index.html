@@ -276,6 +276,7 @@ a{color:var(--accent)}
         <label class="fld"><span>حداقل نسبت سود به ضرر (خالص)</span><input type="number" id="s_minRR" min="0.5" step="0.1"></label>
         <label class="fld"><span>نقد همیشه کنار (٪، کریپتو)</span><input type="number" id="s_cashBufferPct" min="0" max="90" step="1"></label>
         <label class="fld"><span>بزرگ‌ترین پوزیشن (٪ سرمایه، کریپتو)</span><input type="number" id="s_maxPositionPct" min="1" max="100" step="1"></label>
+        <label class="fld"><span>حداقل سفارش صرافی (دلار/تتر)</span><input type="number" id="s_minOrderUSD" min="0" step="1"><small class="hint">نوبیتکس، بازارهای تتری: 11 تتر</small></label>
         <label class="fld"><span>سقف اهرم (فارکس)</span><input type="number" id="s_maxLeverage" min="0.1" max="30" step="0.5"><small class="hint">کریپتو همیشه بدون اهرم (اسپات) حساب می‌شود</small></label>
       </fieldset>
       <fieldset>
@@ -290,8 +291,8 @@ a{color:var(--accent)}
         <legend>کریپتو</legend>
         <label class="fld wide"><span>نمادها (جفت‌های بایننس، با کاما)</span><input type="text" id="s_crypto_symbols" dir="ltr"></label>
         <label class="fld"><span>جلسه</span><select id="s_crypto_session" class="sessSel"></select></label>
-        <label class="fld"><span>منبع داده</span><select id="s_crypto_source"><option value="auto">خودکار (اولین منبعی که جواب بدهد)</option><option value="binance">Binance</option><option value="bybit">Bybit</option><option value="mexc">MEXC</option><option value="gate">Gate</option><option value="nobitex">نوبیتکس</option><option value="wallex">والکس</option></select><small class="hint">اگر در نوبیتکس یا والکس معامله می‌کنی، داده‌ی همان صرافی دقیق‌تر است</small></label>
-        <label class="fld"><span>هزینه‌ی رفت و برگشت (٪)</span><input type="number" id="s_crypto_costPct" min="0" step="0.01"><small class="hint">کارمزد اسپات بایننس 0.1٪ هر طرف = 0.2</small></label>
+        <label class="fld"><span>منبع داده</span><select id="s_crypto_source"><option value="auto">خودکار (اولین منبعی که جواب بدهد)</option><option value="binance">Binance</option><option value="bybit">Bybit</option><option value="mexc">MEXC</option><option value="gate">Gate</option><option value="nobitex">نوبیتکس (پیشنهاد برای کاربر ایران)</option><option value="wallex">والکس</option></select><small class="hint">اگر در نوبیتکس یا والکس معامله می‌کنی، داده‌ی همان صرافی دقیق‌تر است</small></label>
+        <label class="fld"><span>هزینه‌ی رفت و برگشت (٪)</span><input type="number" id="s_crypto_costPct" min="0" step="0.01"><small class="hint">کارمزد خرید + فروش در سطح کاربری خودت؛ از صفحه‌ی کارمزدهای صرافی بخوان</small></label>
         <label class="fld check"><input type="checkbox" id="s_crypto_allowShort"><span>سمت فروش (شورت) هم نشان بده (نیاز به فیوچرز/مارجین)</span></label>
       </fieldset>
       <fieldset>
@@ -843,10 +844,10 @@ const store = {
 // ------------------------------------------------------------------ settings
 const DEFAULTS = {
   account: 1000, dailyTarget: 50, maxLoss: 10, maxDailyLoss: 30, maxTrades: 3, minRR: 1,
-  cashBufferPct: 10, maxPositionPct: 90, maxLeverage: 3, minOrderUSD: 5,
+  cashBufferPct: 10, maxPositionPct: 90, maxLeverage: 3, minOrderUSD: 11, v: 2,
   orMinutes: 15, stopRule: 'or_mid', atrK: 1.5, stopPct: 0.5, targetR: 2,
-  historyDays: 60, replays: 10000, seed: 19, sound: true, tdKey: '',
-  crypto: { symbols: 'BTCUSDT, ETHUSDT, SOLUSDT, BNBUSDT, XRPUSDT, DOGEUSDT, ADAUSDT, LINKUSDT', session: 'newyork', costPct: 0.2, allowShort: false, source: 'auto' },
+  historyDays: 45, replays: 10000, seed: 19, sound: true, tdKey: '',
+  crypto: { symbols: 'BTCUSDT, ETHUSDT, SOLUSDT, XRPUSDT, DOGEUSDT, BNBUSDT', session: 'london', costPct: 0.26, allowShort: false, source: 'nobitex' },
   forex: { symbols: 'EUR/USD, GBP/USD, USD/JPY, XAU/USD', session: 'london', costPct: 0.012, allowShort: true },
   custom: { tz: 'Asia/Tehran', open: '09:00', hours: 8 }
 };
@@ -861,6 +862,19 @@ function merge(base, over) {
   return base;
 }
 let cfg = merge(clone(DEFAULTS), store.get('dtw.cfg', {}));
+(function migrate() {
+  const raw = store.get('dtw.cfg', null);
+  if (!raw || raw.v === 2) return;
+  const c = cfg.crypto;
+  if (c.source === 'auto') c.source = 'nobitex';
+  if (c.session === 'newyork') c.session = 'london';
+  if (c.costPct === 0.2) c.costPct = 0.26;
+  if (c.symbols === 'BTCUSDT, ETHUSDT, SOLUSDT, BNBUSDT, XRPUSDT, DOGEUSDT, ADAUSDT, LINKUSDT') c.symbols = DEFAULTS.crypto.symbols;
+  if (cfg.minOrderUSD === 5) cfg.minOrderUSD = 11;
+  if (cfg.historyDays === 60) cfg.historyDays = 45;
+  cfg.v = 2;
+  store.set('dtw.cfg', cfg);
+})();
 let journal = store.get('dtw.journal', []);
 if (!Array.isArray(journal)) journal = [];
 let market = store.get('dtw.market', 'crypto');
@@ -958,8 +972,19 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 const BIN = ['https://data-api.binance.vision', 'https://api.binance.com'];
 let binIdx = 0;
 function dataErr(msg) { const e = new Error(msg); e.kind = 'data'; return e; }
+// polite spacing per source: Nobitex allows 20 candle requests a minute
+const GAP_MS = { nobitex: 3200, wallex: 1000, gate: 150 };
+const nextSlot = {};
+async function throttle(id) {
+  const g = GAP_MS[id];
+  if (!g) return;
+  const now = Date.now(), at = Math.max(now, (nextSlot[id] || 0));
+  nextSlot[id] = at + g;
+  if (at > now) await sleep(at - now);
+}
+// TradingView-style history (Nobitex, Wallex): at most 500 candles a request
 async function udfHistory(base, inst, end, limit) {
-  const to = Math.floor((end != null ? end : Date.now()) / 1000), from = to - Math.min(1000, limit) * 300;
+  const to = Math.floor((end != null ? end : Date.now()) / 1000), from = to - Math.min(499, limit) * 300;
   const j = await fetchJSON(`${base}?symbol=${encodeURIComponent(inst.src)}&resolution=5&from=${from}&to=${to}`);
   if (j && j.s === 'no_data') return [];
   if (!j || j.s !== 'ok' || !Array.isArray(j.t)) throw dataErr('udf ' + (j && j.s));
@@ -993,13 +1018,14 @@ const CRYPTO_SRC = {
     return j.map(k => ({ t: +k[0], o: +k[1], h: +k[2], l: +k[3], c: +k[4], v: +k[5] }));
   } },
   gate: { name: 'Gate', async get(inst, end, limit) {
+    await throttle('gate');
     const to = Math.floor((end != null ? end : Date.now()) / 1000), from = to - Math.min(999, limit) * 300;
     const j = await fetchJSON(`https://api.gateio.ws/api/v4/spot/candlesticks?currency_pair=${encodeURIComponent(inst.base + '_' + inst.quote)}&interval=5m&from=${from}&to=${to}`);
     if (!Array.isArray(j)) throw dataErr('shape');
     return j.map(k => ({ t: +k[0] * 1000, o: +k[5], h: +k[3], l: +k[4], c: +k[2], v: +k[6] }));
   } },
-  nobitex: { name: 'Nobitex', get: (inst, end, limit) => udfHistory('https://apiv2.nobitex.ir/market/udf/history', inst, end, limit) },
-  wallex: { name: 'Wallex', get: (inst, end, limit) => udfHistory('https://api.wallex.ir/v1/udf/history', inst, end, limit) }
+  nobitex: { name: 'نوبیتکس', async get(inst, end, limit) { await throttle('nobitex'); return udfHistory('https://apiv2.nobitex.ir/market/udf/history', inst, end, limit); } },
+  wallex: { name: 'والکس', async get(inst, end, limit) { await throttle('wallex'); return udfHistory('https://api.wallex.ir/v1/udf/history', inst, end, limit); } }
 };
 const SRC_ORDER = ['binance', 'bybit', 'mexc', 'gate', 'nobitex', 'wallex'];
 // which sources answered or failed last time, kept so a reload starts with one that works
@@ -1038,21 +1064,6 @@ function mergeBars(a, b) {
   b.forEach(x => { if (isFinite(x.t) && x.c > 0) m.set(x.t, x); });
   return Array.from(m.values()).sort((x, y) => x.t - y.t);
 }
-async function cryptoBack(inst, days, onp) {
-  const need = Date.now() - days * DAY;
-  const first = await klines(inst, null, 1000);
-  inst.srcId = first.id;
-  let out = first.bars, oldest = out.length ? out[0].t : null;
-  for (let page = 0; page < 80 && oldest != null && oldest > need; page++) {
-    onp && onp(Math.min(1, (Date.now() - oldest) / (days * DAY)));
-    let chunk;
-    try { chunk = (await klines(inst, oldest - 1, 1000, inst.srcId)).bars; } catch (e) { break; }
-    if (!chunk.length || chunk[0].t >= oldest) break;
-    out = mergeBars(chunk, out);
-    oldest = out[0].t;
-  }
-  return out.filter(b => b.t >= need - DAY);
-}
 // Twelve Data: 8 calls a minute and 800 a day on the free plan, so one call every 8 seconds
 let tdLast = 0;
 let tdUse = store.get('dtw.tdUse', { day: '', n: 0 });
@@ -1072,33 +1083,76 @@ async function tdCall(params) {
     .filter(b => isFinite(b.t) && b.c > 0).sort((a, b) => a.t - b.t);
 }
 const tdDate = t => new Date(t).toISOString().slice(0, 19).replace('T', ' ');
-async function forexBack(sym, days, onp) {
-  const pages = Math.max(1, Math.ceil(days * 5 / 7 * 288 / 5000));
-  let end = null, out = [];
-  for (let p = 0; p < pages; p++) {
-    const params = { symbol: sym, outputsize: 5000 };
-    if (end != null) params.end_date = tdDate(end);
-    const bars = await tdCall(params);
-    if (!bars.length) break;
-    out = mergeBars(bars, out);
-    onp && onp((p + 1) / pages);
-    if (bars.length < 4900) break;
-    end = bars[0].t;
-  }
-  return out;
+// ---- local cache of bars (IndexedDB): after the first load, a reload fetches only what is new
+const idb = (() => {
+  let dbp = null;
+  const open = () => dbp || (dbp = new Promise((res, rej) => {
+    const r = indexedDB.open('dtw', 1);
+    r.onupgradeneeded = () => r.result.createObjectStore('bars');
+    r.onsuccess = () => res(r.result);
+    r.onerror = () => rej(r.error);
+  }));
+  return {
+    async get(k) {
+      try { const db = await open(); return await new Promise(res => { const q = db.transaction('bars').objectStore('bars').get(k); q.onsuccess = () => res(q.result || null); q.onerror = () => res(null); }); }
+      catch (e) { return null; }
+    },
+    async set(k, v) { try { const db = await open(); db.transaction('bars', 'readwrite').objectStore('bars').put(v, k); } catch (e) { /* no cache this visit */ } }
+  };
+})();
+const toRows = bars => bars.filter(b => !b.fill).map(b => [b.t, b.o, b.h, b.l, b.c, b.v]);
+const fromRows = rows => (Array.isArray(rows) ? rows : []).map(r => ({ t: r[0], o: r[1], h: r[2], l: r[3], c: r[4], v: r[5] }));
+const cacheKey = inst => (inst.mkt === 'crypto' ? inst.srcId : 'td') + '|' + inst.src;
+function saveCache(inst) { if (inst.bars.length) { inst.savedAt = Date.now(); idb.set(cacheKey(inst), toRows(inst.bars)); } }
+// one page of bars ending just before `end`, oldest first, always from the instrument's own source
+async function pageBefore(inst, end) {
+  if (inst.mkt === 'crypto') return (await klines(inst, end, 1000, inst.srcId)).bars;
+  return tdCall({ symbol: inst.src, outputsize: 5000, end_date: tdDate(end) });
 }
-async function loadHistory(inst) {
+// step 1: the newest page (enough for today's session), merged with the cache
+async function loadHead(inst) {
   inst.status = 'loading'; inst.progress = 0; inst.err = null;
   scheduleRender();
   try {
-    const onp = p => { inst.progress = p; scheduleRender(); };
-    const bars = inst.mkt === 'crypto' ? await cryptoBack(inst, cfg.historyDays, onp) : await forexBack(inst.src, cfg.historyDays, onp);
-    if (!bars.length) { const e = new Error('empty'); e.kind = 'empty'; throw e; }
-    inst.bars = bars; inst.status = 'ready'; inst.lastFetch = Date.now(); inst.daysLoaded = cfg.historyDays;
+    let head;
+    if (inst.mkt === 'crypto') { const r = await klines(inst, null, 1000); inst.srcId = r.id; head = r.bars; }
+    else head = await tdCall({ symbol: inst.src, outputsize: 5000 });
+    if (!head.length) { const e = new Error('empty'); e.kind = 'empty'; throw e; }
+    const need = Date.now() - cfg.historyDays * DAY;
+    const cached = fromRows(await idb.get(cacheKey(inst))).filter(b => b.t >= need - DAY);
+    inst.cacheNewest = cached.length ? cached[cached.length - 1].t : null;
+    inst.headOldest = head[0].t;
+    inst.bars = mergeBars(cached, head);
+    inst.status = 'ready'; inst.partial = true; inst.lastFetch = Date.now(); inst.fails = 0;
     inst._sig = inst._hk = null;
   } catch (e) {
     inst.status = 'error'; inst.err = explainErr(e);
   }
+}
+// step 2: fill the gap between the cache and the newest page, then go back to historyDays
+async function backfill(inst) {
+  if (inst.status !== 'ready') return;
+  const need = Date.now() - cfg.historyDays * DAY;
+  const add = chunk => { inst.bars = mergeBars(inst.bars, chunk); scheduleRender(); };
+  try {
+    if (inst.cacheNewest != null) {
+      let oldest = inst.headOldest;
+      for (let n = 0; n < 200 && oldest > inst.cacheNewest + MIN5; n++) {
+        const chunk = await pageBefore(inst, oldest - 1);
+        if (!chunk.length || chunk[0].t >= oldest) break;
+        add(chunk); oldest = chunk[0].t;
+      }
+    }
+    let oldest = inst.bars[0].t;
+    for (let n = 0; n < 200 && oldest > need; n++) {
+      inst.progress = Math.min(1, (Date.now() - oldest) / (cfg.historyDays * DAY));
+      const chunk = await pageBefore(inst, oldest - 1);
+      if (!chunk.length || chunk[0].t >= oldest) break;
+      add(chunk); oldest = inst.bars[0].t;
+    }
+  } catch (e) { /* keep what arrived; the cache lets the next load continue from here */ }
+  inst.partial = false; inst.progress = 1; inst.daysLoaded = cfg.historyDays; inst._hk = null;
+  saveCache(inst);
 }
 async function refreshLatest(inst) {
   if (inst.status !== 'ready' || !inst.bars.length) return;
@@ -1109,10 +1163,11 @@ async function refreshLatest(inst) {
     const keepFrom = Date.now() - (cfg.historyDays + 3) * DAY;
     inst.bars = mergeBars(inst.bars, fresh).filter(b => b.t >= keepFrom);
     inst.lastFetch = Date.now(); inst.err = null; inst.fails = 0;
+    if (!inst.partial && Date.now() - (inst.savedAt || 0) > 5 * 60000) saveCache(inst);
   } catch (e) {
     inst.err = explainErr(e);
     inst.fails = (inst.fails || 0) + 1;
-    if (inst.fails >= 3) { inst.status = 'error'; inst.fails = 0; } // the next poll reloads it, from any source
+    if (inst.fails >= 3) { inst.status = 'error'; inst.fails = 0; } // the next poll reloads it
   }
 }
 function explainErr(e) {
@@ -1137,6 +1192,22 @@ function phaseOf(now, sess) {
   }
   return { phase: 'after', date: L.date, start: E.utcOf(L.date, sess.openMin, sess.tz), nextOpen: E.utcOf(E.addDays(L.date, 1), sess.openMin, sess.tz) };
 }
+// a 5-minute slot with no trade has no candle on thin markets: fill it flat at the last close
+// (gaps up to 2 hours; a longer gap is an outage or a closed market and stays a gap)
+function fillGaps(bars, maxGap, until) {
+  const out = [];
+  for (let i = 0; i < bars.length; i++) {
+    const b = bars[i];
+    if (i) {
+      const p = bars[i - 1], gap = (b.t - p.t) / MIN5;
+      if (gap > 1 && gap <= maxGap + 1) for (let t = p.t + MIN5; t < b.t; t += MIN5) out.push({ t, o: p.c, h: p.c, l: p.c, c: p.c, v: 0, fill: true });
+    }
+    out.push(b);
+  }
+  const last = out[out.length - 1];
+  if (until && last && until - last.t <= maxGap * MIN5) for (let t = last.t + MIN5; t <= until; t += MIN5) out.push({ t, o: last.c, h: last.c, l: last.c, c: last.c, v: 0, fill: true });
+  return out;
+}
 function analyze(inst) {
   const sess = sessFor(inst.mkt), rule = ruleNow(), win = windowFor(sess), now = Date.now();
   const allowShort = !!cfg[inst.mkt].allowShort;
@@ -1145,12 +1216,15 @@ function analyze(inst) {
   if (!inst.bars.length) { a.st = { state: inst.status === 'error' ? 'error' : 'loading' }; inst.a = a; return a; }
   const lastBar = inst.bars[inst.bars.length - 1];
   const sig = [inst.bars.length, lastBar.t, lastBar.c, lastBar.h, lastBar.l, sess.key, sess.tz, sess.openMin, sess.bars].join('|');
-  if (inst._sig !== sig) { inst.days = E.sessionize(inst.bars, sess); inst._sig = sig; }
+  // crypto trades all day: a quiet market up to now is a flat price, if the last fetch was just now
+  const liveTo = inst.mkt === 'crypto' && now - (inst.lastFetch || 0) < 120000 ? Math.floor(now / MIN5) * MIN5 - MIN5 : null;
+  const sig2 = sig + '|' + liveTo;
+  if (inst._sig !== sig2) { inst.days = E.sessionize(fillGaps(inst.bars, 24, liveTo), sess); inst._sig = sig2; }
   const D = inst.days.get(ph.date) || new Array(sess.bars);
   a.D = D;
   a.price = lastBar.c;
   a.lastT = lastBar.t;
-  a.age = (now - lastBar.t) / 60000;
+  a.age = inst.mkt === 'crypto' ? (now - (inst.lastFetch || 0)) / 60000 : (now - lastBar.t) / 60000;
   const first = D.find(Boolean);
   a.chg = first ? lastBar.c / first.o - 1 : null;
   a.dec = E.decimalsFor(lastBar.c);
@@ -1164,7 +1238,8 @@ function analyze(inst) {
   if (inst._hk !== hk) {
     const fs = E.fullSessions(inst.days, ph.date, sess, inst.mkt === 'forex' ? 0.97 : 0.99);
     const o = { entryLast: win.entryLast, exitLast: win.exitLast, costPct: cfg[inst.mkt].costPct };
-    inst.full = fs.full; inst.filled = fs.filled; inst.pool = null;
+    inst.full = fs.full; inst.pool = null;
+    inst.filled = fs.filled + fs.full.reduce((n, S) => n + S.D.filter(b => b.fill).length, 0);
     inst.hist = { buy: E.historyReplay(fs.full, rule, Object.assign({ side: 'buy' }, o)), sell: allowShort ? E.historyReplay(fs.full, rule, Object.assign({ side: 'sell' }, o)) : null };
     inst.setups = E.findSetups(E.dailyCloses(inst.bars, now));
     inst._hk = hk;
@@ -1407,6 +1482,7 @@ function distCell(inst) {
   return `<span class="mut">رنج ${n(fmtP(st.rng.lo, inst.a.dec))} – ${n(fmtP(st.rng.hi, inst.a.dec))}</span>`;
 }
 function histCell(inst) {
+  if (inst.partial && inst.status === 'ready') return `<span class="small">تکمیل تاریخچه <span class="prog"><i style="width:${Math.round((inst.progress || 0) * 100)}%"></i></span></span>`;
   const h = inst.hist;
   if (!h) return '<span class="mut">–</span>';
   const one = (x, lab) => x && x.triggered ? `<div>${lab}${n(x.target + '/' + x.triggered)} · <span class="num ${x.avgRnet > 0 ? 'pos' : 'neg'}">${rr(x.avgRnet)}</span></div>` : `<div class="mut">${lab}–</div>`;
@@ -1432,7 +1508,9 @@ function renderBoard() {
     list.sort((x, y) => rank(x) - rank(y));
     const fk = ui.focus[mkt];
     const errs = Array.from(new Set(list.filter(i => i.status === 'error' && !i.bars.length).map(i => i.err)));
-    body = (errs.length ? `<div class="notice" style="padding-bottom:0">${errs.map(e => `<p class="status-line" style="margin:0">${esc(e)}</p>`).join('')}<div class="row-btns" style="margin-top:0"><button type="button" class="btn sm" data-diag="1">عیب‌یابی اتصال</button></div></div>` : '') + `<div class="board-wrap"><table class="board"><thead><tr>
+    const filling = list.filter(i => i.partial && i.status === 'ready').length;
+    const fillNote = filling && mkt === 'crypto' && cfg.crypto.source === 'nobitex' ? (`تاریخچه‌ی ${filling} نماد در حال تکمیل است. نوبیتکس فقط ۲۰ درخواست در دقیقه اجازه می‌دهد، پس بار اول چند دقیقه طول می‌کشد؛ دفعه‌های بعد از حافظه‌ی همین مرورگر خوانده می‌شود. وضعیت امروز و قیمت‌ها همین حالا درست‌اند.`) : '';
+    body = (fillNote ? `<div class="notice" style="padding-bottom:0"><p class="status-line" style="margin:0">${fillNote}</p></div>` : '') + (errs.length ? `<div class="notice" style="padding-bottom:0">${errs.map(e => `<p class="status-line" style="margin:0">${esc(e)}</p>`).join('')}<div class="row-btns" style="margin-top:0"><button type="button" class="btn sm" data-diag="1">عیب‌یابی اتصال</button></div></div>` : '') + `<div class="board-wrap"><table class="board"><thead><tr>
       <th>نماد</th><th>وضعیت قانون</th><th>قیمت</th><th>تغییر جلسه</th><th>امروز</th><th>فاصله</th><th>ستاپ روزانه</th><th title="حد سود اول / دفعات فعال شدن · میانگین R خالص">کارنامه‌ی گذشته</th>
       </tr></thead><tbody>${list.map(inst => {
         const a = inst.a || {};
@@ -1609,7 +1687,7 @@ function renderFocus() {
         case 'late': return `سیگنال ${n(c.v)} کندل پیش بود؛ ورود دیرتر یک معامله‌ی دیگر است`;
         case 'stop': return c.level === 'pass' ? 'حد ضرر سمت درست ورود است' : 'حد ضرر سمت اشتباه است';
         case 'short': return c.level === 'pass' ? 'سمت معامله مجاز است' : 'فروش در این بازار خاموش است';
-        case 'size': return c.level === 'pass' ? 'حجم معامله حساب شد' : ({ zero: 'حجم صفر شد: حد ضرر نسبت به سقف ضرر خیلی دور است', min_order: 'سفارش کمتر از حداقل 5 دلار صرافی است', cross: 'تبدیل این جفت به دلار پشتیبانی نمی‌شود', moved: 'قیمت به حد سود رسیده؛ حرکت تمام شده', stop_side: 'حد ضرر سمت اشتباه است' }[c.why] || 'حجم قابل محاسبه نیست');
+        case 'size': return c.level === 'pass' ? 'حجم معامله حساب شد' : ({ zero: 'حجم صفر شد: حد ضرر نسبت به سقف ضرر خیلی دور است', min_order: `سفارش کمتر از حداقل ${cfg.minOrderUSD} دلار صرافی است`, cross: 'تبدیل این جفت به دلار پشتیبانی نمی‌شود', moved: 'قیمت به حد سود رسیده؛ حرکت تمام شده', stop_side: 'حد ضرر سمت اشتباه است' }[c.why] || 'حجم قابل محاسبه نیست');
         case 'loss': return `ضرر در حد ضرر ${n(usd(c.v))} از سقف ${n(usd(c.lim))}`;
         case 'rr': return `سود به ضرر خالص ${n(c.v.toFixed(2))} (حداقل ${n(c.lim)})`;
         case 'daily_loss': return `ریسک امروز با این معامله ${n(usd(c.v))} از سقف ${n(usd(c.lim))}`;
@@ -1631,7 +1709,7 @@ function renderFocus() {
       <p class="small">قبول شدن یعنی قانون‌های خودت رعایت شده، نه این‌که معامله خوب است.</p>`;
     if (canTake) {
       const verb = plan.long ? 'خرید' : 'فروش';
-      ticketText = `${verb} ${sz.units.toLocaleString('en-US', { maximumFractionDigits: 8 })} ${market === 'crypto' ? inst.base : inst.base === 'XAU' ? 'اونس' : 'واحد'}${sz.lots != null ? ` (${sz.lots.toFixed(2)} لات)` : ''} ${inst.label} به قیمت بازار، حدود ${fmtP(a.price, dec)}
+      ticketText = `${verb} ${sz.units.toLocaleString('en-US', { maximumFractionDigits: 8 })} ${market === 'crypto' ? inst.base : inst.base === 'XAU' ? 'اونس' : 'واحد'}${sz.lots != null ? ` (${sz.lots.toFixed(2)} لات)` : ''} ${inst.label}${market === 'crypto' ? ' در ' + source.crypto : ''} به قیمت بازار، حدود ${fmtP(a.price, dec)}
 حد ضرر (Stop-loss): ${fmtP(plan.stop, dec)}
 حد سود (Take-profit): ${fmtP(plan.target, dec)}
 خروج اجباری: ساعت ${tm(plan.exitAt)} به وقت تو، سود یا ضرر
@@ -1742,7 +1820,7 @@ function drawFocus(force) {
   for (let i = 0; i <= L; i += every) {
     const xx = pl + i * cw / L;
     g.strokeStyle = col('--line2'); g.beginPath(); g.moveTo(Math.round(xx) + 0.5, pt); g.lineTo(Math.round(xx) + 0.5, pt + ch); g.stroke();
-    g.fillStyle = col('--faint'); g.fillText(tm(a.ph.start + i * 300000), xx, pt + ch + 7);
+    g.fillStyle = col('--faint'); g.textAlign = i === 0 ? 'left' : 'center'; g.fillText(tm(a.ph.start + i * 300000), xx, pt + ch + 7);
   }
   // opening range band
   if (rng) {
@@ -1853,7 +1931,7 @@ function renderJournal() {
 }
 
 // ------------------------------------------------------------------ settings dialog
-const FIELDS = ['account', 'dailyTarget', 'maxLoss', 'maxDailyLoss', 'maxTrades', 'minRR', 'cashBufferPct', 'maxPositionPct', 'maxLeverage',
+const FIELDS = ['account', 'dailyTarget', 'maxLoss', 'maxDailyLoss', 'maxTrades', 'minRR', 'cashBufferPct', 'maxPositionPct', 'maxLeverage', 'minOrderUSD',
   'orMinutes', 'stopRule', 'atrK', 'stopPct', 'targetR', 'tdKey', 'historyDays', 'replays', 'seed', 'sound',
   'crypto.symbols', 'crypto.session', 'crypto.costPct', 'crypto.allowShort', 'crypto.source', 'forex.symbols', 'forex.session', 'forex.costPct', 'forex.allowShort',
   'custom.tz', 'custom.open', 'custom.hours'];
@@ -1967,17 +2045,28 @@ $('#diagRun').onclick = () => runDiag();
 $('#diagCopy').onclick = () => { try { navigator.clipboard.writeText(diagText).then(() => toast('نتیجه کپی شد.'), () => selectText($('#diagBody'))); } catch (e) { selectText($('#diagBody')); } };
 
 // ------------------------------------------------------------------ orchestration
-async function loadMarket(mkt, force) {
+// loads run one after another per market, so two clicks never fetch the same history twice
+const loadChain = { crypto: Promise.resolve(), forex: Promise.resolve() };
+function loadMarket(mkt, force) {
+  loadChain[mkt] = loadChain[mkt].then(() => runLoad(mkt, force)).catch(() => {});
+  return loadChain[mkt];
+}
+async function runLoad(mkt, force) {
   syncInsts(mkt);
   scheduleRender();
   if (mkt === 'forex' && !cfg.tdKey) return;
   const list = Array.from(insts[mkt].values()).filter(i => force || i.status === 'idle' || i.status === 'error' || (i.daysLoaded || 0) < cfg.historyDays);
   list.sort((x, y) => (y.key === ui.focus[mkt]) - (x.key === ui.focus[mkt]));
+  // first the newest page of every symbol, so the board fills fast; then each history, focus first
   let idx = 0;
   const worker = async () => {
-    while (idx < list.length) { const inst = list[idx++]; await loadHistory(inst); analyze(inst); checkAlerts(); scheduleRender(); }
+    while (idx < list.length) { const inst = list[idx++]; await loadHead(inst); analyze(inst); checkAlerts(); scheduleRender(); }
   };
   await Promise.all(Array.from({ length: mkt === 'crypto' ? 3 : 1 }, worker));
+  list.sort((x, y) => (y.key === ui.focus[mkt]) - (x.key === ui.focus[mkt]));
+  for (const inst of list) {
+    if (inst.status === 'ready' && inst.partial) { await backfill(inst); analyze(inst); checkAlerts(); scheduleRender(); }
+  }
 }
 let refreshing = { crypto: false, forex: false };
 async function refreshMarket(mkt) {
@@ -1986,8 +2075,11 @@ async function refreshMarket(mkt) {
   try {
     const list = Array.from(insts[mkt].values());
     for (const inst of list) {
-      if (inst.status === 'ready') await refreshLatest(inst);
-      else if (inst.status === 'error') await loadHistory(inst);
+      if (inst.status === 'ready') {
+        // while its history is still filling, a symbol shares the rate limit: refresh it once a minute
+        if (inst.partial && Date.now() - (inst.lastFetch || 0) < 60000) continue;
+        await refreshLatest(inst);
+      } else if (inst.status === 'error') loadMarket(mkt);
       analyze(inst);
     }
     checkAlerts();

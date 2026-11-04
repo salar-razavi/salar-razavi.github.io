@@ -220,6 +220,21 @@ details.skipped summary{cursor:pointer;color:var(--muted);font-size:13px}
 details.skipped ul{margin:6px 0 0;padding-inline-start:18px;font-size:13px}
 .crit{padding:0 18px 14px}
 
+/* the five picks */
+.picks{display:flex;flex-direction:column;gap:10px;padding:12px 18px 4px}
+.pick{display:grid;grid-template-columns:34px minmax(120px,auto) minmax(0,1fr) auto;gap:8px 16px;align-items:center;padding:12px 14px;border:1px solid var(--line);border-radius:10px;background:var(--panel)}
+.pick .rk{display:grid;place-items:center;width:30px;height:30px;border-radius:50%;background:var(--accent-soft);color:var(--accent);font-family:var(--f-num);font-weight:700}
+.pick .who b{display:block;font-size:16px;font-weight:800}
+.pick .nums{display:flex;flex-wrap:wrap;gap:4px 16px;font-size:13px;min-width:0}
+.pick .nums span{white-space:nowrap}
+.pick .why{display:flex;flex-wrap:wrap;gap:4px 10px;font-size:12px;flex-basis:100%}
+.pick .acts{display:flex;gap:6px;flex-wrap:wrap}
+.q{display:inline-block;font-size:11px;font-weight:700;padding:1px 8px;border-radius:99px;margin-top:4px}
+.q.s{background:var(--up-soft);color:var(--up)} .q.m{background:var(--warn-soft);color:var(--warn)} .q.w{background:var(--down-soft);color:var(--down)} .q.r{background:var(--up);color:var(--on-accent)}
+.bt{margin:12px 18px 0;padding:10px 12px;border-radius:8px;font-size:14px;border-inline-start:3px solid var(--faint);background:var(--sunk)}
+.bt.good{border-color:var(--up)} .bt.bad{border-color:var(--down)} .bt.mid{border-color:var(--warn)}
+@media (max-width: 820px){ .pick{grid-template-columns:34px minmax(0,1fr)} .pick .nums,.pick .acts{grid-column:1/-1} }
+
 /* paper account */
 .paper-grid{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);border-top:1px solid var(--line2)}
 .paper-grid>div{padding:14px 18px;min-width:0}
@@ -339,6 +354,7 @@ a{color:var(--accent)}
 </header>
 
 <main class="wrap">
+  <section class="card" id="topCard" aria-labelledby="topH"></section>
   <section class="card" id="sugCard" aria-labelledby="sugH"></section>
   <div class="stack" id="viewDash">
     <section class="card" id="realityCard" aria-labelledby="realityH"></section>
@@ -1643,11 +1659,13 @@ function put(id, html) { if (last[id] !== html) { last[id] = html; document.getE
 function renderAll() {
   insts[market].forEach(inst => { if (inst.bars.length || inst.status !== 'idle') analyze(inst); });
   renderTop();
+  renderTop5();
   renderSug();
   $('#viewDash').hidden = ui.view !== 'dash';
   $('#viewPaper').hidden = ui.view !== 'paper';
   $('#viewGuide').hidden = ui.view !== 'guide';
   $('#sugCard').hidden = ui.view === 'guide';
+  $('#topCard').hidden = ui.view === 'guide';
   if (ui.view === 'dash') { renderReality(); renderBoard(); renderFocus(); syncLogSymbols(); renderScore(); renderJournal(); }
   else if (ui.view === 'paper') renderPaper();
   else renderGuide();
@@ -2328,7 +2346,7 @@ function sugItemHTML(g, mkt, tier) {
 }
 function renderSug() {
   const mkt = ui.view === 'paper' ? 'crypto' : market;
-  if (mkt === 'forex' && !cfg.tdKey) { put('sugCard', `<div class="sec-h"><h2 id="sugH">پیشنهادهای الان</h2></div><p class="sug-empty">برای فارکس اول کلید Twelve Data لازم است.</p>`); return; }
+  if (mkt === 'forex' && !cfg.tdKey) { put('sugCard', `<div class="sec-h"><h2 id="sugH">سیگنال‌های قانون</h2></div><p class="sug-empty">برای فارکس اول کلید Twelve Data لازم است.</p>`); return; }
   const list = Array.from(insts[mkt].values());
   const ready = list.filter(i => i.status === 'ready');
   const { A, B, skip, watch } = buildSuggestions(mkt);
@@ -2357,10 +2375,269 @@ function renderSug() {
     if (watch.length) body += `<div class="watch"><span>نزدیک به فعال شدن:</span>${watch.map(w => `<span><b>${esc(w.inst.label)}</b> ${n((w.d * 100).toFixed(2) + '%')} تا ${w.side === 'buy' ? 'سقف' : 'کف'} رنج</span>`).join('')}</div>`;
     if (skip.length) body += `<details class="skipped"><summary>${n(skip.length)} نماد فعال شده ولی پیشنهاد نمی‌شود؛ دلیلش را ببین</summary><ul>${skip.map(x => `<li><b>${esc(x.inst.label)}</b> ${x.plan.long ? '↑' : '↓'}: ${x.why.join('؛ ')}</li>`).join('')}</ul></details>`;
   }
-  const html = `<div class="sec-h"><h2 id="sugH">پیشنهادهای الان</h2><p>${mkt === 'crypto' ? esc(source.crypto) : 'فارکس'} · خودکار به‌روز می‌شود${last ? ` · آخرین داده ${n(tm(last))}` : ''}</p></div>${body}
+  const html = `<div class="sec-h"><h2 id="sugH">سیگنال‌های قانون</h2><p>${mkt === 'crypto' ? esc(source.crypto) : 'فارکس'} · خودکار به‌روز می‌شود${last ? ` · آخرین داده ${n(tm(last))}` : ''}</p></div>${body}
     <p class="small crit">هر پیشنهاد اول باید از همه‌ی قانون‌های ریسک تو رد شود (سقف ضرر، نسبت سود به ضرر، سقف روزانه، پنجره‌ی ورود، تازه بودن داده)؛ این‌ها در هیچ سطحی کم نمی‌شوند. بعد پنج شرط کیفیت شمرده می‌شود: سیگنال تازه (حداکثر ۱ کندل)، حداقل ${n(SUG_MIN_N)} بار نمونه‌ی گذشته، میانگین گذشته‌ی مثبت بعد از کارمزد، میانگین شبیه‌سازی مثبت، و قیمت هم‌جهت با میانگین 20 روزه. پیشنهادهای ۸۰٪ یکی از این پنج را ندارند، پس طبق تعریف ضعیف‌ترند؛ نتیجه‌ی هر سطح جدا در حساب مجازی ثبت می‌شود تا ببینی ارزشش را دارد یا نه. این خروجی یک قانون است، نه پیش‌بینی و نه توصیه‌ی مالی.</p>`;
   put('sugCard', html);
 }
+
+// ------------------------------------------------------------------ the five picks: always five, best first
+// A plain, untuned ranking of every liquid Nobitex market with complete history: the average of three percentile
+// ranks across the market (20-day trend, 7-day return, 24-hour return). A symbol with a full rule signal (5 of 5)
+// goes first, one with 4 of 5 next. Each pick gets a buy-now plan: stop 1.5 hourly ATRs below the ask (at least
+// four times the trading cost), target at the user's R, exit at the session's flat-by time (or the next one).
+// The same ranking is replayed on every past day at this same clock time, with real bars, so the card can say
+// whether its top five did better than buying everything, or lost money anyway.
+const TOP_N = 5;
+function closedIdx(bars, t) {           // index of the last bar closed by time t, or -1
+  let lo = 0, hi = bars.length - 1, ans = -1;
+  while (lo <= hi) { const m = (lo + hi) >> 1; if (bars[m].t + MIN5 <= t) { ans = m; lo = m + 1; } else hi = m - 1; }
+  return ans;
+}
+function prepDays(inst) {
+  const k = inst.bars.length + '|' + (inst.bars.length ? inst.bars[inst.bars.length - 1].t : 0);
+  if (inst._dk === k) return;
+  const days = new Map();
+  inst.bars.forEach(b => days.set(Math.floor(b.t / DAY), b.c));
+  inst.dayKeys = Array.from(days.keys()).sort((x, y) => x - y);
+  const vals = inst.dayKeys.map(d => days.get(d)), pre = [0];
+  vals.forEach(v => pre.push(pre[pre.length - 1] + v));
+  inst.dayPre = pre; inst._dk = k;
+}
+function featuresAt(inst, t, pNow) {
+  const bars = inst.bars, i = closedIdx(bars, t);
+  if (i < 0 || t - bars[i].t > 6 * 3600000) return null;
+  const p = pNow || bars[i].c;
+  const i24 = closedIdx(bars, t - DAY), i7 = closedIdx(bars, t - 7 * DAY);
+  if (i24 < 0 || i7 < 0) return null;
+  prepDays(inst);
+  const dayT = Math.floor(t / DAY);
+  let lo = 0, hi = inst.dayKeys.length;
+  while (lo < hi) { const m = (lo + hi) >> 1; if (inst.dayKeys[m] < dayT) lo = m + 1; else hi = m; }
+  if (lo < 20) return null;
+  const ma20 = (inst.dayPre[lo] - inst.dayPre[lo - 20]) / 20;
+  const hh = new Array(24).fill(null), t0 = t - DAY;
+  for (let k = i24 + 1; k <= i; k++) {
+    const b = bars[k], h = Math.min(23, Math.floor((b.t - t0) / 3600000)), x = hh[h];
+    if (!x) hh[h] = { h: b.h, l: b.l, c: b.c }; else { if (b.h > x.h) x.h = b.h; if (b.l < x.l) x.l = b.l; x.c = b.c; }
+  }
+  let prev = bars[i24].c, sum = 0, cnt = 0;
+  hh.forEach(x => { if (!x) return; sum += Math.max(x.h - x.l, Math.abs(x.h - prev), Math.abs(x.l - prev)); cnt++; prev = x.c; });
+  if (cnt < 8) return null;
+  return { p, r24: p / bars[i24].c - 1, r7: p / bars[i7].c - 1, trend: p / ma20 - 1, ma20, atr: sum / cnt / p };
+}
+function scoreRows(rows) {
+  ['r7', 'r24', 'trend'].forEach(k => {
+    const sorted = rows.map(r => r.f[k]).sort((x, y) => x - y);
+    rows.forEach(r => {
+      let lo = 0, hi = sorted.length;
+      while (lo < hi) { const m = (lo + hi) >> 1; if (sorted[m] < r.f[k]) lo = m + 1; else hi = m; }
+      r['p_' + k] = rows.length > 1 ? lo / (rows.length - 1) : 0.5;
+    });
+  });
+  rows.forEach(r => { r.score = (r.p_r7 + r.p_r24 + r.p_trend) / 3; });
+}
+// when a trade bought now has to be out: the session's flat-by, or 23:30 your time (tether market closes),
+// or else the next session's flat-by
+function pickHorizon(now) {
+  const S = sessFor('crypto'), W = windowFor(S), ph = phaseOf(now, S), off = (W.exitLast + 1) * MIN5;
+  const flat = ph.start + off;
+  if (ph.phase === 'open' && flat - now >= 3600000) return { exitAt: flat, note: 'خروج اجباری جلسه' };
+  const d = new Date(now); d.setHours(23, 30, 0, 0);
+  if (d.getTime() - now >= 3600000 && ph.phase !== 'before') return { exitAt: d.getTime(), note: 'بسته شدن بازار تتر/تومان' };
+  const next = ph.phase === 'open' ? (phaseOf(flat + 3600000, S).nextOpen || flat + DAY) + off : (ph.nextOpen || ph.start + DAY) + off;
+  return { exitAt: Math.min(next, now + DAY), note: 'خروج اجباری جلسه‌ی بعد' };
+}
+const costPctOf = inst => (cfg.crypto.costPct || 0) + (inst.spread || 0);
+function pickStop(entry, f, costPct, hours) {
+  const stopPct = Math.max(1.5 * f.atr * Math.max(1, Math.sqrt(hours / 6)), 4 * costPct / 100, 0.004);
+  const dec = E.decimalsFor(entry), stop = E.roundAway(entry * (1 - stopPct), true, dec);
+  return { stop, target: E.targetFrom(entry, stop, +cfg.targetR, true, dec), dec };
+}
+// what really happened to a buy at time t, bar by bar (stop checked first; a gap through the stop fills at the open)
+function forwardR(inst, t, entry, stop, target, H, costR) {
+  const bars = inst.bars, end = t + H, risk = entry - stop;
+  let exit = entry, out = 'close', k = closedIdx(bars, t) + 1;
+  for (; k < bars.length && bars[k].t + MIN5 <= end; k++) {
+    const b = bars[k];
+    if (b.l <= stop) { out = 'stop'; exit = Math.min(stop, b.o); break; }
+    if (b.h >= target) { out = 'target'; exit = target; break; }
+    exit = b.c;
+  }
+  return { R: (exit - entry) / risk - costR, out };
+}
+function backtestTop(cands, now, H, hours) {
+  const top = [], all = [];
+  let days = 0;
+  for (let d = 1; d <= 60; d++) {
+    const t = now - d * DAY;
+    if (t + H > now) continue;
+    const rows = [];
+    cands.forEach(inst => { const f = featuresAt(inst, t); if (f) rows.push({ inst, f }); });
+    if (rows.length < 8) continue;
+    days++;
+    scoreRows(rows);
+    rows.sort((x, y) => y.score - x.score);
+    rows.forEach((r, i) => {
+      const c = costPctOf(r.inst), pl = pickStop(r.f.p, r.f, c, hours), costR = (c / 100) / ((r.f.p - pl.stop) / r.f.p);
+      const res = forwardR(r.inst, t, r.f.p, pl.stop, pl.target, H, costR);
+      all.push(res.R);
+      if (i < TOP_N) top.push(res.R);
+    });
+  }
+  const avg = a => a.length ? a.reduce((x, y) => x + y, 0) / a.length : null;
+  return { days, nTop: top.length, top: avg(top), all: avg(all), winTop: top.length ? top.filter(x => x > 0).length / top.length : null };
+}
+// buy-now Time Machine on a 24-hour clock: each 5-minute step is drawn from this coin's own bars at the same time of day
+function pool24(inst) {
+  const k = inst.bars.length + '|' + (inst.bars.length ? inst.bars[inst.bars.length - 1].t : 0);
+  if (inst._p24k === k) return inst._p24;
+  const byDay = new Map();
+  fillGaps(inst.bars, 24, null).forEach(b => {
+    const d = Math.floor(b.t / DAY);
+    let arr = byDay.get(d);
+    if (!arr) byDay.set(d, arr = new Array(288));
+    arr[Math.floor((b.t % DAY) / MIN5)] = b;
+  });
+  const pool = Array.from({ length: 288 }, () => []);
+  byDay.forEach((arr, d) => {
+    const prev = byDay.get(d - 1);
+    for (let i = 0; i < 288; i++) {
+      const b = arr[i], pb = i ? arr[i - 1] : prev && prev[287];
+      if (b && pb) pool[i].push([b.h / pb.c, b.l / pb.c, b.c / pb.c]);
+    }
+  });
+  inst._p24 = pool; inst._p24k = k;
+  return pool;
+}
+function simNow(inst, entry, stop, target, t0, H, costR) {
+  const pool = pool24(inst), rnd = E.mulberry32(+cfg.seed || 19), steps = Math.max(1, Math.round(H / MIN5)), slot0 = Math.floor((t0 % DAY) / MIN5);
+  const N = 4000, risk = entry - stop, rT = (target - entry) / risk;
+  let cT = 0, cS = 0, sum = 0;
+  for (let r = 0; r < N; r++) {
+    let p = entry, out = 0;
+    for (let j = 1; j <= steps; j++) {
+      let row = pool[(slot0 + j + Math.floor(rnd() * 5) - 2 + 288 * 2) % 288];
+      if (!row.length) continue;
+      const b = row[Math.floor(rnd() * row.length)];
+      if (p * b[1] <= stop) { out = -1; break; }
+      if (p * b[0] >= target) { out = 1; break; }
+      p *= b[2];
+    }
+    if (out === 1) { cT++; sum += rT; } else if (out === -1) { cS++; sum -= 1; } else sum += (p - entry) / risk;
+  }
+  return { pT: cT / N, pS: cS / N, avgR: sum / N - costR };
+}
+const topCache = { at: 0, key: '', res: null, bt: null, btAt: 0, btKey: '', mc: new Map() };
+function buildTop(now) {
+  const cands = Array.from(insts.crypto.values()).filter(i => i.tracked && i.status === 'ready' && !i.partial && liquidity(i).ok && i.bars.length);
+  const hz = pickHorizon(now), H = hz.exitAt - now, hours = H / 3600000;
+  const sug = buildSuggestions('crypto'), tierOfKey = new Map();
+  sug.A.forEach(g => tierOfKey.set(g.inst.key, { tier: 'A', g })); sug.B.forEach(g => { if (!tierOfKey.has(g.inst.key)) tierOfKey.set(g.inst.key, { tier: 'B', g }); });
+  const rows = [];
+  cands.forEach(inst => {
+    const ask = askPx(inst), f = featuresAt(inst, now, ask);
+    if (f) rows.push({ inst, f, ask });
+  });
+  if (rows.length) scoreRows(rows);
+  rows.forEach(r => { const t = tierOfKey.get(r.inst.key); r.rule = t || null; r.rank = r.score + (t ? (t.tier === 'A' ? 2 : 1) : 0); });
+  rows.sort((x, y) => y.rank - x.rank);
+  const picks = rows.slice(0, TOP_N).map(r => {
+    const inst = r.inst, c = costPctOf(inst);
+    let plan;
+    if (r.rule && !r.rule.g.plan.none) {
+      const g = r.rule.g;
+      plan = { stop: g.plan.stop, target: g.plan.target, exitAt: g.plan.exitAt, dec: g.plan.dec, src: 'rule' };
+    } else plan = Object.assign(pickStop(r.ask, r.f, c, hours), { exitAt: hz.exitAt, src: 'rank' });
+    plan.entry = r.ask; plan.side = 'buy'; plan.long = true;
+    plan.costR = (c / 100) / ((plan.entry - plan.stop) / plan.entry);
+    const sz = E.size({ side: 'buy', entry: plan.entry, stop: plan.stop, target: plan.target }, { account: cfg.account, maxLoss: cfg.maxLoss, maxPositionPct: cfg.maxPositionPct,
+      cashBufferPct: cfg.cashBufferPct, maxLeverage: cfg.maxLeverage, costPct: cfg.crypto.costPct, minOrderUSD: cfg.minOrderUSD }, { cls: 'crypto', base: inst.base, quote: inst.quote, contract: 1 });
+    return Object.assign(r, { plan, sz });
+  });
+  return { picks, cands, nRanked: rows.length, hz, H, hours };
+}
+function renderTop5() {
+  if (cfg.crypto.source !== 'nobitex' && !insts.crypto.size) { put('topCard', ''); return; }
+  const now = Date.now(), slot = Math.floor(now / 60000);
+  const ready = Array.from(insts.crypto.values()).filter(i => i.tracked && i.status === 'ready' && !i.partial).map(i => i.key).join(',');
+  if (topCache.key !== slot + '|' + ready + '|' + statsAt) { topCache.res = buildTop(now); topCache.key = slot + '|' + ready + '|' + statsAt; }
+  const T = topCache.res;
+  // the replay of the same ranking on past days, refreshed every 15 minutes
+  const btKey = ready + '|' + Math.round(T.H / 1800000) + '|' + cfg.targetR + '|' + cfg.crypto.costPct;
+  if (T.cands.length >= 8 && (topCache.btKey !== btKey || now - topCache.btAt > 15 * 60000)) {
+    topCache.btKey = btKey; topCache.btAt = now;
+    setTimeout(() => { try { topCache.bt = backtestTop(T.cands, Date.now(), T.H, T.hours); } catch (e) { topCache.bt = null; } scheduleRender(); }, 30);
+  }
+  const bt = T.cands.length >= 8 ? topCache.bt : null;
+  // the buy-now Time Machine for each pick, one at a time
+  T.picks.forEach(pk => {
+    const k = pk.inst.key + '|' + Math.floor(now / 300000) + '|' + pk.plan.stop + '|' + pk.plan.target + '|' + pk.plan.exitAt;
+    pk.mcKey = k;
+    if (!topCache.mc.has(k)) {
+      topCache.mc.set(k, null);
+      setTimeout(() => { try { topCache.mc.set(k, simNow(pk.inst, pk.plan.entry, pk.plan.stop, pk.plan.target, Date.now(), pk.plan.exitAt - Date.now(), pk.plan.costR)); } catch (e) { topCache.mc.set(k, { err: 1 }); } scheduleRender(); }, 40);
+    }
+  });
+  if (topCache.mc.size > 200) topCache.mc.clear();
+  const filling = Array.from(insts.crypto.values()).filter(i => i.tracked && i.partial).length;
+  let head = '';
+  if (bt && bt.nTop >= 25) {
+    const cls = bt.top > 0 && bt.top > bt.all ? 'good' : bt.top <= 0 ? 'bad' : 'mid';
+    const msg = bt.top <= 0
+      ? `در ${n(bt.days)} روز گذشته، اگر هر روز همین ساعت ۵ تای اول همین رتبه‌بندی را با همین برنامه خریده بودی، به‌طور میانگین <b>ضرر</b> می‌کردی: ${n(rr(bt.top))} در هر معامله (${n(pc(bt.winTop, 0))} برد). یعنی «بهترین‌ها» هم در گذشته معمولاً ضرر داده‌اند؛ خرید نکردن بهتر بوده.`
+      : bt.top > bt.all
+        ? `در ${n(bt.days)} روز گذشته، ۵ تای اول همین ساعت به‌طور میانگین ${n(rr(bt.top))} در هر معامله داده‌اند (${n(pc(bt.winTop, 0))} برد)، در برابر ${n(rr(bt.all))} برای خرید همه‌ی نمادها. کمی بهتر از تصادف بوده، نه تضمین.`
+        : `در ${n(bt.days)} روز گذشته، ۵ تای اول همین ساعت (${n(rr(bt.top))} در هر معامله) از خرید همه‌ی نمادها (${n(rr(bt.all))}) بهتر نبوده‌اند؛ این رتبه‌بندی برتری قابل اتکایی نشان نمی‌دهد.`;
+    head = `<p class="bt ${cls}">${msg}</p>`;
+  } else if (T.cands.length) head = `<p class="bt">هنوز داده‌ی کافی برای سنجیدن این روش روی روزهای گذشته نیست${filling ? ' (تاریخچه در حال تکمیل است)' : ''}.</p>`;
+  const QL = { r: 'سیگنال کامل قانون', s: 'قوی', m: 'متوسط', w: 'ضعیف' };
+  const picksHTML = T.picks.map((pk, i) => {
+    const { inst, f, plan, sz } = pk, mc = topCache.mc.get(pk.mcKey);
+    const pos = [f.trend > 0, f.r7 > 0, f.r24 > 0, mc && !mc.err ? mc.avgR > 0 : null];
+    const good = pos.filter(x => x === true).length;
+    const q = pk.rule && pk.rule.tier === 'A' ? 'r' : good >= 4 ? 's' : good === 3 ? 'm' : 'w';
+    const chip = (ok, txt) => `<span class="${ok ? 'pos' : 'neg'}">${ok ? '✓' : '✕'} ${txt}</span>`;
+    const why = [chip(f.trend > 0, `${f.trend > 0 ? 'بالای' : 'زیر'} میانگین ۲۰ روزه (${spc(f.trend, 1)})`), chip(f.r7 > 0, `۷ روز ${spc(f.r7, 1)}`), chip(f.r24 > 0, `۲۴ ساعت ${spc(f.r24, 1)}`)];
+    if (pk.rule) why.unshift(`<span class="pos">★ قانون شکست رنج: ${pk.rule.tier === 'A' ? '۵ از ۵ شرط' : '۴ از ۵ شرط'}</span>`);
+    const mcTxt = !mc ? 'شبیه‌سازی…' : mc.err ? '' : `شبیه‌سازی: اول حد سود ${n(pc(mc.pT, 0))}، اول حد ضرر ${n(pc(mc.pS, 0))}، میانگین <span class="num ${mc.avgR > 0 ? 'pos' : 'neg'}">${rr(mc.avgR)}</span>`;
+    const open = paper.positions.some(p => p.key === inst.key);
+    const szOk = sz && !sz.refuse && sz.units > 0;
+    return `<div class="pick"><span class="rk">${n(i + 1)}</span>
+      <div class="who"><b>${esc(inst.label)}</b><span class="q ${q}">${QL[q]}</span></div>
+      <div class="nums"><span>ورود ≈ ${n(fmtP(plan.entry, plan.dec))}</span><span>حد ضرر <span class="num neg">${fmtP(plan.stop, plan.dec)}</span> <span class="small">(${n(pc((plan.entry - plan.stop) / plan.entry, 1))})</span></span><span>حد سود <span class="num pos">${fmtP(plan.target, plan.dec)}</span></span>
+        ${szOk ? `<span>حجم ${n(sz.units.toLocaleString('en-US', { maximumFractionDigits: 8 }))} (${n(usd(sz.notional, 0))})</span><span>ضرر ممکن <span class="num neg">${usd(-sz.lossAtStop)}</span></span><span>سود ممکن <span class="num pos">${usd(sz.gainAtTarget)}</span></span>` : `<span class="neg">با سقف ضرر تو حجم معتبری نمی‌شود</span>`}
+        <span>خروج تا ${n(tm(plan.exitAt))}</span><span>${mcTxt}</span>
+        <span class="why">${why.join('')}</span></div>
+      <div class="acts">${open ? `<button type="button" class="btn ghost sm" data-view-go="paper">روی حساب مجازی باز است</button>` : szOk ? `<button type="button" class="btn sm" data-top-paper="${esc(inst.key)}">باز کردن مجازی</button>` : ''}${szOk ? `<button type="button" class="btn ghost sm" data-top-log="${esc(inst.key)}">خریدم؛ ثبتش کن</button>` : ''}<button type="button" class="btn ghost sm" data-focus="${esc(inst.key)}" data-mkt="crypto">جزئیات</button></div></div>`;
+  }).join('');
+  let body;
+  if (!T.picks.length) body = `<p class="sug-empty">${filling ? `تاریخچه‌ی نمادها در حال تکمیل است؛ اولین انتخاب‌ها چند دقیقه‌ی دیگر می‌آیند (${n(filling)} نماد در صف).` : 'منتظر داده…'}</p>`;
+  else body = `<div class="picks">${picksHTML}</div>${T.picks.length < TOP_N ? `<p class="sug-empty">فعلاً ${n(T.picks.length)} نماد تاریخچه‌ی کامل دارد؛ بقیه با کامل شدن تاریخچه اضافه می‌شوند.</p>` : ''}`;
+  const html = `<div class="sec-h"><h2 id="topH">۵ انتخاب برتر الان</h2><p>${esc(source.crypto)} · از بین ${n(T.nRanked)} بازار پرمعامله با تاریخچه‌ی کامل · خروج تا ${n(tm(T.hz.exitAt))} (${esc(T.hz.note)}) · هر دقیقه به‌روز می‌شود</p></div>
+    ${head}${body}
+    <p class="small crit">همیشه پنج نماد نشان داده می‌شود، حتی وقتی هیچ‌کدام خوب نیست؛ برای همین برچسب کیفیت هر کدام و نتیجه‌ی همین روش در روزهای گذشته کنارش آمده. رتبه‌بندی ساده و ثابت است: روند ۲۰ روزه، بازده ۷ روزه و بازده ۲۴ ساعته نسبت به بقیه‌ی بازار؛ نمادی که قانون شکست رنج برایش فعال شده، جلوتر می‌آید. حجم هر کدام طوری حساب شده که اگر حد ضرر بخورد، ضررت از ${n(usd(cfg.maxLoss))} بیشتر نشود. ولی سقف تو ${n(cfg.maxTrades)} معامله و ${n(usd(cfg.maxDailyLoss, 0))} ریسک در روز است؛ پس همه‌ی پنج تا را نخر. این پیش‌بینی نیست و توصیه‌ی مالی هم نیست.</p>`;
+  put('topCard', html);
+}
+document.addEventListener('click', e => {
+  const tp = e.target.closest('[data-top-paper]'), tl = e.target.closest('[data-top-log]');
+  if (!tp && !tl) return;
+  const key = (tp || tl).dataset[tp ? 'topPaper' : 'topLog'];
+  const pk = topCache.res && topCache.res.picks.find(x => x.inst.key === key);
+  if (!pk) { toast('این انتخاب دیگر در لیست نیست.'); return; }
+  if (tp) {
+    const err = paperOpen(pk.inst, pk.sz.units, pk.plan.stop, pk.plan.target, pk.plan.exitAt, pk.rule ? pk.rule.tier : 'T');
+    if (err) toast(esc(err), 'down');
+    scheduleRender();
+    return;
+  }
+  if (market !== 'crypto') { market = 'crypto'; store.set('dtw.market', market); }
+  setView('dash');
+  Object.keys(last).forEach(k => delete last[k]);
+  renderAll();
+  syncLogSymbols();
+  logPrefill(pk.inst, pk.plan, pk.sz);
+  setTimeout(() => { L$('logCard').scrollIntoView({ block: 'start' }); L$('l_price').focus({ preventScroll: true }); }, 80);
+});
 
 // ------------------------------------------------------------------ paper account (virtual money, crypto spot)
 let paper = store.get('dtw.paper', null);
@@ -2453,7 +2730,7 @@ function paperPreview() {
   el.innerHTML = `قیمت ${n(fmtP(price, dec))} · حد ضرر ${n(fmtP(stop, dec))} · حد سود ${n(fmtP(target, dec))} · ضرر در حد ضرر حدود <span class="num ${risk > cfg.maxLoss ? 'neg' : ''}">${usd(risk)}</span> (سقف ${n(usd(cfg.maxLoss))}) · نقد ${n(usd(paper.cash))}`;
 }
 const tierOf = x => x.tier || (x.sug ? 'A' : null);
-const tierTag = x => { const t = tierOf(x); return t === 'A' ? ' <span class="small pos">۵/۵</span>' : t === 'B' ? ' <span class="small" style="color:var(--warn)">۸۰٪</span>' : ' <span class="small">دستی</span>'; };
+const tierTag = x => { const t = tierOf(x); return t === 'A' ? ' <span class="small pos">۵/۵</span>' : t === 'B' ? ' <span class="small" style="color:var(--warn)">۸۰٪</span>' : t === 'T' ? ' <span class="small" style="color:var(--accent)">۵ برتر</span>' : ' <span class="small">دستی</span>'; };
 function renderPaper() {
   const list = Array.from(insts.crypto.values()).sort((x, y) => (y.tracked ? 1 : 0) - (x.tracked ? 1 : 0) || (y.vol || 0) - (x.vol || 0) || x.label.localeCompare(y.label));
   const sel = $('#p_sym'), keys = list.map(i => i.key).join(',');
@@ -2470,7 +2747,7 @@ function renderPaper() {
     <div class="stat"><span class="lbl">سود و زیان کل</span><b class="num ${total >= 0 ? 'pos' : 'neg'}">${usd(total)}</b><small>${n(spc(total / paper.start))}</small></div>
     <div class="stat"><span class="lbl">امروز</span><b class="num ${today >= 0 ? 'pos' : 'neg'}">${usd(today)}</b><small>هدف تو ${n(usd(cfg.dailyTarget, 0))}</small></div>
     <div class="stat"><span class="lbl">معاملات بسته</span><b class="num">${paper.closed.length}</b><small>${paper.closed.length ? `${n(pc(wins / paper.closed.length, 0))} برد · میانگین ${n(rr(Rs.reduce((t, c) => t + c.R, 0) / Math.max(1, Rs.length)))}` : 'هنوز معامله‌ای بسته نشده'}</small></div></div>`);
-  const tiers = [['A', 'پیشنهادهای ۵ از ۵'], ['B', 'پیشنهادهای ۸۰٪'], [null, 'خرید دستی']].map(([t, name]) => {
+  const tiers = [['A', 'سیگنال قانون، ۵ از ۵'], ['B', 'سیگنال قانون، ۸۰٪'], ['T', '۵ انتخاب برتر (بدون سیگنال)'], [null, 'خرید دستی']].map(([t, name]) => {
     const cs = paper.closed.filter(c => tierOf(c) === t), w = cs.filter(c => c.pnl > 0).length, Rr = cs.filter(c => c.R != null);
     const pnl = cs.reduce((x, c) => x + c.pnl, 0);
     return `<tr><td><b>${name}</b></td><td>${n(cs.length)}</td><td>${n(cs.length ? pc(w / cs.length, 0) : '–')}</td><td><span class="num ${pnl >= 0 ? 'pos' : 'neg'}">${cs.length ? usd(pnl) : '–'}</span></td><td>${n(Rr.length ? rr(Rr.reduce((x, c) => x + c.R, 0) / Rr.length) : '–')}</td></tr>`;
@@ -2496,7 +2773,7 @@ function renderPaper() {
       return `<tr><td><b>${esc(p.label)}</b>${tierTag(p)}</td><td>${n(p.units.toLocaleString('en-US', { maximumFractionDigits: 8 }))}</td><td>${n(fmtP(p.entry, p.dec))}</td><td>${n(fmtP(pr, p.dec))}</td>
         <td><span class="num neg">${fmtP(p.stop, p.dec)}</span></td><td><span class="num pos">${fmtP(p.target, p.dec)}</span></td><td><span class="num ${u >= 0 ? 'pos' : 'neg'}">${usd(u)}</span></td><td>${n(tm(p.exitAt))}</td>
         <td><button type="button" class="btn ghost sm" data-paper-sell="${p.id}">فروش</button></td></tr>`; }).join('')}</tbody></table></div>`
-    : `<p class="empty">پوزیشن بازی نداری. از «پیشنهادهای الان» یا فرم خرید دستی شروع کن.</p>`);
+    : `<p class="empty">پوزیشن بازی نداری. از «۵ انتخاب برتر الان»، «سیگنال‌های قانون» یا فرم خرید دستی شروع کن.</p>`);
   put('paperClosed', paper.closed.length ? `<div class="tbl"><table class="list"><thead><tr><th>بسته شد</th><th>نماد</th><th>ورود</th><th>خروج</th><th>دلیل</th><th>سود/زیان</th><th>R</th></tr></thead><tbody>
     ${paper.closed.slice(-30).reverse().map(c => `<tr><td>${n(new Date(c.closedAt).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit' }) + ' ' + tm(c.closedAt))}</td><td><b>${esc(c.label)}</b>${tierTag(c)}</td>
       <td>${n(fmtP(c.entry, c.dec))}</td><td>${n(fmtP(c.exit, c.dec))}</td><td>${RS[c.reason] || ''}</td><td><span class="num ${c.pnl >= 0 ? 'pos' : 'neg'}">${usd(c.pnl)}</span></td><td>${n(c.R != null ? rr(c.R) : '–')}</td></tr>`).join('')}</tbody></table></div>`
@@ -2600,7 +2877,12 @@ function renderGuide() {
   ${C('imp', IMP, 'خرید تتر با تومان در صرافی‌های ایرانی فعلاً از ۲۳:۳۰ تا ۱۱:۳۰ بسته است و سقف خرید روزانه ۲۰۰۰ تتر است (طبق خبرهای مهر ۱۴۰۵؛ ممکن است عوض شود). تتر را قبل از شروع جلسه آماده داشته باش.')}
 
   ${sec('sug', 4, 'پیشنهادها: چی بخرم')}
-  <p>کارت «پیشنهادهای الان» بالای داشبورد خودکار به‌روز می‌شود. هر پیشنهاد اول باید از <b>همه‌ی قانون‌های ریسک</b> تو رد شود: سقف ضرر هر معامله، حداقل نسبت سود به ضرر، سقف روزانه، پنجره‌ی ورود و تازه بودن داده. این‌ها در هیچ سطحی کم نمی‌شوند. بعد پنج شرط کیفیت شمرده می‌شود:</p>
+  <p>دو کارت بالای صفحه هست.</p>
+  <p><b>«۵ انتخاب برتر الان»</b> همیشه پنج نماد نشان می‌دهد، به ترتیب. رتبه‌بندی ساده و ثابت است: روند ۲۰ روزه، بازده ۷ روزه و بازده ۲۴ ساعته‌ی هر نماد نسبت به بقیه‌ی بازار؛ نمادی که قانون شکست رنج برایش فعال شده جلوتر می‌آید. برای هر کدام برنامه‌ی کامل آماده است: ورود، حد ضرر (۱٫۵ برابر نوسان ساعتی)، حد سود، حجم، ساعت خروج و نتیجه‌ی شبیه‌سازی. برچسب کنار هر نماد (قوی، متوسط، ضعیف) می‌گوید چند نشانه‌اش مثبت است.</p>
+  ${C('must', MUST, '«همیشه پنج تا» یعنی حتی در بدترین روز هم پنج اسم می‌آید. قبل از خرید، جمله‌ی رنگی بالای همین کارت را بخوان: همین رتبه‌بندی را روی روزهای گذشته در همین ساعت اجرا می‌کند و می‌گوید پنج تای اولش واقعاً سود داده‌اند یا نه. اگر قرمز است، یعنی بهترین‌ها هم در گذشته ضرر داده‌اند.')}
+  ${C('imp', IMP, `همه‌ی پنج تا را نخر: سقف تو ${n(cfg.maxTrades)} معامله و ${n(usd(cfg.maxDailyLoss, 0))} ریسک در روز است. اگر می‌خری، از بالای لیست شروع کن و برچسب «ضعیف» را رد کن.`)}
+  <p><b>«سیگنال‌های قانون»</b> سخت‌گیرتر است و فقط وقتی چیزی نشان می‌دهد که قانون شکست رنج همین الان فعال شده باشد.</p>
+  <p>کارت «سیگنال‌های قانون» خودکار به‌روز می‌شود. هر پیشنهاد اول باید از <b>همه‌ی قانون‌های ریسک</b> تو رد شود: سقف ضرر هر معامله، حداقل نسبت سود به ضرر، سقف روزانه، پنجره‌ی ورود و تازه بودن داده. این‌ها در هیچ سطحی کم نمی‌شوند. بعد پنج شرط کیفیت شمرده می‌شود:</p>
   <ol><li>سیگنال تازه است (حداکثر یک کندل پیش).</li><li>همین قانون روی همین ارز حداقل ${n(SUG_MIN_N)} بار در گذشته فعال شده.</li><li>میانگین نتیجه‌ی گذشته بعد از کارمزد مثبت است.</li><li>میانگین شبیه‌سازی‌های ماشین زمان مثبت است.</li><li>قیمت بالای میانگین ۲۰ روزه است (هم‌جهت با روند).</li></ol>
   <p><b>بخش سبز (۵ از ۵):</b> همه‌ی شرط‌ها برقرار است. <b>بخش نارنجی (۴ از ۵، ۸۰٪):</b> یکی کم است و روی کارت با ✕ مشخص شده.</p>
   <p><b>قانون‌های نقدینگی</b> هم جزو قانون‌های ریسک‌اند: حجم ۲۴ ساعته حداقل ${n(usdK(cfg.crypto.minVolUSD))} و اسپرد حداکثر ${n(cfg.crypto.maxSpreadPct + '%')}. بازار کم‌معامله پیشنهاد نمی‌شود، چون قیمتی که واقعاً پر می‌شود با عدد صفحه فرق زیادی دارد.</p>

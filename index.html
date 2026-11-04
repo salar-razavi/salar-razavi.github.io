@@ -120,6 +120,20 @@ table{border-collapse:collapse;width:100%}
 .keyrow{display:flex;gap:8px;flex-wrap:wrap}
 .keyrow input{flex:1 1 240px;min-width:0}
 
+.board-tools{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;padding:6px 18px 0}
+.board-tools input{flex:0 1 220px;min-width:0}
+.board tr.thin td{color:var(--muted)}
+.board tr.thin .sym{color:var(--ink)}
+.board small.h{font-size:11px;color:var(--faint);margin-inline-start:4px}
+
+.pform.logf{grid-template-columns:repeat(4,minmax(0,1fr));padding:12px 18px 16px}
+.logsum{display:flex;flex-wrap:wrap;gap:4px 18px;font-size:14px}
+.logwarn{margin:6px 0 0;padding:6px 10px;border-radius:8px;background:var(--warn-soft);color:var(--ink);font-size:13px}
+.ocobox{margin-top:10px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--sunk)}
+.ocobox .oco{margin:6px 0 8px;background:var(--panel)}
+.jsub{display:block;font-size:12px;color:var(--muted);font-weight:400;white-space:normal}
+@media (max-width: 820px){ .pform.logf{grid-template-columns:repeat(2,minmax(0,1fr))} }
+
 /* focus */
 .focus-head{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;justify-content:space-between;padding:14px 18px 10px;border-bottom:1px solid var(--line2)}
 .focus-head h2{font-size:22px;font-weight:800}
@@ -291,6 +305,7 @@ a{color:var(--accent)}
   .stat b{font-size:19px}
   .odd{grid-template-columns:92px 1fr 50px}
   .brand .sub{display:none}
+  .top{position:static}
   .guide{padding:2px 14px 20px}
   .tl li{flex-direction:column;align-items:stretch;gap:0;padding-bottom:10px}
   .tl .t{min-width:0;text-align:start}
@@ -327,8 +342,34 @@ a{color:var(--accent)}
   <section class="card" id="sugCard" aria-labelledby="sugH"></section>
   <div class="stack" id="viewDash">
     <section class="card" id="realityCard" aria-labelledby="realityH"></section>
-    <section class="card" id="boardCard" aria-labelledby="boardH"></section>
+    <section class="card" id="boardCard" aria-labelledby="boardH">
+      <div class="sec-h"><h2 id="boardH">تابلوی نمادها</h2><p id="boardSub"></p></div>
+      <div class="session" id="boardSess"></div>
+      <div class="board-tools" id="boardTools">
+        <div class="seg" role="group" aria-label="کدام نمادها" id="boardFilter">
+          <button type="button" data-bf="live" aria-pressed="true">قانون روشن</button>
+          <button type="button" data-bf="all" aria-pressed="false">همه‌ی بازارها</button>
+        </div>
+        <input type="search" id="boardSearch" placeholder="جستجوی نماد" dir="auto" autocomplete="off" aria-label="جستجوی نماد">
+      </div>
+      <div id="boardBody"></div>
+    </section>
     <section class="card" id="focusCard" aria-label="نماد انتخاب‌شده"></section>
+    <section class="card" id="logCard" aria-labelledby="logH">
+      <div class="sec-h"><h2 id="logH">ثبت خرید واقعی</h2><p>هر خریدی که خودت در صرافی انجام دادی، با پیشنهاد یا بدون آن</p></div>
+      <form class="pform logf" id="lForm" novalidate>
+        <label class="fld"><span>نماد</span><select id="l_sym"></select></label>
+        <label class="fld" id="l_sideW" hidden><span>سمت</span><select id="l_side"><option value="buy">خرید</option><option value="sell">فروش</option></select></label>
+        <label class="fld"><span>قیمت خرید (همان که پر شد)</span><input type="number" id="l_price" step="any" min="0" dir="ltr"></label>
+        <label class="fld"><span id="l_usdLbl">مبلغ (تتر)</span><input type="number" id="l_usd" step="any" min="0" dir="ltr"></label>
+        <label class="fld"><span id="l_unitsLbl">مقدار خریده‌شده</span><input type="number" id="l_units" step="any" min="0" dir="ltr"></label>
+        <label class="fld"><span>حد ضرر</span><input type="number" id="l_stop" step="any" min="0" dir="ltr"></label>
+        <label class="fld"><span>حد سود</span><input type="number" id="l_target" step="any" min="0" dir="ltr"></label>
+        <label class="fld"><span>ساعت خروج اجباری</span><input type="time" id="l_exit" dir="ltr"></label>
+        <div class="full" id="l_sum"></div>
+        <div class="full row-btns" style="margin-top:0"><button type="submit" class="btn">ثبت در ژورنال</button><button type="button" class="btn ghost" id="l_fill">پر کردن با قیمت و برنامه‌ی الان</button></div>
+      </form>
+    </section>
     <div class="two">
       <section class="card" id="scoreCard" aria-labelledby="scoreH"></section>
       <section class="card" id="journalCard" aria-labelledby="journalH"></section>
@@ -397,7 +438,11 @@ a{color:var(--accent)}
       </fieldset>
       <fieldset>
         <legend>کریپتو</legend>
-        <label class="fld wide"><span>نمادها (جفت‌های بایننس، با کاما)</span><input type="text" id="s_crypto_symbols" dir="ltr"></label>
+        <label class="fld"><span>کدام نمادها</span><select id="s_crypto_mode"><option value="all">همه‌ی بازارهای تتری نوبیتکس</option><option value="list">فقط لیست زیر</option></select></label>
+        <label class="fld"><span>حداقل حجم ۲۴ ساعته (تتر)</span><input type="number" id="s_crypto_minVolUSD" min="0" step="1000"><small class="hint">کمتر از این، قانون روشن نمی‌شود</small></label>
+        <label class="fld"><span>حداکثر اسپرد (٪)</span><input type="number" id="s_crypto_maxSpreadPct" min="0.01" step="0.05"><small class="hint">فاصله‌ی بهترین قیمت خرید و فروش</small></label>
+        <label class="fld"><span>حداکثر نماد با قانون روشن</span><input type="number" id="s_crypto_maxTracked" min="1" max="200" step="1"><small class="hint">هر نماد بار اول حدود ۲۶ درخواست تاریخچه می‌خواهد و نوبیتکس ۲۰ درخواست در دقیقه می‌دهد</small></label>
+        <label class="fld wide"><span>نمادهای لیست (برای «فقط لیست زیر»، با کاما)</span><input type="text" id="s_crypto_symbols" dir="ltr"></label>
         <label class="fld"><span>جلسه</span><select id="s_crypto_session" class="sessSel"></select></label>
         <label class="fld"><span>منبع داده</span><select id="s_crypto_source"><option value="auto">خودکار (اولین منبعی که جواب بدهد)</option><option value="binance">Binance</option><option value="bybit">Bybit</option><option value="mexc">MEXC</option><option value="gate">Gate</option><option value="nobitex">نوبیتکس (پیشنهاد برای کاربر ایران)</option><option value="wallex">والکس</option></select><small class="hint">اگر در نوبیتکس یا والکس معامله می‌کنی، داده‌ی همان صرافی دقیق‌تر است</small></label>
         <label class="fld"><span>هزینه‌ی رفت و برگشت (٪)</span><input type="number" id="s_crypto_costPct" min="0" step="0.01"><small class="hint">کارمزد خرید + فروش در سطح کاربری خودت؛ از صفحه‌ی کارمزدهای صرافی بخوان</small></label>
@@ -810,7 +855,9 @@ a{color:var(--accent)}
     return al ? 100 - 100 / (1 + ag / al) : 100;
   }
   // closes of COMPLETE UTC days with enough bars (weekends of a forex feed drop out)
-  function dailyCloses(bars, now) {
+  // minBars: how many 5-minute bars a day needs to count (288 is a full day; thin markets trade less)
+  function dailyCloses(bars, now, minBars) {
+    if (minBars == null) minBars = 144;
     var byDay = new Map(), today = new Date(now).toISOString().slice(0, 10);
     bars.forEach(function (b) {
       var d = new Date(b.t).toISOString().slice(0, 10);
@@ -820,7 +867,7 @@ a{color:var(--accent)}
       x.n++;
       if (b.t >= x.t) { x.t = b.t; x.c = b.c; }
     });
-    return Array.from(byDay.keys()).sort().filter(function (d) { return byDay.get(d).n >= 144; })
+    return Array.from(byDay.keys()).sort().filter(function (d) { return byDay.get(d).n >= minBars; })
       .map(function (d) { return byDay.get(d).c; });
   }
   function findSetups(c) {
@@ -952,11 +999,12 @@ const store = {
 // ------------------------------------------------------------------ settings
 const DEFAULTS = {
   account: 1000, dailyTarget: 50, maxLoss: 10, maxDailyLoss: 30, maxTrades: 3, minRR: 1,
-  cashBufferPct: 10, maxPositionPct: 90, maxLeverage: 3, minOrderUSD: 11, v: 2,
+  cashBufferPct: 10, maxPositionPct: 90, maxLeverage: 3, minOrderUSD: 11, v: 3,
   orMinutes: 15, stopRule: 'or_mid', atrK: 1.5, stopPct: 0.5, targetR: 2,
   historyDays: 45, replays: 10000, seed: 19, sound: true, tdKey: '',
-  crypto: { symbols: 'BTCUSDT, ETHUSDT, SOLUSDT, XRPUSDT, DOGEUSDT, BNBUSDT', session: 'london', costPct: 0.26, allowShort: false, source: 'nobitex' },
-  forex: { symbols: 'EUR/USD, GBP/USD, USD/JPY, XAU/USD', session: 'london', costPct: 0.012, allowShort: true },
+  crypto: { symbols: 'BTCUSDT, ETHUSDT, SOLUSDT, XRPUSDT, DOGEUSDT, BNBUSDT', session: 'london', costPct: 0.26, allowShort: false, source: 'nobitex',
+    mode: 'all', minVolUSD: 20000, maxSpreadPct: 0.3, maxTracked: 30 },
+  forex: { symbols: 'EUR/USD, GBP/USD, USD/JPY, AUD/USD, USD/CAD, USD/CHF, NZD/USD, XAU/USD', session: 'london', costPct: 0.012, allowShort: true },
   custom: { tz: 'Asia/Tehran', open: '09:00', hours: 8 }
 };
 function clone(x) { return JSON.parse(JSON.stringify(x)); }
@@ -972,15 +1020,18 @@ function merge(base, over) {
 let cfg = merge(clone(DEFAULTS), store.get('dtw.cfg', {}));
 (function migrate() {
   const raw = store.get('dtw.cfg', null);
-  if (!raw || raw.v === 2) return;
+  if (!raw || raw.v >= 3) return;
   const c = cfg.crypto;
-  if (c.source === 'auto') c.source = 'nobitex';
-  if (c.session === 'newyork') c.session = 'london';
-  if (c.costPct === 0.2) c.costPct = 0.26;
-  if (c.symbols === 'BTCUSDT, ETHUSDT, SOLUSDT, BNBUSDT, XRPUSDT, DOGEUSDT, ADAUSDT, LINKUSDT') c.symbols = DEFAULTS.crypto.symbols;
-  if (cfg.minOrderUSD === 5) cfg.minOrderUSD = 11;
-  if (cfg.historyDays === 60) cfg.historyDays = 45;
-  cfg.v = 2;
+  if (!(raw.v >= 2)) {
+    if (c.source === 'auto') c.source = 'nobitex';
+    if (c.session === 'newyork') c.session = 'london';
+    if (c.costPct === 0.2) c.costPct = 0.26;
+    if (c.symbols === 'BTCUSDT, ETHUSDT, SOLUSDT, BNBUSDT, XRPUSDT, DOGEUSDT, ADAUSDT, LINKUSDT') c.symbols = DEFAULTS.crypto.symbols;
+    if (cfg.minOrderUSD === 5) cfg.minOrderUSD = 11;
+    if (cfg.historyDays === 60) cfg.historyDays = 45;
+  }
+  if (cfg.forex.symbols === 'EUR/USD, GBP/USD, USD/JPY, XAU/USD') cfg.forex.symbols = DEFAULTS.forex.symbols;
+  cfg.v = 3;
   store.set('dtw.cfg', cfg);
 })();
 let journal = store.get('dtw.journal', []);
@@ -1028,6 +1079,7 @@ function dur(ms) {
   return h ? `${h} ساعت و ${m % 60} دقیقه` : `${m} دقیقه`;
 }
 const sideFa = s => s === 'buy' ? 'خرید (لانگ)' : 'فروش (شورت)';
+const usdK = x => (x == null || !isFinite(x)) ? '–' : '$' + x.toLocaleString('en-US', { notation: 'compact', maximumFractionDigits: 1 });
 
 // ------------------------------------------------------------------ instruments
 const CRYPTO_QUOTES = ['FDUSD', 'USDT', 'USDC', 'TUSD', 'BTC', 'ETH', 'BNB', 'EUR', 'TRY'];
@@ -1045,17 +1097,102 @@ function parseSymbols(mkt) {
       if (m) d = { key: m[1] + '/' + m[2], src: m[1] + '/' + m[2], base: m[1], quote: m[2], label: m[1] + '/' + m[2],
         contract: m[1] === 'XAU' ? 100 : m[1] === 'XAG' ? 5000 : 100000 };
     }
-    if (d && !seen.has(d.key) && out.length < 16) { seen.add(d.key); out.push(d); }
+    if (d && !seen.has(d.key) && out.length < (mkt === 'crypto' ? 80 : 12)) { seen.add(d.key); out.push(d); }
   });
   return out;
 }
 const insts = { crypto: new Map(), forex: new Map() };
 const ui = { focus: store.get('dtw.focus', { crypto: null, forex: null }), side: {}, booted: false };
 function syncInsts(mkt) {
+  if (mkt === 'crypto') return syncCrypto();
   const list = parseSymbols(mkt), old = insts[mkt], next = new Map();
   list.forEach(d => next.set(d.key, old.get(d.key) || Object.assign({ mkt, bars: [], status: 'idle', alerted: {}, cls: mkt }, d)));
+  next.forEach(i => { i.tracked = true; });
   insts[mkt] = next;
   if (!next.has(ui.focus[mkt])) ui.focus[mkt] = list.length ? list[0].key : null;
+}
+// ---- every Nobitex USDT market, from one stats request (price, best bid and ask, 24-hour volume)
+const STABLES = new Set(['USDT', 'USDC', 'DAI', 'TUSD', 'FDUSD', 'BUSD', 'USDE', 'PYUSD', 'USDD']);
+const statsMap = new Map();
+let statsAt = 0, statsErr = null, statsBusy = false;
+const allMode = () => cfg.crypto.mode === 'all' && cfg.crypto.source === 'nobitex';
+const FRESH_LIVE = 180000;
+const liveOk = inst => inst.liveAt > 0 && Date.now() - inst.liveAt < FRESH_LIVE;
+function pxNow(inst) { return inst.live > 0 && liveOk(inst) ? inst.live : inst.a && inst.a.price > 0 ? inst.a.price : null; }
+function askPx(inst) { return inst.ask > 0 && liveOk(inst) ? inst.ask : pxNow(inst); }
+function bidPx(inst) { return inst.bid > 0 && liveOk(inst) ? inst.bid : pxNow(inst); }
+function openKeys(mkt) {
+  const out = new Set();
+  if (mkt === 'crypto') { try { paper.positions.forEach(p => out.add(p.key)); } catch (e) { /* paper account not set up yet */ } }
+  journal.forEach(j => { if (!j.result && j.mkt === mkt) out.add(j.key); });
+  return out;
+}
+async function pollStats() {
+  if (cfg.crypto.source !== 'nobitex' || statsBusy) return;
+  statsBusy = true;
+  try {
+    const j = await fetchJSON('https://apiv2.nobitex.ir/market/stats?dstCurrency=usdt', 12000);
+    if (!j || j.status !== 'ok' || !j.stats) throw dataErr('stats');
+    const num = v => { const x = parseFloat(v); return isFinite(x) ? x : null; };
+    statsMap.clear();
+    Object.keys(j.stats).forEach(k => {
+      const m = /^(.+)-usdt$/i.exec(k);
+      if (!m) return;
+      const st = j.stats[k] || {}, base = m[1].toUpperCase();
+      const bid = num(st.bestBuy), ask = num(st.bestSell), latest = num(st.latest);
+      const mid = bid > 0 && ask > 0 ? (bid + ask) / 2 : null;
+      statsMap.set(base + 'USDT', { base, latest: latest > 0 ? latest : null, bid: bid > 0 ? bid : null, ask: ask > 0 ? ask : null,
+        spread: mid ? (ask - bid) / mid * 100 : null, vol: num(st.volumeDst) || 0, chg: num(st.dayChange), closed: !!st.isClosed });
+    });
+    statsAt = Date.now(); statsErr = null;
+    applyStats();
+  } catch (e) { statsErr = e; scheduleRender(); }
+  finally { statsBusy = false; }
+}
+function applyStats() {
+  if (allMode()) syncCrypto();
+  insts.crypto.forEach(inst => {
+    const st = statsMap.get(inst.key);
+    if (!st) return;
+    Object.assign(inst, { live: st.latest, bid: st.bid, ask: st.ask, spread: st.spread, vol: st.vol, chg24: st.chg, closed: st.closed, liveAt: statsAt });
+  });
+  updateTracking();
+  scheduleRender();
+}
+function syncCrypto() {
+  const old = insts.crypto, next = new Map();
+  const defs = allMode() && statsMap.size
+    ? Array.from(statsMap.values()).filter(st => !STABLES.has(st.base)).map(st => ({ key: st.base + 'USDT', src: st.base + 'USDT', base: st.base, quote: 'USDT', label: st.base + '/USDT', contract: 1 }))
+    : parseSymbols('crypto');
+  defs.forEach(d => next.set(d.key, old.get(d.key) || Object.assign({ mkt: 'crypto', bars: [], status: 'idle', alerted: {}, cls: 'crypto' }, d)));
+  openKeys('crypto').forEach(k => { if (!next.has(k) && old.has(k)) next.set(k, old.get(k)); });   // keep anything with an open trade
+  insts.crypto = next;
+  if (!next.has(ui.focus.crypto)) ui.focus.crypto = next.has('BTCUSDT') ? 'BTCUSDT' : (defs.length ? defs[0].key : null);
+  updateTracking();
+}
+// why a market is shown with its price only (the rule does not run on it)
+function liquidity(inst) {
+  if (inst.mkt !== 'crypto' || !statsAt || inst.vol == null) return { ok: true };
+  if (STABLES.has(inst.base)) return { ok: false, why: 'stable' };
+  if (inst.closed) return { ok: false, why: 'closed' };
+  if (!(inst.vol >= cfg.crypto.minVolUSD)) return { ok: false, why: 'volume' };
+  if (inst.spread == null || inst.spread > cfg.crypto.maxSpreadPct) return { ok: false, why: 'spread' };
+  return { ok: true };
+}
+// the rule runs on the most traded liquid markets (up to maxTracked), plus the focus and anything with an open trade
+function updateTracking() {
+  const list = Array.from(insts.crypto.values());
+  const forced = openKeys('crypto');
+  if (ui.focus.crypto) forced.add(ui.focus.crypto);
+  let keep;
+  list.forEach(i => { i.volRank = null; });
+  if (allMode() && statsAt) {
+    const liquid = list.filter(i => liquidity(i).ok).sort((x, y) => (y.vol || 0) - (x.vol || 0));
+    liquid.forEach((i, r) => { i.volRank = r; });
+    keep = new Set(liquid.slice(0, Math.max(1, cfg.crypto.maxTracked)).map(i => i.key));
+  } else keep = new Set(list.map(i => i.key));
+  list.forEach(i => { i.tracked = keep.has(i.key) || forced.has(i.key); i.capped = !keep.has(i.key) && i.volRank != null; });
+  pump();
 }
 
 // ------------------------------------------------------------------ data
@@ -1081,7 +1218,7 @@ const BIN = ['https://data-api.binance.vision', 'https://api.binance.com'];
 let binIdx = 0;
 function dataErr(msg) { const e = new Error(msg); e.kind = 'data'; return e; }
 // polite spacing per source: Nobitex allows 20 candle requests a minute
-const GAP_MS = { nobitex: 3200, wallex: 1000, gate: 150 };
+const GAP_MS = { nobitex: 3400, wallex: 1000, gate: 150 };
 const nextSlot = {};
 async function throttle(id) {
   const g = GAP_MS[id];
@@ -1094,9 +1231,13 @@ async function throttle(id) {
 async function udfHistory(base, inst, end, limit) {
   const to = Math.floor((end != null ? end : Date.now()) / 1000), from = to - Math.min(499, limit) * 300;
   const j = await fetchJSON(`${base}?symbol=${encodeURIComponent(inst.src)}&resolution=5&from=${from}&to=${to}`);
-  if (j && j.s === 'no_data') return [];
-  if (!j || j.s !== 'ok' || !Array.isArray(j.t)) throw dataErr('udf ' + (j && j.s));
-  return j.t.map((t, i) => ({ t: t * 1000, o: +j.o[i], h: +j.h[i], l: +j.l[i], c: +j.c[i], v: +(j.v ? j.v[i] : 0) }));
+  let out = [];
+  if (!(j && j.s === 'no_data')) {
+    if (!j || j.s !== 'ok' || !Array.isArray(j.t)) throw dataErr('udf ' + (j && j.s));
+    out = j.t.map((t, i) => ({ t: t * 1000, o: +j.o[i], h: +j.h[i], l: +j.l[i], c: +j.c[i], v: +(j.v ? j.v[i] : 0) }));
+  }
+  out.from = from * 1000;
+  return out;
 }
 const CRYPTO_SRC = {
   binance: { name: 'Binance', async get(inst, end, limit) {
@@ -1151,12 +1292,12 @@ async function klines(inst, endTime, limit, onlyId) {
     const st = srcState[id] || (srcState[id] = {});
     if (!forced && st.downUntil > Date.now()) continue;
     try {
-      const bars = (await CRYPTO_SRC[id].get(inst, endTime, limit))
-        .filter(b => isFinite(b.t) && b.c > 0 && b.h >= b.l && b.t % MIN5 === 0).sort((a, b) => a.t - b.t);
+      const raw = await CRYPTO_SRC[id].get(inst, endTime, limit);
+      const bars = raw.filter(b => isFinite(b.t) && b.c > 0 && b.h >= b.l && b.t % MIN5 === 0).sort((a, b) => a.t - b.t);
       st.err = null; st.downUntil = 0; st.ok = Date.now();
       if (!forced && cryptoPick !== id) { cryptoPick = id; saveSrc(); }
       source.crypto = CRYPTO_SRC[id].name;
-      return { bars, id };
+      return { bars, id, from: raw.from };
     } catch (e) {
       lastErr = e;
       if (e.kind !== 'data') { network++; st.err = String(e.message || e.name); st.downUntil = Date.now() + 2 * 3600000; saveSrc(); }
@@ -1212,55 +1353,74 @@ const toRows = bars => bars.filter(b => !b.fill).map(b => [b.t, b.o, b.h, b.l, b
 const fromRows = rows => (Array.isArray(rows) ? rows : []).map(r => ({ t: r[0], o: r[1], h: r[2], l: r[3], c: r[4], v: r[5] }));
 const cacheKey = inst => (inst.mkt === 'crypto' ? inst.srcId : 'td') + '|' + inst.src;
 function saveCache(inst) { if (inst.bars.length) { inst.savedAt = Date.now(); idb.set(cacheKey(inst), toRows(inst.bars)); } }
-// one page of bars ending just before `end`, oldest first, always from the instrument's own source
+// one page of bars ending just before `end`, oldest first, always from the instrument's own source.
+// `start` is how far back the page reached: the request window for Nobitex (even when a quiet market
+// had no trades in it), else the first bar.
 async function pageBefore(inst, end) {
-  if (inst.mkt === 'crypto') return (await klines(inst, end, 1000, inst.srcId)).bars;
-  return tdCall({ symbol: inst.src, outputsize: 5000, end_date: tdDate(end) });
+  if (inst.mkt === 'crypto') {
+    const r = await klines(inst, end, 1000, inst.srcId);
+    return { bars: r.bars, start: r.from != null ? r.from : (r.bars.length ? r.bars[0].t : null) };
+  }
+  const bars = await tdCall({ symbol: inst.src, outputsize: 5000, end_date: tdDate(end) });
+  return { bars, start: bars.length ? bars[0].t : null };
 }
 // step 1: the newest page (enough for today's session), merged with the cache
 async function loadHead(inst) {
   inst.status = 'loading'; inst.progress = 0; inst.err = null;
   scheduleRender();
   try {
-    let head;
-    if (inst.mkt === 'crypto') { const r = await klines(inst, null, 1000); inst.srcId = r.id; head = r.bars; }
-    else head = await tdCall({ symbol: inst.src, outputsize: 5000 });
-    if (!head.length) { const e = new Error('empty'); e.kind = 'empty'; throw e; }
+    let head, winStart;
+    if (inst.mkt === 'crypto') {
+      const r = await klines(inst, null, 1000);
+      inst.srcId = r.id; head = r.bars; winStart = r.from != null ? r.from : (head.length ? head[0].t : Date.now());
+    } else { head = await tdCall({ symbol: inst.src, outputsize: 5000 }); winStart = head.length ? head[0].t : Date.now(); }
     const need = Date.now() - cfg.historyDays * DAY;
     const cached = fromRows(await idb.get(cacheKey(inst))).filter(b => b.t >= need - DAY);
+    if (!head.length && !cached.length) { const e = new Error('empty'); e.kind = 'empty'; throw e; }
     inst.cacheNewest = cached.length ? cached[cached.length - 1].t : null;
-    inst.headOldest = head[0].t;
+    inst.gapTo = winStart;                                               // fill back from here to the cache
+    inst.backTo = cached.length ? Math.min(winStart, cached[0].t) : winStart; // then on back from the oldest bar held
     inst.bars = mergeBars(cached, head);
-    inst.status = 'ready'; inst.partial = true; inst.lastFetch = Date.now(); inst.fails = 0;
+    inst.status = 'ready'; inst.partial = true; inst.lastFetch = Date.now(); inst.fails = 0; inst.histFails = 0;
     inst._sig = inst._hk = null;
   } catch (e) {
-    inst.status = 'error'; inst.err = explainErr(e);
+    inst.status = 'error'; inst.errAt = Date.now(); inst.err = explainErr(e);
   }
 }
-// step 2: fill the gap between the cache and the newest page, then go back to historyDays
-async function backfill(inst) {
+// step 2, one page per call: first the gap between the cache and the newest page, then back to historyDays
+async function backfillStep(inst) {
   if (inst.status !== 'ready') return;
   const need = Date.now() - cfg.historyDays * DAY;
-  const add = chunk => { inst.bars = mergeBars(inst.bars, chunk); scheduleRender(); };
   try {
-    if (inst.cacheNewest != null) {
-      let oldest = inst.headOldest;
-      for (let n = 0; n < 200 && oldest > inst.cacheNewest + MIN5; n++) {
-        const chunk = await pageBefore(inst, oldest - 1);
-        if (!chunk.length || chunk[0].t >= oldest) break;
-        add(chunk); oldest = chunk[0].t;
-      }
+    if (inst.cacheNewest != null && inst.gapTo > inst.cacheNewest + MIN5) {
+      const r = await pageBefore(inst, inst.gapTo - 1);
+      if (r.bars.length) inst.bars = mergeBars(r.bars, inst.bars);
+      if (r.start == null || r.start >= inst.gapTo) inst.cacheNewest = null; else inst.gapTo = r.start;
+      return;
     }
-    let oldest = inst.bars[0].t;
-    for (let n = 0; n < 200 && oldest > need; n++) {
-      inst.progress = Math.min(1, (Date.now() - oldest) / (cfg.historyDays * DAY));
-      const chunk = await pageBefore(inst, oldest - 1);
-      if (!chunk.length || chunk[0].t >= oldest) break;
-      add(chunk); oldest = inst.bars[0].t;
+    inst.cacheNewest = null;
+    if (inst.backTo > need) {
+      const r = await pageBefore(inst, inst.backTo - 1);
+      if (r.bars.length) inst.bars = mergeBars(r.bars, inst.bars);
+      inst.backTo = r.start == null || r.start >= inst.backTo ? need : r.start;   // nothing older: stop here
+      inst.progress = Math.min(1, (Date.now() - inst.backTo) / (cfg.historyDays * DAY));
+      if (inst.backTo > need) return;
     }
-  } catch (e) { /* keep what arrived; the cache lets the next load continue from here */ }
-  inst.partial = false; inst.progress = 1; inst.daysLoaded = cfg.historyDays; inst._hk = null;
-  saveCache(inst);
+    inst.partial = false; inst.progress = 1; inst.daysLoaded = cfg.historyDays; inst._hk = null;
+    saveCache(inst);
+  } catch (e) {
+    inst.histFails = (inst.histFails || 0) + 1;
+    inst.histPauseUntil = Date.now() + Math.min(10, inst.histFails) * 60000;   // try again later; keep what arrived
+  }
+}
+async function backfill(inst) {
+  for (let i = 0; i < 400 && inst.status === 'ready' && inst.partial && !(inst.histPauseUntil > Date.now()); i++) { await backfillStep(inst); scheduleRender(); }
+}
+// pages of history still to fetch for one instrument (an estimate, for the progress note)
+function pagesLeft(inst) {
+  if (!inst.partial || inst.backTo == null) return 0;
+  const need = Date.now() - cfg.historyDays * DAY, per = (inst.srcId === 'nobitex' || inst.srcId === 'wallex' ? 499 : 1000) * MIN5;
+  return Math.max(0, Math.ceil((inst.backTo - need) / per)) + (inst.cacheNewest != null ? Math.max(0, Math.ceil((inst.gapTo - inst.cacheNewest) / per)) : 0);
 }
 async function refreshLatest(inst) {
   if (inst.status !== 'ready' || !inst.bars.length) return;
@@ -1275,7 +1435,7 @@ async function refreshLatest(inst) {
   } catch (e) {
     inst.err = explainErr(e);
     inst.fails = (inst.fails || 0) + 1;
-    if (inst.fails >= 3) { inst.status = 'error'; inst.fails = 0; } // the next poll reloads it
+    if (inst.fails >= 3) { inst.status = 'error'; inst.errAt = Date.now(); inst.fails = 0; } // the next poll reloads it
   }
 }
 function explainErr(e) {
@@ -1330,12 +1490,12 @@ function analyze(inst) {
   if (inst._sig !== sig2) { inst.days = E.sessionize(fillGaps(inst.bars, 24, liveTo), sess); inst._sig = sig2; }
   const D = inst.days.get(ph.date) || new Array(sess.bars);
   a.D = D;
-  a.price = lastBar.c;
+  a.price = inst.live > 0 && liveOk(inst) ? inst.live : lastBar.c;
   a.lastT = lastBar.t;
   a.age = inst.mkt === 'crypto' ? (now - (inst.lastFetch || 0)) / 60000 : (now - lastBar.t) / 60000;
   const first = D.find(Boolean);
-  a.chg = first ? lastBar.c / first.o - 1 : null;
-  a.dec = E.decimalsFor(lastBar.c);
+  a.chg = first ? a.price / first.o - 1 : null;
+  a.dec = E.decimalsFor(a.price);
   const since = ph.phase === 'open' ? ph.since : sess.bars * 5;
   let st = E.entryStatus(D, since, rule, { entryLast: win.entryLast, allowShort, L: sess.bars });
   if (ph.phase !== 'open') st = Object.assign({}, st, { review: st.state, state: ph.phase });
@@ -1349,7 +1509,7 @@ function analyze(inst) {
     inst.full = fs.full; inst.pool = null;
     inst.filled = fs.filled + fs.full.reduce((n, S) => n + S.D.filter(b => b.fill).length, 0);
     inst.hist = { buy: E.historyReplay(fs.full, rule, Object.assign({ side: 'buy' }, o)), sell: allowShort ? E.historyReplay(fs.full, rule, Object.assign({ side: 'sell' }, o)) : null };
-    const dc = E.dailyCloses(inst.bars, now);
+    const dc = E.dailyCloses(inst.bars, now, inst.mkt === 'crypto' ? 24 : 144);
     inst.setups = E.findSetups(dc);
     inst.ma20 = dc.length >= 20 ? dc.slice(-20).reduce((t, x) => t + x, 0) / 20 : null;
     inst._hk = hk;
@@ -1388,7 +1548,8 @@ function planFor(inst, side) {
   const sess = a.sess;
   const exitAt = a.ph.start + (a.win.exitLast + 1) * 5 * 60000;
   const entryAt = a.ph.start + (k + 1) * 5 * 60000;
-  return { side, long, entry, stop, target, k, kind, dec, risk, rng, exitAt, entryAt, last: a.win.exitLast, L: sess.bars, ago: kind === 'triggered' ? st.lastDone - k : 0 };
+  const ago = kind === 'triggered' ? Math.max(st.lastDone - k, Math.floor((Date.now() - entryAt) / MIN5)) : 0;
+  return { side, long, entry, stop, target, k, kind, dec, risk, rng, exitAt, entryAt, last: a.win.exitLast, L: sess.bars, ago };
 }
 const mcCache = new Map();
 function mcFor(inst, plan) {
@@ -1446,7 +1607,7 @@ function checkAlerts() {
       const k = a.ph.date + a.st.side;
       if (!inst.alerted[k]) {
         inst.alerted[k] = 1;
-        if (inst.seen) toast(`<b>${esc(inst.label)}</b>: قانون شکست رنج فعال شد، سمت ${sideFa(a.st.side)} در ${n(fmtP(a.st.price, a.dec))}. اول برنامه و چک ریسک را ببین.`, a.st.side === 'buy' ? 'up' : 'down');
+        if (inst.seen && (inst.key === ui.focus[mkt] || openKeys(mkt).has(inst.key))) toast(`<b>${esc(inst.label)}</b>: قانون شکست رنج فعال شد، سمت ${sideFa(a.st.side)} در ${n(fmtP(a.st.price, a.dec))}. اول برنامه و چک ریسک را ببین.`, a.st.side === 'buy' ? 'up' : 'down');
       }
     }
     if (inst.status === 'ready') inst.seen = true;
@@ -1456,7 +1617,7 @@ function checkAlerts() {
   journal.forEach(j => {
     if (j.result) return;
     const inst = insts[j.mkt] && insts[j.mkt].get(j.key);
-    const p = inst && inst.a && inst.a.price;
+    const p = inst ? pxNow(inst) : null;
     j.al = j.al || {};
     if (p != null) {
       const hitT = j.side === 'buy' ? p >= j.target : p <= j.target;
@@ -1487,7 +1648,7 @@ function renderAll() {
   $('#viewPaper').hidden = ui.view !== 'paper';
   $('#viewGuide').hidden = ui.view !== 'guide';
   $('#sugCard').hidden = ui.view === 'guide';
-  if (ui.view === 'dash') { renderReality(); renderBoard(); renderFocus(); renderScore(); renderJournal(); }
+  if (ui.view === 'dash') { renderReality(); renderBoard(); renderFocus(); syncLogSymbols(); renderScore(); renderJournal(); }
   else if (ui.view === 'paper') renderPaper();
   else renderGuide();
 }
@@ -1495,7 +1656,7 @@ function renderTop() {
   document.querySelectorAll('#mktSeg button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.mkt === market)));
   document.querySelectorAll('#viewSeg button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.view === ui.view)));
   $('#mktSeg').hidden = ui.view !== 'dash';
-  const list = Array.from(insts[market].values());
+  const list = Array.from(insts[market].values()).filter(i => i.tracked !== false);
   const busy = list.filter(i => i.status === 'loading').length, bad = list.filter(i => i.status === 'error').length, ok = list.filter(i => i.status === 'ready').length;
   const chip = $('#dataChip');
   let cls = 'chip', txt;
@@ -1564,6 +1725,7 @@ function stateChip(inst) {
   const a = inst.a, st = a && a.st;
   if (inst.status === 'loading' && !inst.bars.length) return `<span class="state idle">در حال دریافت <span class="prog"><i style="width:${Math.round((inst.progress || 0) * 100)}%"></i></span></span>`;
   if (inst.status === 'error' && !inst.bars.length) return `<span class="state warn" title="${esc(inst.err || '')}">خطا</span>`;
+  if (inst.status === 'idle' && !inst.bars.length) return `<span class="state idle">در صف دریافت</span>`;
   if (!st) return `<span class="state idle">–</span>`;
   if (st.state === 'triggered') return st.side === 'buy' ? `<span class="state up">فعال شد ↑ خرید</span>` : `<span class="state down">فعال شد ↓ فروش</span>`;
   const f = STATE_FA[st.state] || STATE_FA.idle;
@@ -1584,15 +1746,21 @@ function spark(inst) {
   if (rng) band = `<rect x="2" y="${y(rng.hi)}" width="${W - 4}" height="${Math.max(1, y(rng.lo) - y(rng.hi))}" fill="var(--orband)"/>`;
   return `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" aria-hidden="true" style="direction:ltr">${band}<polyline fill="none" stroke="${col}" stroke-width="1.4" points="${pts.map(p => x(p[0]) + ',' + y(p[1])).join(' ')}"/></svg>`;
 }
+function dist(inst) {
+  const st = inst.a && inst.a.st, p = pxNow(inst) || (st && st.last);
+  if (!st || !st.rng || !(p > 0)) return { up: null, down: null };
+  return { up: (st.rng.hi - p) / p, down: (p - st.rng.lo) / p };
+}
 function distCell(inst) {
   const st = inst.a && inst.a.st;
   if (!st || !st.rng) return '<span class="mut">–</span>';
   if (st.state === 'waiting') {
-    const up = `<span class="num">${(st.toHigh * 100).toFixed(2)}%</span> تا سقف`;
-    return inst.a.allowShort ? `${up}<br><span class="num">${(st.toLow * 100).toFixed(2)}%</span> تا کف` : up;
+    const d = dist(inst);
+    const up = d.up <= 0 ? `بالای سقف؛ منتظر بسته شدن کندل` : `<span class="num">${(d.up * 100).toFixed(2)}%</span> تا سقف`;
+    return inst.a.allowShort ? `${up}<br><span class="num">${(d.down * 100).toFixed(2)}%</span> تا کف` : up;
   }
   if (st.state === 'triggered') {
-    const ago = st.lastDone - st.k;
+    const ago = Math.max(st.lastDone - st.k, Math.floor((Date.now() - (inst.a.ph.start + (st.k + 1) * MIN5)) / MIN5));
     return ago <= 0 ? 'همین کندل' : `${n(ago)} کندل پیش`;
   }
   return `<span class="mut">رنج ${n(fmtP(st.rng.lo, inst.a.dec))} – ${n(fmtP(st.rng.hi, inst.a.dec))}</span>`;
@@ -1604,53 +1772,97 @@ function histCell(inst) {
   const one = (x, lab) => x && x.triggered ? `<div>${lab}${n(x.target + '/' + x.triggered)} · <span class="num ${x.avgRnet > 0 ? 'pos' : 'neg'}">${rr(x.avgRnet)}</span></div>` : `<div class="mut">${lab}–</div>`;
   return one(h.buy, inst.a && inst.a.allowShort ? '↑ ' : '') + (h.sell ? one(h.sell, '↓ ') : '');
 }
+const THIN_FA = { stable: 'استیبل‌کوین', closed: 'بازار بسته', volume: 'حجم کم', spread: 'اسپرد زیاد' };
+ui.boardFilter = store.get('dtw.bf', 'live');
 function renderBoard() {
-  const mkt = market, list = Array.from(insts[mkt].values());
+  const mkt = market, all = Array.from(insts[mkt].values());
   const sess = sessFor(mkt), win = windowFor(sess), ph = phaseOf(Date.now(), sess);
   const fmtOpen = tm(ph.start), entryEnd = tm(ph.start + (win.entryLast + 1) * 5 * 60000), exitT = tm(ph.start + (win.exitLast + 1) * 5 * 60000);
   const phaseTxt = ph.phase === 'open' ? `باز · <span data-cd="${ph.start + sess.bars * 5 * 60000}"></span> تا پایان` :
     `بسته · جلسه‌ی بعد <span data-cd="${ph.nextOpen}"></span> دیگر (${n(tm(ph.nextOpen))})`;
+  const statsBoard = mkt === 'crypto' && allMode();
+  const tracked = all.filter(i => i.tracked);
+  const noKey = mkt === 'forex' && !cfg.tdKey;
+  $('#boardTools').hidden = noKey;
+  $('#boardFilter').hidden = !statsBoard;
+  document.querySelectorAll('#boardFilter [data-bf]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.bf === ui.boardFilter)));
+  put('boardSub', statsBoard && statsAt
+    ? `${n(all.length)} بازار تتری نوبیتکس · قانون روی ${n(tracked.length)} تای پرمعامله روشن است · روی هر ردیف بزن تا جزئیاتش پایین بیاید`
+    : `${all.length ? n(all.length) + ' نماد · ' : ''}روی هر ردیف بزن تا جزئیاتش پایین بیاید`);
+  put('boardSess', `<span>جلسه: <b>${esc(sess.name)}</b> (${esc(sess.note)})</span><span>شروع: ${n(fmtOpen)}</span>
+    <span>رنج اول: <b>${n(cfg.orMinutes)} دقیقه</b></span><span>آخرین ورود: ${n(entryEnd)}</span><span>خروج اجباری: ${n(exitT)}</span><span>${phaseTxt}</span>`);
   let body;
-  if (mkt === 'forex' && !cfg.tdKey) {
+  if (noKey) {
     body = `<div class="notice">
-      <p>داده‌ی زنده‌ی فارکس رایگان و بدون کلید در دسترس نیست. Twelve Data یک کلید رایگان می‌دهد (روزی ۸۰۰ درخواست، کافی برای ۴ جفت‌ارز).</p>
+      <p>داده‌ی زنده‌ی فارکس رایگان و بدون کلید در دسترس نیست. Twelve Data یک کلید رایگان می‌دهد: روزی ۸۰۰ درخواست، کافی برای حدود ۸ جفت‌ارز با به‌روزرسانی هر ۱۰ دقیقه. برای «همه‌ی» جفت‌ارزها پلن رایگان کافی نیست.</p>
+      <p><b>یادت باشد:</b> فارکس در نوبیتکس معامله نمی‌شود و فقط از کارگزار خارجی ممکن است؛ همان ریسکی که گفتی نمی‌خواهی (بسته شدن حساب کاربر ایرانی).</p>
       <ol><li>در <a href="https://twelvedata.com/register" target="_blank" rel="noopener">twelvedata.com</a> ثبت‌نام کن.</li><li>از داشبورد آن‌جا کلید API را کپی کن.</li><li>همین‌جا بچسبان. کلید فقط در همین مرورگر می‌ماند.</li></ol>
       <div class="keyrow"><input type="password" id="quickKey" dir="ltr" placeholder="API key" autocomplete="off"><button type="button" class="btn" id="quickKeyBtn">ذخیره و دریافت داده</button></div>
     </div>`;
-  } else if (!list.length) {
+  } else if (!all.length) {
     body = `<p class="empty">نمادی تعریف نشده. از «تنظیمات» نماد اضافه کن.</p>`;
   } else {
-    const rank = i => { const s = i.a && i.a.st && i.a.st.state; return s === 'triggered' ? 0 : s === 'waiting' ? 1 + Math.min(Math.abs(i.a.st.toHigh || 1), Math.abs(i.a.st.toLow || 1)) : 5; };
+    const q = ($('#boardSearch').value || '').trim().toUpperCase().replace(/[\/\-\s]/g, '');
+    let list = statsBoard && ui.boardFilter === 'live' && !q ? tracked : all;
+    if (q) list = list.filter(i => i.key.includes(q) || i.base.includes(q));
+    const rank = i => {
+      if (!i.tracked) return 1000 - Math.log10((i.vol || 0) + 1);
+      const s0 = i.a && i.a.st && i.a.st.state;
+      if (s0 === 'triggered') return 0;
+      if (s0 === 'waiting') { const d = dist(i); return 1 + Math.min(Math.abs(d.up != null ? d.up : 1), i.a.allowShort && d.down != null ? Math.abs(d.down) : 1); }
+      return 10 + (i.volRank != null ? i.volRank : 99) / 100;
+    };
     list.sort((x, y) => rank(x) - rank(y));
     const fk = ui.focus[mkt];
-    const errs = Array.from(new Set(list.filter(i => i.status === 'error' && !i.bars.length).map(i => i.err)));
-    const filling = list.filter(i => i.partial && i.status === 'ready').length;
-    const fillNote = filling && mkt === 'crypto' && cfg.crypto.source === 'nobitex' ? (`تاریخچه‌ی ${filling} نماد در حال تکمیل است. نوبیتکس فقط ۲۰ درخواست در دقیقه اجازه می‌دهد، پس بار اول چند دقیقه طول می‌کشد؛ دفعه‌های بعد از حافظه‌ی همین مرورگر خوانده می‌شود. وضعیت امروز و قیمت‌ها همین حالا درست‌اند.`) : '';
-    body = (fillNote ? `<div class="notice" style="padding-bottom:0"><p class="status-line" style="margin:0">${fillNote}</p></div>` : '') + (errs.length ? `<div class="notice" style="padding-bottom:0">${errs.map(e => `<p class="status-line" style="margin:0">${esc(e)}</p>`).join('')}<div class="row-btns" style="margin-top:0"><button type="button" class="btn sm" data-diag="1">عیب‌یابی اتصال</button></div></div>` : '') + `<div class="board-wrap"><table class="board"><thead><tr>
-      <th>نماد</th><th>وضعیت قانون</th><th>قیمت</th><th>تغییر جلسه</th><th>امروز</th><th>فاصله</th><th>ستاپ روزانه</th><th title="حد سود اول / دفعات فعال شدن · میانگین R خالص">کارنامه‌ی گذشته</th>
+    const notes = [];
+    if (statsBoard && statsErr && !statsAt) notes.push(`لیست همه‌ی بازارها از نوبیتکس نرسید (${esc(why(statsErr))}). فعلاً فقط نمادهای لیست تنظیمات نشان داده می‌شود.`);
+    const errs = Array.from(new Set(tracked.filter(i => i.status === 'error' && !i.bars.length).map(i => i.err)));
+    const filling = tracked.filter(i => i.partial && i.status === 'ready');
+    if (filling.length && mkt === 'crypto' && cfg.crypto.source === 'nobitex') {
+      const pages = filling.reduce((t, i) => t + pagesLeft(i), 0), mins = Math.max(1, Math.ceil(pages / 12));
+      notes.push(`تاریخچه‌ی ${n(filling.length)} نماد در حال تکمیل است؛ حدود ${n(mins)} دقیقه‌ی دیگر، اول پرمعامله‌ترها. نوبیتکس فقط ۲۰ درخواست در دقیقه می‌دهد و تا تاریخچه‌ی یک نماد کامل نشود، برای آن پیشنهادی نمی‌آید. قیمت‌ها و وضعیت امروز همین حالا درست‌اند و دفعه‌ی بعد تاریخچه از حافظه‌ی همین مرورگر خوانده می‌شود.`);
+    }
+    if (mkt === 'forex' && tdLeft() <= 40) notes.push('سهمیه‌ی امروز Twelve Data تقریباً تمام شده؛ فارکس تا فردا به‌روز نمی‌شود.');
+    const head = statsBoard ? '<th>حجم ۲۴س</th><th>اسپرد</th>' : '';
+    body = (notes.length ? `<div class="notice" style="padding-bottom:0">${notes.map(t => `<p class="status-line" style="margin:0">${t}</p>`).join('')}</div>` : '')
+      + (errs.length ? `<div class="notice" style="padding-bottom:0">${errs.map(e => `<p class="status-line" style="margin:0">${esc(e)}</p>`).join('')}<div class="row-btns" style="margin-top:0"><button type="button" class="btn sm" data-diag="1">عیب‌یابی اتصال</button></div></div>` : '')
+      + (list.length ? `<div class="board-wrap"><table class="board"><thead><tr>
+      <th>نماد</th><th>وضعیت قانون</th><th>قیمت</th><th>تغییر</th><th>امروز</th><th>فاصله</th><th>ستاپ روزانه</th><th title="حد سود اول / دفعات فعال شدن · میانگین R خالص">کارنامه‌ی گذشته</th>${head}
       </tr></thead><tbody>${list.map(inst => {
-        const a = inst.a || {};
+        const a = inst.a || {}, live = inst.tracked && inst.a && inst.bars.length;
+        const tail = statsBoard ? `<td>${n(usdK(inst.vol))}</td><td>${inst.spread != null ? n(inst.spread.toFixed(2) + '%') : '–'}</td>` : '';
+        if (!live) {
+          const lq = liquidity(inst);
+          const why0 = inst.tracked ? 'در صف دریافت' : !lq.ok ? THIN_FA[lq.why] : inst.capped ? `بیرون از ${n(cfg.crypto.maxTracked)} تای اول` : '–';
+          const px = pxNow(inst);
+          return `<tr data-key="${esc(inst.key)}" class="thin ${inst.key === fk ? 'on' : ''}" tabindex="0">
+            <td class="sym">${esc(inst.label)}</td>
+            <td>${inst.tracked ? stateChip(inst) : `<span class="state idle">فقط قیمت · ${why0}</span>`}</td>
+            <td>${n(fmtP(px, px ? E.decimalsFor(px) : 2))}</td>
+            <td>${inst.chg24 != null ? `<span class="num ${inst.chg24 >= 0 ? 'pos' : 'neg'}">${spc(inst.chg24 / 100)}</span><small class="h">۲۴س</small>` : '–'}</td>
+            <td></td><td><span class="mut">–</span></td><td><span class="mut">–</span></td><td><span class="mut">–</span></td>${tail}</tr>`;
+        }
         const tags = (inst.setups ? inst.setups.tags : []).filter(t => a.allowShort || TAG_FA[t][1] === 'l').map(t => `<span class="tag ${TAG_FA[t][1]}">${TAG_FA[t][0]}</span>`).join('');
         return `<tr data-key="${esc(inst.key)}" class="${inst.key === fk ? 'on' : ''}" tabindex="0">
           <td class="sym">${esc(inst.label)}${inst.err && inst.bars.length ? `<small title="${esc(inst.err)}">به‌روزرسانی نشد</small>` : ''}</td>
           <td>${stateChip(inst)}</td>
           <td>${n(fmtP(a.price, a.dec || 2))}</td>
-          <td><span class="num ${a.chg >= 0 ? 'pos' : 'neg'}">${spc(a.chg)}</span></td>
+          <td><span class="num ${a.chg >= 0 ? 'pos' : 'neg'}">${spc(a.chg)}</span><small class="h">جلسه</small></td>
           <td>${spark(inst)}</td>
           <td>${distCell(inst)}</td>
           <td><div class="tags">${tags || '<span class="mut">–</span>'}</div></td>
-          <td>${histCell(inst)}</td></tr>`;
-      }).join('')}</tbody></table></div>`;
+          <td>${histCell(inst)}</td>${tail}</tr>`;
+      }).join('')}</tbody></table></div>` : `<p class="empty">نمادی با «${esc(q)}» پیدا نشد.</p>`);
+    if (statsBoard && ui.boardFilter === 'live' && !q) body += `<p class="small" style="padding:0 18px 12px">${n(all.length - tracked.length)} بازار دیگر فقط با قیمت در «همه‌ی بازارها» هست: کم‌معامله، اسپرد زیاد یا بیرون از ${n(cfg.crypto.maxTracked)} تای اول. هر کدام را انتخاب کنی، قانون برایش روشن می‌شود.</p>`;
   }
-  const html = `<div class="sec-h"><h2 id="boardH">تابلوی نمادها</h2><p>${list.length ? n(list.length) + ' نماد · ' : ''}روی هر ردیف بزن تا جزئیاتش پایین بیاید</p></div>
-    <div class="session"><span>جلسه: <b>${esc(sess.name)}</b> (${esc(sess.note)})</span><span>شروع: ${n(fmtOpen)}</span>
-    <span>رنج اول: <b>${n(cfg.orMinutes)} دقیقه</b></span><span>آخرین ورود: ${n(entryEnd)}</span><span>خروج اجباری: ${n(exitT)}</span><span>${phaseTxt}</span></div>${body}`;
-  if (put('boardCard', html)) {
+  if (put('boardBody', body)) {
     const btn = $('#quickKeyBtn');
     if (btn) btn.onclick = () => { const v = $('#quickKey').value.trim(); if (!v) return; cfg.tdKey = v; store.set('dtw.cfg', cfg); loadMarket('forex', true); };
-    tickCountdowns();
   }
+  tickCountdowns();
 }
+$('#boardFilter').addEventListener('click', e => { const b = e.target.closest('[data-bf]'); if (!b) return; ui.boardFilter = b.dataset.bf; store.set('dtw.bf', ui.boardFilter); scheduleRender(); });
+$('#boardSearch').addEventListener('input', () => scheduleRender());
 
 const NONE_FA = {
   forming: 'رنج اول جلسه هنوز کامل نشده؛ برنامه بعد از آن ساخته می‌شود.',
@@ -1731,8 +1943,9 @@ function evaluate(inst, plan, mc, side) {
   const a = inst.a, mkt = inst.mkt;
   const sizedPlan = Object.assign({}, plan);
   let moved = false;
-  if (plan.kind === 'triggered' && a.price != null) {
-    sizedPlan.entry = plan.long ? Math.max(plan.entry, a.price) : Math.min(plan.entry, a.price);
+  const px = plan.long ? askPx(inst) : bidPx(inst);
+  if (plan.kind === 'triggered' && px != null) {
+    sizedPlan.entry = plan.long ? Math.max(plan.entry, px) : Math.min(plan.entry, px);
     moved = plan.long ? a.price >= plan.target : a.price <= plan.target;
   }
   const sz = E.size(sizedPlan, { account: cfg.account, maxLoss: cfg.maxLoss, maxPositionPct: cfg.maxPositionPct, cashBufferPct: cfg.cashBufferPct,
@@ -1751,6 +1964,10 @@ function evaluate(inst, plan, mc, side) {
   const checks = E.riskCheck(sizedPlan, sz, { maxLoss: cfg.maxLoss, minRR: cfg.minRR, maxDailyLoss: cfg.maxDailyLoss, maxTrades: cfg.maxTrades, maxLeverage: cfg.maxLeverage }, ctx);
   checks.unshift({ key: 'trigger', level: plan.kind === 'triggered' ? 'pass' : 'block' });
   if (plan.kind === 'triggered' && plan.ago >= 1) checks.splice(1, 0, { key: 'late', level: 'warn', v: plan.ago });
+  if (mkt === 'crypto' && statsAt && inst.vol != null) {
+    checks.push({ key: 'volume', level: inst.vol >= cfg.crypto.minVolUSD ? 'pass' : 'block', v: inst.vol, lim: cfg.crypto.minVolUSD });
+    checks.push({ key: 'spread', level: inst.spread != null && inst.spread <= cfg.crypto.maxSpreadPct ? 'pass' : 'block', v: inst.spread, lim: cfg.crypto.maxSpreadPct });
+  }
   const blocked = checks.filter(c => c.level === 'block');
   return { sizedPlan, sz, checks, blocked, canTake: !blocked.length && plan.kind === 'triggered' };
 }
@@ -1772,6 +1989,8 @@ function checkText(c, plan) {
     case 'fresh': return c.level === 'pass' ? `داده تازه است` : `داده کهنه است (${n(Math.round(c.v || 0))} دقیقه)`;
     case 'history': return c.level === 'pass' ? `این قانون در ${n(c.n)} بار گذشته میانگین مثبت داشت (${n(rr(c.v))})` : `این قانون در ${n(c.n)} بار گذشته میانگین منفی داشت (${n(rr(c.v))})`;
     case 'replays': return c.level === 'pass' ? `میانگین شبیه‌سازی مثبت است (${n(rr(c.v, 3))})` : `میانگین شبیه‌سازی منفی است (${n(rr(c.v, 3))})`;
+    case 'volume': return c.level === 'pass' ? `حجم ۲۴ ساعته ${n(usdK(c.v))} (حداقل ${n(usdK(c.lim))})` : `حجم ۲۴ ساعته فقط ${n(usdK(c.v))}؛ بازار کم‌معامله است (حداقل ${n(usdK(c.lim))})`;
+    case 'spread': return c.level === 'pass' ? `اسپرد ${n(c.v.toFixed(2) + '%')} (حداکثر ${n(c.lim + '%')})` : `اسپرد ${n(c.v != null ? c.v.toFixed(2) + '%' : '؟')}؛ بیشتر از حداکثر ${n(c.lim + '%')}`;
   }
   return c.key;
 }
@@ -1813,7 +2032,7 @@ function renderFocus() {
   else s2 = oddsHTML(mc, plan, inst);
   s2 += histHTML(inst.hist && inst.hist[side], inst);
   // step 3 and 4: size and risk
-  let s3 = `<p class="small">بعد از برنامه.</p>`, s4 = `<p class="small">بعد از برنامه.</p>`, s5 = `<p class="small">سفارش فقط وقتی آماده می‌شود که قانون واقعاً فعال شده باشد و همه‌ی چک‌ها قبول شوند.</p>`;
+  let s3 = `<p class="small">بعد از برنامه.</p>`, s4 = `<p class="small">بعد از برنامه.</p>`, s5 = '';
   let ticketText = '', canTake = false, sz = null, sizedPlan = null;
   if (!plan.none) {
     const ev = evaluate(inst, plan, mc, side);
@@ -1839,12 +2058,19 @@ function renderFocus() {
 حد ضرر (Stop-loss): ${fmtP(plan.stop, dec)}
 حد سود (Take-profit): ${fmtP(plan.target, dec)}
 خروج اجباری: ساعت ${tm(plan.exitAt)} به وقت تو، سود یا ضرر
-ضرر در حد ضرر: ${usd(sz.lossAtStop)} · سود در حد سود: ${usd(sz.gainAtTarget)} (با کارمزد)`;
+ضرر در حد ضرر: ${usd(sz.lossAtStop)} · سود در حد سود: ${usd(sz.gainAtTarget)} (با کارمزد)${market === 'crypto' && plan.long ? `
+بعد از خرید، سفارش فروش OCO در ${source.crypto}:
+  قیمت (معین): ${fmtP(plan.target, dec)}
+  قیمت توقف: ${fmtP(plan.stop, dec)}
+  قیمت حد ضرر: ${fmtP(E.roundAway(plan.stop * 0.998, true, dec), dec)}` : ''}`;
       s5 = `<pre class="ticket" id="ticketText">${esc(ticketText)}</pre>
-        <div class="row-btns"><button type="button" class="btn ghost sm" id="copyTicket">کپی</button><button type="button" class="btn sm" id="takeTrade">این معامله را گرفتم، ثبت کن</button>${market === 'crypto' ? `<button type="button" class="btn ghost sm" data-paper-open="${esc(inst.key)}">روی حساب مجازی باز کن</button>` : ''}</div>
-        <p class="small" style="margin-top:8px">هیچ سفارشی از این‌جا ارسال نمی‌شود. سفارش و حد ضرر را خودت در صرافی یا کارگزار بگذار، بعد ثبت کن تا سقف‌های روزانه و هشدارها کار کنند.</p>`;
+        <div class="row-btns"><button type="button" class="btn ghost sm" id="copyTicket">کپی</button><button type="button" class="btn sm" data-log-prefill="1">خریدم؛ ثبتش کن</button>${market === 'crypto' ? `<button type="button" class="btn ghost sm" data-paper-open="${esc(inst.key)}">روی حساب مجازی باز کن</button>` : ''}</div>
+        <p class="small" style="margin-top:8px">هیچ سفارشی از این‌جا ارسال نمی‌شود. بعد از خرید در صرافی، «خریدم؛ ثبتش کن» را بزن، قیمت و مقداری که واقعاً پر شد را وارد کن و ثبت کن تا هشدار فروش و سقف‌های روزانه کار کنند.</p>`;
     }
   }
+  if (!s5) s5 = `<p class="small">${plan.none ? 'الان سیگنالی برای این نماد نیست، پس متن سفارش آماده نمی‌شود.' : 'متن سفارش فقط وقتی آماده می‌شود که قانون فعال شده باشد و همه‌ی چک‌ها قبول شوند.'}</p>
+    <p class="small" style="margin-top:6px">اگر با این حال خودت در صرافی خرید کردی، ثبتش کن تا هشدار فروش و سقف‌های روزانه کار کنند.</p>
+    <div class="row-btns"><button type="button" class="btn sm" data-log-prefill="1">خرید کردم؛ ثبتش کن</button></div>`;
   const instHead = `<div class="focus-head"><div><h2>${esc(inst.label)}</h2><p class="small">${market === 'crypto' ? 'کریپتو، اسپات' : 'فارکس'} · ${esc(a.sess.name)}</p></div>
     <div style="text-align:left"><div class="px num">${fmtP(a.price, a.dec || 2)}</div><div class="num ${a.chg >= 0 ? 'pos' : 'neg'}" style="font-size:13px">${spc(a.chg)} از شروع جلسه</div></div></div>`;
   const html = `${instHead}
@@ -1862,7 +2088,7 @@ function renderFocus() {
     <div class="focus-grid2">
       <div class="step"><h3><span class="n">3</span>حجم معامله</h3>${s3}</div>
       <div class="step"><h3><span class="n">4</span>چک ریسک</h3>${s4}</div>
-      <div class="step"><h3><span class="n">5</span>سفارش دستی</h3>${s5}</div>
+      <div class="step"><h3><span class="n">5</span>سفارش و ثبت خرید</h3>${s5}</div>
     </div>`;
   focusDraw = { inst, a, plan: plan.none ? null : plan, mc: mc && !mc.pending && !mc.err ? mc : null };
   const changed = put('focusCard', html);
@@ -1878,20 +2104,144 @@ function renderFocus() {
       const done = () => toast('متن سفارش کپی شد.');
       try { navigator.clipboard.writeText(txt).then(done, () => selectText($('#ticketText'))); } catch (e) { selectText($('#ticketText')); }
     };
-    const tk = $('#takeTrade');
-    if (tk) tk.onclick = () => {
-      journal.push({ id: Date.now(), mkt: market, key: inst.key, label: inst.label, side: plan.side, entry: sizedPlan.entry, stop: plan.stop, target: plan.target,
-        units: sz.units, lossAtStop: sz.lossAtStop, gainAtTarget: sz.gainAtTarget, costUSD: sz.costUSD, quoteUSD: ['USD', 'USDT', 'USDC', 'FDUSD', 'TUSD'].includes(inst.quote),
-        dec, takenAt: Date.now(), exitAt: plan.exitAt, result: null, pnl: null });
-      saveJournal();
-      toast('در ژورنال ثبت شد. سفارش را خودت در صرافی گذاشتی؟ هشدار حد ضرر، حد سود و زمان خروج تا وقتی این صفحه باز است کار می‌کند.');
-      scheduleRender();
-    };
     tickCountdowns();
   }
   drawFocus();
 }
 function selectText(el) { if (!el) return; const r = document.createRange(); r.selectNodeContents(el); const s = getSelection(); s.removeAllRanges(); s.addRange(r); toast('متن انتخاب شد؛ کپی کن.'); }
+
+// ------------------------------------------------------------------ recording a real trade
+const L$ = id => document.getElementById(id);
+const QUOTE_USD = ['USD', 'USDT', 'USDC', 'FDUSD', 'TUSD'];
+const hmOf = t => { const d = new Date(t); return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); };
+function defaultExitAt(mkt) {
+  const S = sessFor(mkt), W = windowFor(S), ph = phaseOf(Date.now(), S), end = ph.start + (W.exitLast + 1) * 300000;
+  if (ph.phase === 'open' && end > Date.now()) return end;
+  return (ph.nextOpen || ph.start + DAY) + (W.exitLast + 1) * 300000;
+}
+function logInst() { return insts[market].get(L$('l_sym').value) || null; }
+function syncLogSymbols() {
+  const sel = L$('l_sym');
+  const list = Array.from(insts[market].values()).sort((x, y) => (y.tracked ? 1 : 0) - (x.tracked ? 1 : 0) || (y.vol || 0) - (x.vol || 0) || x.label.localeCompare(y.label));
+  const keys = market + ':' + list.map(i => i.key).join(',');
+  if (sel.dataset.keys === keys) return;
+  const v = sel.value;
+  sel.innerHTML = list.map(i => `<option value="${esc(i.key)}">${esc(i.label)}</option>`).join('');
+  sel.dataset.keys = keys;
+  sel.value = list.some(i => i.key === v) ? v : (ui.focus[market] || (list[0] && list[0].key) || '');
+  L$('l_sideW').hidden = market !== 'forex';
+  if (market !== 'forex') L$('l_side').value = 'buy';
+  if (!L$('l_price').value) updateLogSummary();
+}
+function logPrefill(inst, plan, sz) {
+  if (!inst) return;
+  L$('l_sym').value = inst.key;
+  const side = plan ? plan.side : 'buy', long = side === 'buy';
+  L$('l_side').value = side;
+  const price = (long ? askPx(inst) : bidPx(inst)) || (plan && plan.entry);
+  if (!(price > 0)) { toast('قیمت این نماد هنوز نرسیده.'); return; }
+  const dec = E.decimalsFor(price);
+  let stop, target;
+  if (plan) { stop = plan.stop; target = plan.target; }
+  else { stop = E.roundAway(price * (long ? 0.99 : 1.01), long, dec); target = E.targetFrom(price, stop, +cfg.targetR, long, dec); }
+  L$('l_price').value = +price.toFixed(dec);
+  L$('l_stop').value = stop; L$('l_target').value = target;
+  const units = sz && sz.units > 0 ? sz.units : null;
+  L$('l_units').value = units ? +units.toFixed(8) : '';
+  L$('l_usd').value = units ? +(units * price).toFixed(2) : '';
+  L$('l_exit').value = hmOf(plan ? plan.exitAt : defaultExitAt(market));
+  updateLogSummary();
+}
+function prefillFromFocusOr(inst) {
+  const focus = inst || focusInst();
+  if (!focus) return;
+  let plan = null, sz = null;
+  if (focus.key === ui.focus[market] && focus.a && focus.a.D) {
+    const side = focusSide(focus), p = planFor(focus, side);
+    if (!p.none && p.kind !== 'review') { plan = p; const mc = mcFor(focus, p); sz = evaluate(focus, p, mc.pending || mc.err ? null : mc, side).sz; if (sz.refuse) sz = null; }
+  }
+  logPrefill(focus, plan, sz);
+}
+function logRead() {
+  const inst = logInst();
+  if (!inst) return null;
+  const side = market === 'forex' ? L$('l_side').value : 'buy', long = side === 'buy';
+  const price = parseFloat(L$('l_price').value), units = parseFloat(L$('l_units').value);
+  const stop = parseFloat(L$('l_stop').value), target = parseFloat(L$('l_target').value);
+  const quoteUSD = QUOTE_USD.includes(inst.quote), f = (cfg[market].costPct || 0) / 2 / 100, conv = p => quoteUSD ? 1 : 1 / p;
+  const errs = [];
+  if (!(price > 0)) errs.push('قیمت خرید را وارد کن.');
+  if (!(units > 0)) errs.push('مقدار یا مبلغ را وارد کن.');
+  if (price > 0 && (!(stop > 0) || (long ? stop >= price : stop <= price))) errs.push(long ? 'حد ضرر باید زیر قیمت خرید باشد.' : 'حد ضرر باید بالای قیمت باشد.');
+  if (price > 0 && (!(target > 0) || (long ? target <= price : target >= price))) errs.push(long ? 'حد سود باید بالای قیمت خرید باشد.' : 'حد سود باید زیر قیمت باشد.');
+  const dec = price > 0 ? E.decimalsFor(price) : 2;
+  const r = { inst, side, long, price, units, stop, target, dec, quoteUSD, errs, f };
+  if (!errs.length) {
+    const feeIn = units * price * f * conv(price);
+    r.loss = units * Math.abs(price - stop) * conv(stop) + feeIn + units * stop * f * conv(stop);
+    r.gain = units * Math.abs(target - price) * conv(target) - feeIn - units * target * f * conv(target);
+    r.costUSD = 2 * feeIn;
+    r.oco = { price: target, stop, stopLimit: E.roundAway(long ? stop * 0.998 : stop * 1.002, long, dec), units: units * (1 - f) };
+    const m = /^(\d{1,2}):(\d{2})$/.exec(L$('l_exit').value || '');
+    let ex = defaultExitAt(market);
+    if (m) { const d = new Date(); d.setHours(+m[1], +m[2], 0, 0); ex = d.getTime(); if (ex <= Date.now()) ex += DAY; }
+    r.exitAt = ex;
+  }
+  return r;
+}
+function ocoText(r, base) {
+  return `سفارش فروش OCO\nمقدار: حدود ${+r.oco.units.toFixed(8)} ${base}\nقیمت (معین): ${fmtP(r.oco.price, r.dec)}\nقیمت توقف: ${fmtP(r.oco.stop, r.dec)}\nقیمت حد ضرر: ${fmtP(r.oco.stopLimit, r.dec)}`;
+}
+function updateLogSummary() {
+  const r = logRead(), el = L$('l_sum');
+  if (!r) { el.innerHTML = ''; return; }
+  L$('l_unitsLbl').textContent = market === 'crypto' ? `مقدار خریده‌شده (${r.inst.base})` : 'مقدار (واحد)';
+  L$('l_usdLbl').textContent = market === 'crypto' ? 'مبلغ (تتر)' : 'مبلغ (دلار)';
+  if (r.errs.length) { el.innerHTML = `<p class="small">${r.errs.join(' ')} یا دکمه‌ی «پر کردن با قیمت و برنامه‌ی الان» را بزن.</p>`; return; }
+  const today = todayEntries(), used = today.reduce((t, j) => t + (j.lossAtStop || 0), 0), warns = [];
+  if (r.loss > cfg.maxLoss + 0.005) warns.push(`ضرر در حد ضرر ${usd(r.loss)} از سقف ${usd(cfg.maxLoss)} بیشتر است.`);
+  if (used + r.loss > cfg.maxDailyLoss + 0.005) warns.push(`ریسک امروز با این معامله ${usd(used + r.loss)} می‌شود؛ بیشتر از سقف ${usd(cfg.maxDailyLoss)}.`);
+  if (today.length >= cfg.maxTrades) warns.push(`سقف ${cfg.maxTrades} معامله‌ی امروز پر شده.`);
+  if (r.gain / r.loss < cfg.minRR) warns.push(`سود به ضرر خالص ${(r.gain / r.loss).toFixed(2)} است؛ کمتر از ${cfg.minRR}.`);
+  el.innerHTML = `<div class="logsum"><span>ضرر در حد ضرر <b class="num neg">${usd(-r.loss)}</b></span><span>سود در حد سود <b class="num pos">${usd(r.gain)}</b></span><span>سود به ضرر ${n((r.gain / r.loss).toFixed(2))}</span><span>خروج اجباری ساعت ${n(tm(r.exitAt))}</span><span class="small">کارمزد رفت و برگشت حساب شده</span></div>
+    ${warns.length ? `<p class="logwarn">${warns.join(' ')} اگر خرید انجام شده، باز هم ثبتش کن تا هشدار فروش بگیری؛ ولی این معامله از قانون‌های خودت بیرون است.</p>` : ''}
+    ${market === 'crypto' && r.long ? `<div class="ocobox"><b>بعد از خرید، در ${esc(source.crypto)} سفارش فروش OCO بگذار:</b>
+      <dl class="oco"><dt>مقدار</dt><dd>حدود ${n(+r.oco.units.toFixed(8))} ${esc(r.inst.base)} <span class="small">(موجودی همین ارز؛ بعد از کارمزد خرید کمی کمتر از مقدار سفارش است)</span></dd><dt>قیمت (معین)</dt><dd>${n(fmtP(r.oco.price, r.dec))}</dd><dt>قیمت توقف</dt><dd>${n(fmtP(r.oco.stop, r.dec))}</dd><dt>قیمت حد ضرر</dt><dd>${n(fmtP(r.oco.stopLimit, r.dec))}</dd></dl>
+      <button type="button" class="btn ghost sm" id="l_copyOco">کپی عددهای OCO</button></div>` : ''}`;
+}
+L$('l_sym').addEventListener('change', () => prefillFromFocusOr(logInst()));
+L$('l_side').addEventListener('change', updateLogSummary);
+L$('l_usd').addEventListener('input', () => { const p = parseFloat(L$('l_price').value), u = parseFloat(L$('l_usd').value); if (p > 0 && u >= 0) L$('l_units').value = +(u / p).toFixed(8); updateLogSummary(); });
+L$('l_units').addEventListener('input', () => { const p = parseFloat(L$('l_price').value), q = parseFloat(L$('l_units').value); if (p > 0 && q >= 0) L$('l_usd').value = +(q * p).toFixed(2); updateLogSummary(); });
+L$('l_price').addEventListener('input', () => { const p = parseFloat(L$('l_price').value), q = parseFloat(L$('l_units').value); if (p > 0 && q > 0) L$('l_usd').value = +(q * p).toFixed(2); updateLogSummary(); });
+['l_stop', 'l_target', 'l_exit'].forEach(id => L$(id).addEventListener('input', updateLogSummary));
+L$('l_fill').onclick = () => prefillFromFocusOr(logInst());
+L$('lForm').addEventListener('click', e => {
+  if (!e.target.closest('#l_copyOco')) return;
+  const r = logRead();
+  if (!r || r.errs.length) return;
+  const txt = ocoText(r, r.inst.base);
+  try { navigator.clipboard.writeText(txt).then(() => toast('عددهای OCO کپی شد.'), () => selectText(L$('l_sum'))); } catch (err) { selectText(L$('l_sum')); }
+});
+L$('lForm').addEventListener('submit', e => {
+  e.preventDefault();
+  const r = logRead();
+  if (!r || r.errs.length) { toast(r ? r.errs.join(' ') : 'نماد را انتخاب کن.', 'down'); return; }
+  journal.push({ id: Date.now(), mkt: market, key: r.inst.key, label: r.inst.label, side: r.side, entry: r.price, stop: r.stop, target: r.target, units: r.units,
+    lossAtStop: r.loss, gainAtTarget: r.gain, costUSD: r.costUSD, quoteUSD: r.quoteUSD, dec: r.dec, takenAt: Date.now(), exitAt: r.exitAt, result: null, pnl: null, oco: r.oco });
+  saveJournal();
+  if (market === 'crypto') updateTracking();
+  toast(`${esc(r.inst.label)} در ژورنال ثبت شد. اگر هنوز OCO نگذاشتی، همین حالا در صرافی بگذار. هشدار فروش تا وقتی این صفحه باز است کار می‌کند.`, 'up');
+  L$('l_price').value = ''; L$('l_units').value = ''; L$('l_usd').value = '';
+  updateLogSummary();
+  scheduleRender();
+  setTimeout(() => L$('journalCard').scrollIntoView({ block: 'start' }), 60);
+});
+document.addEventListener('click', e => {
+  if (!e.target.closest('[data-log-prefill]')) return;
+  prefillFromFocusOr(focusInst());
+  setTimeout(() => { L$('logCard').scrollIntoView({ block: 'start' }); L$('l_price').focus({ preventScroll: true }); }, 60);
+});
 
 // ------------------------------------------------------------------ suggestions: what the rule says right now
 // Two tiers. The risk rules are never relaxed: a symbol is listed only when the rule triggered and EVERY risk
@@ -2019,17 +2369,12 @@ function savePaper() { store.set('dtw.paper', paper); }
 if (!paper || !Array.isArray(paper.positions) || !Array.isArray(paper.closed)) paperNew();
 const feeSide = () => (cfg.crypto.costPct || 0) / 2 / 100;
 const qtyStep = price => Math.pow(10, -Math.max(0, Math.min(6, Math.floor(Math.log10(price)) + 1)));
-function nextExitAt(inst) {
-  const a = inst.a, end = a.ph.start + (a.win.exitLast + 1) * 300000;
-  if (a.ph.phase === 'open' && end > Date.now()) return end;
-  const base = a.ph.nextOpen || a.ph.start + DAY;
-  return base + (a.win.exitLast + 1) * 300000;
-}
+function nextExitAt() { return defaultExitAt('crypto'); }
 function paperToday() { return paper.positions.concat(paper.closed).filter(p => dayKey(p.openedAt) === dayKey(Date.now())); }
 // open a long at the live price; returns an error text or null
 function paperOpen(inst, units, stop, target, exitAt, tier) {
-  const a = inst.a, price = a && a.price;
-  if (!(price > 0) || inst.status !== 'ready') return 'قیمت این نماد هنوز نرسیده.';
+  const price = askPx(inst);
+  if (!(price > 0)) return 'قیمت این نماد هنوز نرسیده.';
   if (!(stop < price)) return 'حد ضرر باید زیر قیمت باشد.';
   if (paper.positions.some(p => p.key === inst.key)) return 'روی این نماد یک پوزیشن باز داری.';
   const step = qtyStep(price);
@@ -2048,6 +2393,7 @@ function paperOpen(inst, units, stop, target, exitAt, tier) {
   paper.positions.push({ id: Date.now(), key: inst.key, label: inst.label, src: source.crypto, units, entry: price, stop, target, exitAt,
     openedAt: Date.now(), feeIn: fee, risk, dec: E.decimalsFor(price), checkedTo: Math.ceil(Date.now() / MIN5) * MIN5, tier: tier || null });
   savePaper();
+  updateTracking();
   toast(`خرید مجازی: ${n(units.toLocaleString('en-US', { maximumFractionDigits: 8 }))} ${esc(inst.base)} در ${n(fmtP(price, E.decimalsFor(price)))}`, 'up');
   return null;
 }
@@ -2060,6 +2406,7 @@ function paperClose(pos, price, reason, at) {
   paper.closed.push(Object.assign({}, pos, { exit: price, closedAt: at || Date.now(), reason, pnl, R }));
   if (paper.closed.length > 400) paper.closed = paper.closed.slice(-400);
   savePaper();
+  setTimeout(updateTracking, 0);
   const RS = { stop: 'حد ضرر', target: 'حد سود', time: 'زمان خروج', manual: 'فروش دستی' };
   toast(`فروش مجازی ${esc(pos.label)} (${RS[reason]}): ${n(usd(pnl))}`, pnl >= 0 ? 'up' : 'down');
 }
@@ -2068,7 +2415,7 @@ function paperTick() {
   const now = Date.now();
   paper.positions.slice().forEach(pos => {
     const inst = insts.crypto.get(pos.key);
-    if (!inst || inst.status !== 'ready' || !inst.a) return;
+    if (!inst) return;
     for (const b of inst.bars) {
       if (b.t < pos.checkedTo || b.t + MIN5 > now) continue;
       if (b.l <= pos.stop) { paperClose(pos, Math.min(pos.stop, b.o), 'stop', b.t + MIN5); return; }
@@ -2076,7 +2423,8 @@ function paperTick() {
       pos.checkedTo = b.t + MIN5;
       if (pos.checkedTo >= pos.exitAt) { paperClose(pos, b.c, 'time', pos.exitAt); return; }
     }
-    const p = inst.a.price;
+    const p = bidPx(inst);
+    if (!(p > 0)) return;
     if (p <= pos.stop) paperClose(pos, p, 'stop');
     else if (p >= pos.target) paperClose(pos, pos.target, 'target');
     else if (now >= pos.exitAt) paperClose(pos, p, 'time');
@@ -2097,8 +2445,9 @@ function paperOpenFromSuggestion(key, tier) {
 function paperPreview() {
   const el = $('#p_preview'), inst = insts.crypto.get($('#p_sym').value);
   if (!el) return;
-  if (!inst || !inst.a || !(inst.a.price > 0)) { el.textContent = 'قیمت این نماد هنوز نرسیده.'; return; }
-  const price = inst.a.price, dec = E.decimalsFor(price), amt = +$('#p_amt').value || 0, sp = +$('#p_stop').value || 0, R = +$('#p_tr').value || 0;
+  const price = inst ? askPx(inst) : null;
+  if (!(price > 0)) { el.textContent = 'قیمت این نماد هنوز نرسیده.'; return; }
+  const dec = E.decimalsFor(price), amt = +$('#p_amt').value || 0, sp = +$('#p_stop').value || 0, R = +$('#p_tr').value || 0;
   const stop = E.roundAway(price * (1 - sp / 100), true, dec), target = E.targetFrom(price, stop, R, true, dec);
   const units = amt / price, risk = units * (price - stop) + amt * feeSide() * 2;
   el.innerHTML = `قیمت ${n(fmtP(price, dec))} · حد ضرر ${n(fmtP(stop, dec))} · حد سود ${n(fmtP(target, dec))} · ضرر در حد ضرر حدود <span class="num ${risk > cfg.maxLoss ? 'neg' : ''}">${usd(risk)}</span> (سقف ${n(usd(cfg.maxLoss))}) · نقد ${n(usd(paper.cash))}`;
@@ -2106,16 +2455,16 @@ function paperPreview() {
 const tierOf = x => x.tier || (x.sug ? 'A' : null);
 const tierTag = x => { const t = tierOf(x); return t === 'A' ? ' <span class="small pos">۵/۵</span>' : t === 'B' ? ' <span class="small" style="color:var(--warn)">۸۰٪</span>' : ' <span class="small">دستی</span>'; };
 function renderPaper() {
-  const list = Array.from(insts.crypto.values());
+  const list = Array.from(insts.crypto.values()).sort((x, y) => (y.tracked ? 1 : 0) - (x.tracked ? 1 : 0) || (y.vol || 0) - (x.vol || 0) || x.label.localeCompare(y.label));
   const sel = $('#p_sym'), keys = list.map(i => i.key).join(',');
   if (sel.dataset.keys !== keys) { const v = sel.value; sel.innerHTML = list.map(i => `<option value="${esc(i.key)}">${esc(i.label)}</option>`).join(''); sel.dataset.keys = keys; if (v) sel.value = v; }
-  const priceOf = pos => { const i = insts.crypto.get(pos.key); return i && i.a && i.a.price > 0 ? i.a.price : pos.entry; };
+  const priceOf = pos => { const i = insts.crypto.get(pos.key); return (i && bidPx(i)) || pos.entry; };
   const openVal = paper.positions.reduce((t, p) => t + p.units * priceOf(p), 0);
   const equity = paper.cash + openVal, total = equity - paper.start;
   const today = paper.closed.filter(c => dayKey(c.closedAt) === dayKey(Date.now())).reduce((t, c) => t + c.pnl, 0)
     + paper.positions.filter(p => dayKey(p.openedAt) === dayKey(Date.now())).reduce((t, p) => t + p.units * (priceOf(p) - p.entry) - p.feeIn, 0);
   const wins = paper.closed.filter(c => c.pnl > 0).length, Rs = paper.closed.filter(c => c.R != null);
-  $('#paperSub').textContent = `قیمت لحظه‌ای ${source.crypto} و کارمزد ${cfg.crypto.costPct}٪ رفت و برگشت · سفارش واقعی ثبت نمی‌شود · فقط در همین مرورگر`;
+  $('#paperSub').textContent = `قیمت لحظه‌ای ${source.crypto}: خرید به بهترین قیمت فروشنده، فروش به بهترین قیمت خریدار، و کارمزد ${cfg.crypto.costPct}٪ رفت و برگشت · سفارش واقعی ثبت نمی‌شود · فقط در همین مرورگر`;
   put('paperStats', `<div class="reality" style="margin-top:12px">
     <div class="stat"><span class="lbl">ارزش حساب</span><b class="num">${usd(equity)}</b><small>شروع ${n(usd(paper.start, 0))}</small></div>
     <div class="stat"><span class="lbl">سود و زیان کل</span><b class="num ${total >= 0 ? 'pos' : 'neg'}">${usd(total)}</b><small>${n(spc(total / paper.start))}</small></div>
@@ -2157,11 +2506,12 @@ function renderPaper() {
 $('#pForm').addEventListener('submit', e => {
   e.preventDefault();
   const inst = insts.crypto.get($('#p_sym').value);
-  if (!inst || !inst.a || !(inst.a.price > 0)) { toast('قیمت این نماد هنوز نرسیده.'); return; }
-  const price = inst.a.price, dec = E.decimalsFor(price);
+  const price = inst ? askPx(inst) : null;
+  if (!(price > 0)) { toast('قیمت این نماد هنوز نرسیده.'); return; }
+  const dec = E.decimalsFor(price);
   const stop = E.roundAway(price * (1 - (+$('#p_stop').value || 1) / 100), true, dec);
   const target = E.targetFrom(price, stop, +$('#p_tr').value || 2, true, dec);
-  const err = paperOpen(inst, (+$('#p_amt').value || 0) / price, stop, target, nextExitAt(inst), false);
+  const err = paperOpen(inst, (+$('#p_amt').value || 0) / price, stop, target, nextExitAt(), false);
   if (err) toast(esc(err), 'down');
   scheduleRender();
 });
@@ -2178,13 +2528,15 @@ document.addEventListener('click', e => {
   const ps = e.target.closest('[data-paper-sell]');
   if (ps) {
     const pos = paper.positions.find(p => String(p.id) === ps.dataset.paperSell), inst = pos && insts.crypto.get(pos.key);
-    if (pos && inst && inst.a && inst.a.price > 0) { paperClose(pos, inst.a.price, 'manual'); scheduleRender(); }
+    const px = inst && bidPx(inst);
+    if (pos && px > 0) { paperClose(pos, px, 'manual'); scheduleRender(); }
     return;
   }
   const fo = e.target.closest('[data-focus]');
   if (fo) {
     if (fo.dataset.mkt && fo.dataset.mkt !== market) { market = fo.dataset.mkt; store.set('dtw.market', market); }
     ui.focus[market] = fo.dataset.focus; store.set('dtw.focus', ui.focus);
+    if (market === 'crypto') updateTracking();
     setView('dash');
     scheduleRender();
     setTimeout(() => $('#focusCard').scrollIntoView({ block: 'start' }), 80);
@@ -2227,7 +2579,7 @@ function renderGuide() {
 
   ${sec('setup', 2, 'تنظیم اول (یک بار)')}
   <ol>
-    <li>صفحه را باز کن. بار اول، کامل شدن تاریخچه‌ی ۴۵ روزه از نوبیتکس حدود ۱۰ دقیقه طول می‌کشد (نوبیتکس فقط ۲۰ درخواست در دقیقه می‌دهد). قیمت‌ها و وضعیت امروز از همان اول درست‌اند. دفعه‌های بعد چند ثانیه.</li>
+    <li>صفحه را باز کن. تابلو همه‌ی بازارهای تتری نوبیتکس را با قیمت نشان می‌دهد و قانون روی پرمعامله‌ترها روشن می‌شود (حداکثر ${n(cfg.crypto.maxTracked)} نماد با حجم ۲۴ ساعته‌ی حداقل ${n(usdK(cfg.crypto.minVolUSD))} و اسپرد حداکثر ${n(cfg.crypto.maxSpreadPct + '%')}). تاریخچه‌ی ${n(cfg.historyDays)} روزه بار اول برای هر نماد حدود ۲۶ درخواست می‌خواهد و نوبیتکس ۲۰ درخواست در دقیقه می‌دهد؛ پس کامل شدن برای همه حدود ${n(Math.ceil(cfg.crypto.maxTracked * 26 / 12))} دقیقه طول می‌کشد، اول پرمعامله‌ترها. قیمت‌ها و وضعیت امروز از همان اول درست‌اند و دفعه‌های بعد تاریخچه از حافظه‌ی مرورگر خوانده می‌شود.</li>
     <li>«تنظیمات» را باز کن و این‌ها را با واقعیت خودت پر کن: <b>سرمایه</b>، <b>حداکثر ضرر هر معامله</b> (پیشنهاد: حداکثر ۱٪ سرمایه؛ الان ${n(riskPct + '%')})، <b>سقف ضرر روزانه</b> و <b>حداکثر معامله در روز</b>.</li>
     <li><b>هزینه‌ی رفت و برگشت:</b> کارمزد خرید به‌علاوه‌ی فروش در سطح کاربری خودت در نوبیتکس. پیش‌فرض ${n(cfg.crypto.costPct + '%')} است.</li>
     <li>منبع داده را روی «نوبیتکس» و جلسه را روی «لندن» نگه دار.</li>
@@ -2251,6 +2603,7 @@ function renderGuide() {
   <p>کارت «پیشنهادهای الان» بالای داشبورد خودکار به‌روز می‌شود. هر پیشنهاد اول باید از <b>همه‌ی قانون‌های ریسک</b> تو رد شود: سقف ضرر هر معامله، حداقل نسبت سود به ضرر، سقف روزانه، پنجره‌ی ورود و تازه بودن داده. این‌ها در هیچ سطحی کم نمی‌شوند. بعد پنج شرط کیفیت شمرده می‌شود:</p>
   <ol><li>سیگنال تازه است (حداکثر یک کندل پیش).</li><li>همین قانون روی همین ارز حداقل ${n(SUG_MIN_N)} بار در گذشته فعال شده.</li><li>میانگین نتیجه‌ی گذشته بعد از کارمزد مثبت است.</li><li>میانگین شبیه‌سازی‌های ماشین زمان مثبت است.</li><li>قیمت بالای میانگین ۲۰ روزه است (هم‌جهت با روند).</li></ol>
   <p><b>بخش سبز (۵ از ۵):</b> همه‌ی شرط‌ها برقرار است. <b>بخش نارنجی (۴ از ۵، ۸۰٪):</b> یکی کم است و روی کارت با ✕ مشخص شده.</p>
+  <p><b>قانون‌های نقدینگی</b> هم جزو قانون‌های ریسک‌اند: حجم ۲۴ ساعته حداقل ${n(usdK(cfg.crypto.minVolUSD))} و اسپرد حداکثر ${n(cfg.crypto.maxSpreadPct + '%')}. بازار کم‌معامله پیشنهاد نمی‌شود، چون قیمتی که واقعاً پر می‌شود با عدد صفحه فرق زیادی دارد.</p>
   ${C('imp', IMP, 'پیشنهادهای ۸۰٪ طبق تعریف ضعیف‌ترند. اول فقط روی حساب مجازی امتحانشان کن و جدول «نتیجه به تفکیک نوع پیشنهاد» را ببین.')}
   ${C('tip', TIP, 'بیشتر روزها هیچ پیشنهادی نمی‌آید. این ایراد نیست؛ یعنی شرط‌ها سخت‌گیرند.')}
 
@@ -2269,7 +2622,7 @@ function renderGuide() {
   <ol>
     <li>در بازار تتری همان ارز (مثلاً BTC/USDT) به قیمت بازار، <b>همان حجمی را بخر که داشبورد گفته</b>؛ نه بیشتر.</li>
     <li><b>بلافاصله</b> یک سفارش فروش OCO ثبت کن. OCO دو سفارش است: اگر یکی اجرا شود، دیگری خودکار لغو می‌شود.</li>
-    <li>در قسمت ۵ داشبورد «این معامله را گرفتم، ثبت کن» را بزن.</li>
+    <li>در قسمت ۵ داشبورد «خریدم؛ ثبتش کن» را بزن (یا مستقیم به کارت «ثبت خرید واقعی» برو)، قیمت و مقداری که <b>واقعاً</b> پر شد را وارد کن و «ثبت در ژورنال» را بزن. همان کارت عددهای OCO را هم آماده نشان می‌دهد.</li>
   </ol>
   <p>فیلدهای OCO فروش، با یک مثال (خرید بیت‌کوین در 77,000، حد ضرر 76,400، حد سود 78,200):</p>
   <dl class="oco"><dt>مقدار</dt><dd>همان حجمی که خریدی</dd><dt>قیمت (معین)</dt><dd>حد سود: ${n('78,200')}</dd><dt>قیمت توقف</dt><dd>حد ضرر: ${n('76,400')}</dd><dt>قیمت حد ضرر</dt><dd>کمی پایین‌تر از حد ضرر، مثلاً ۰٫۲٪: ${n('76,250')}</dd></dl>
@@ -2283,7 +2636,7 @@ function renderGuide() {
   ${C('must', MUST, 'حد ضرر را بعد از خرید هرگز پایین‌تر نبر و شب نگه ندار. بیشترِ ضررهای بزرگ از همین دو کار می‌آیند.')}
 
   ${sec('journal', 8, 'ژورنال و سقف‌های روزانه')}
-  <p>هر معامله‌ی واقعی را ثبت کن و بعد از فروش، نتیجه را بزن: «حد سود»، «حد ضرر» یا قیمت خروج دستی. کارت ژورنال تعداد معاملات امروز، ریسک مصرف‌شده و نتیجه‌ی روز را نشان می‌دهد.</p>
+  <p>هر خرید واقعی را در کارت «ثبت خرید واقعی» ثبت کن؛ با پیشنهاد یا بدون آن. نماد، قیمت و مقداری که پر شد، حد ضرر، حد سود و ساعت خروج را وارد کن؛ ضرر و سود ممکن و عددهای OCO همان‌جا حساب می‌شوند. بعد از فروش، در ژورنال نتیجه را بزن: «حد سود»، «حد ضرر» یا قیمت خروج دستی. کارت ژورنال تعداد معاملات امروز، ریسک مصرف‌شده و نتیجه‌ی روز را نشان می‌دهد.</p>
   ${C('must', MUST, `وقتی ریسک مصرف‌شده‌ی امروز به ${n(usd(cfg.maxDailyLoss, 0))} یا تعداد معاملات به ${n(cfg.maxTrades)} رسید، داشبورد معامله‌ی تازه را رد می‌کند. آن روز را تمام کن؛ «جبران ضرر» با معامله‌ی بیشتر معمولاً ضرر را بزرگ‌تر می‌کند.`)}
 
   ${sec('paper', 9, 'حساب مجازی')}
@@ -2309,7 +2662,8 @@ function renderGuide() {
     <li><b>بعد از به‌روزرسانی سایت چیزی عوض نشد:</b> صفحه را با Ctrl+F5 دوباره باز کن.</li>
     <li><b>کارنامه خالی است:</b> بار اول تاریخچه هنوز در حال تکمیل است؛ چند دقیقه صبر کن.</li>
     <li><b>«داده‌ی تازه نیست»:</b> اینترنت یا نوبیتکس قطع شده؛ تا درست نشده، معامله‌ی تازه نگیر.</li>
-    <li><b>فارکس:</b> کلید رایگان Twelve Data لازم است و ممکن است از اینترنت ایران باز نشود.</li>
+    <li><b>نمادها کم است:</b> در تنظیمات «کدام نمادها» را روی «همه‌ی بازارهای تتری نوبیتکس» بگذار و در تابلو «همه‌ی بازارها» را بزن. برای روشن کردن قانون روی نمادهای بیشتر، «حداکثر نماد با قانون روشن» را بالا ببر یا «حداقل حجم» را پایین بیاور.</li>
+    <li><b>فارکس:</b> کلید رایگان Twelve Data لازم است، ممکن است از اینترنت ایران باز نشود و پلن رایگان فقط برای حدود ۸ جفت‌ارز کافی است. فارکس در نوبیتکس معامله نمی‌شود.</li>
   </ul>
 
   ${sec('risk', 13, 'ریسک‌هایی که باید بدانی')}
@@ -2329,6 +2683,8 @@ function renderGuide() {
     <dt>حد سود</dt><dd>قیمتی که اگر رسید، می‌فروشی و سود را برمی‌داری.</dd>
     <dt>OCO</dt><dd>دو سفارش فروش با هم (حد سود و حد ضرر)؛ اجرای یکی، دیگری را لغو می‌کند.</dd>
     <dt>کارمزد رفت و برگشت</dt><dd>کارمزد خرید به‌علاوه‌ی کارمزد فروش.</dd>
+    <dt>اسپرد</dt><dd>فاصله‌ی بهترین قیمت خریدار و فروشنده. خرید به قیمت فروشنده پر می‌شود و فروش به قیمت خریدار؛ اسپرد بزرگ یعنی همان لحظه‌ی خرید ضرر کرده‌ای.</dd>
+    <dt>حجم ۲۴ ساعته</dt><dd>مجموع معاملات یک بازار در ۲۴ ساعت گذشته، به تتر.</dd>
     <dt>ماشین زمان</dt><dd>شبیه‌سازی هزاران حالت از بقیه‌ی روز، ساخته‌شده از کندل‌های گذشته‌ی خود همان ارز. پیش‌بینی نیست.</dd>
     <dt>حساب مجازی</dt><dd>تمرین با پول غیرواقعی و قیمت واقعی.</dd>
   </dl>
@@ -2468,7 +2824,7 @@ function drawFocus(force) {
 function renderScore() {
   const rows = [];
   insts[market].forEach(inst => {
-    if (!inst.hist) return;
+    if (!inst.hist || inst.partial) return;
     ['buy', 'sell'].forEach(s => { const h = inst.hist[s]; if (h) rows.push({ inst, s, h }); });
   });
   rows.sort((p, q) => (q.h.triggered ? q.h.avgRnet : -9) - (p.h.triggered ? p.h.avgRnet : -9));
@@ -2490,7 +2846,8 @@ function renderJournal() {
   const rows = journal.slice(-12).reverse().map(j => {
     const res = j.result ? `<span class="num ${j.pnl >= 0 ? 'pos' : 'neg'}">${usd(j.pnl)}</span> <span class="small">${{ target: 'حد سود', stop: 'حد ضرر', manual: 'دستی' }[j.result]}</span>`
       : `<div class="jbtns"><button type="button" class="btn ghost sm" data-j="${j.id}" data-r="target">حد سود</button><button type="button" class="btn ghost sm" data-j="${j.id}" data-r="stop">حد ضرر</button><input type="number" step="any" placeholder="قیمت خروج" id="jx${j.id}" dir="ltr"><button type="button" class="btn ghost sm" data-j="${j.id}" data-r="manual">ثبت</button></div>`;
-    return `<tr><td>${n(new Date(j.takenAt).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit' }) + ' ' + tm(j.takenAt))}</td><td><b>${esc(j.label)}</b> ${j.side === 'buy' ? '↑' : '↓'}</td><td>${n(fmtP(j.entry, j.dec))}</td><td>${res}</td><td><button type="button" class="btn ghost sm" data-del="${j.id}" aria-label="حذف">✕</button></td></tr>`;
+    const sub = j.result ? '' : `<span class="jsub">حد ضرر ${n(fmtP(j.stop, j.dec))} · حد سود ${n(fmtP(j.target, j.dec))} · خروج ${n(tm(j.exitAt))}${j.oco ? ` · OCO: معین ${n(fmtP(j.oco.price, j.dec))}، توقف ${n(fmtP(j.oco.stop, j.dec))}، حد ضرر ${n(fmtP(j.oco.stopLimit, j.dec))}` : ''}</span>`;
+    return `<tr><td>${n(new Date(j.takenAt).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit' }) + ' ' + tm(j.takenAt))}</td><td><b>${esc(j.label)}</b> ${j.side === 'buy' ? '↑' : '↓'}${sub}</td><td>${n(fmtP(j.entry, j.dec))}</td><td>${res}</td><td><button type="button" class="btn ghost sm" data-del="${j.id}" aria-label="حذف">✕</button></td></tr>`;
   }).join('');
   const html = `<div class="sec-h"><h2 id="journalH">ژورنال و سقف‌های امروز</h2><p>فقط در همین مرورگر ذخیره می‌شود</p></div>
     <div class="reality" style="grid-template-columns:repeat(3,minmax(0,1fr))">
@@ -2498,7 +2855,7 @@ function renderJournal() {
       <div class="stat"><span class="lbl">ریسک مصرف‌شده‌ی امروز</span><b class="num">${usd(risk, 0)}</b><small>از سقف ${n(usd(cfg.maxDailyLoss, 0))}</small><div class="meter"><i style="width:${Math.min(100, risk / cfg.maxDailyLoss * 100).toFixed(0)}%"></i></div></div>
       <div class="stat"><span class="lbl">نتیجه‌ی امروز</span><b class="num ${realized >= 0 ? 'pos' : 'neg'}">${usd(realized)}</b><small>هدف تو ${n(usd(cfg.dailyTarget, 0))}</small></div>
     </div>
-    ${rows ? `<div class="tbl"><table class="list"><thead><tr><th>زمان</th><th>نماد</th><th>ورود</th><th>نتیجه</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>` : '<p class="empty">هنوز معامله‌ای ثبت نشده. وقتی سفارشی را خودت گذاشتی، از قسمت ۵ ثبتش کن.</p>'}
+    ${rows ? `<div class="tbl"><table class="list"><thead><tr><th>زمان</th><th>نماد</th><th>ورود</th><th>نتیجه</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>` : '<p class="empty">هنوز معامله‌ای ثبت نشده. هر خریدی در صرافی کردی، در کارت «ثبت خرید واقعی» ثبتش کن.</p>'}
     ${closed.length ? `<p class="small" style="padding:0 18px 14px">کل: ${n(closed.length)} معامله‌ی بسته، ${n(pc(wins / closed.length, 0))} برد، جمع ${n(usd(allPnl))}.</p>` : ''}`;
   if (put('journalCard', html)) {
     document.querySelectorAll('#journalCard [data-j]').forEach(b => b.onclick = () => {
@@ -2507,7 +2864,7 @@ function renderJournal() {
       if (b.dataset.r === 'target') { j.result = 'target'; j.pnl = j.gainAtTarget; }
       else if (b.dataset.r === 'stop') { j.result = 'stop'; j.pnl = -j.lossAtStop; }
       else { const p = parseFloat($('#jx' + j.id).value); if (!(p > 0)) { toast('قیمت خروج را وارد کن.'); return; } j.result = 'manual'; j.exitPrice = p; j.pnl = pnlFor(j, p); }
-      saveJournal(); scheduleRender();
+      saveJournal(); if (j.mkt === 'crypto') updateTracking(); scheduleRender();
     });
     document.querySelectorAll('#journalCard [data-del]').forEach(b => b.onclick = () => {
       if (b.dataset.armed !== '1') { b.dataset.armed = '1'; b.textContent = 'حذف؟'; setTimeout(() => { b.dataset.armed = ''; b.textContent = '✕'; }, 3000); return; }
@@ -2519,7 +2876,7 @@ function renderJournal() {
 // ------------------------------------------------------------------ settings dialog
 const FIELDS = ['account', 'dailyTarget', 'maxLoss', 'maxDailyLoss', 'maxTrades', 'minRR', 'cashBufferPct', 'maxPositionPct', 'maxLeverage', 'minOrderUSD',
   'orMinutes', 'stopRule', 'atrK', 'stopPct', 'targetR', 'tdKey', 'historyDays', 'replays', 'seed', 'sound',
-  'crypto.symbols', 'crypto.session', 'crypto.costPct', 'crypto.allowShort', 'crypto.source', 'forex.symbols', 'forex.session', 'forex.costPct', 'forex.allowShort',
+  'crypto.symbols', 'crypto.session', 'crypto.costPct', 'crypto.allowShort', 'crypto.source', 'crypto.mode', 'crypto.minVolUSD', 'crypto.maxSpreadPct', 'crypto.maxTracked', 'forex.symbols', 'forex.session', 'forex.costPct', 'forex.allowShort',
   'custom.tz', 'custom.open', 'custom.hours'];
 const getP = (o, p) => p.split('.').reduce((x, k) => x[k], o);
 const setP = (o, p, v) => { const ks = p.split('.'); const last = ks.pop(); ks.reduce((x, k) => x[k], o)[last] = v; };
@@ -2549,6 +2906,10 @@ function readSettings() {
   next.historyDays = Math.max(20, Math.min(120, Math.round(next.historyDays)));
   next.account = Math.max(10, next.account);
   next.maxLoss = Math.max(0.5, next.maxLoss);
+  next.crypto.mode = next.crypto.mode === 'list' ? 'list' : 'all';
+  next.crypto.minVolUSD = Math.max(0, next.crypto.minVolUSD);
+  next.crypto.maxSpreadPct = Math.max(0.01, next.crypto.maxSpreadPct);
+  next.crypto.maxTracked = Math.max(1, Math.min(200, Math.round(next.crypto.maxTracked)));
   if (!validTz(next.custom.tz)) next.custom.tz = 'UTC';
   if (hm(next.custom.open) == null) next.custom.open = '09:00';
   return next;
@@ -2566,9 +2927,10 @@ $('#setForm').addEventListener('submit', e => {
   ['crypto', 'forex'].forEach(m => {
     const srcChanged = m === 'crypto' && prev.crypto.source !== next.crypto.source;
     if (srcChanged) { cryptoPick = null; insts.crypto.forEach(i => { i.status = 'idle'; i.bars = []; }); }
-    const refetch = srcChanged || prev[m].symbols !== next[m].symbols || next.historyDays > prev.historyDays || (m === 'forex' && prev.tdKey !== next.tdKey);
+    const listChanged = m === 'crypto' && ['mode', 'minVolUSD', 'maxSpreadPct', 'maxTracked'].some(k => prev.crypto[k] !== next.crypto[k]);
+    const refetch = srcChanged || listChanged || prev[m].symbols !== next[m].symbols || next.historyDays > prev.historyDays || (m === 'forex' && prev.tdKey !== next.tdKey);
     insts[m].forEach(i => { i._hk = null; i._sig = null; });
-    if (refetch && (m === market || insts[m].size)) loadMarket(m, m === 'forex' && prev.tdKey !== next.tdKey);
+    if (refetch && (m === 'crypto' || m === market)) loadMarket(m, m === 'forex' && prev.tdKey !== next.tdKey);
   });
   Object.keys(last).forEach(k => delete last[k]);
   scheduleRender();
@@ -2587,7 +2949,7 @@ function why(e) {
 let diagText = '';
 async function runDiag() {
   const body = $('#diagBody');
-  const rows = SRC_ORDER.map(id => ({ id, name: CRYPTO_SRC[id].name, state: 'هنوز جواب نداده…', ok: null }));
+  const rows = [{ id: 'nbstats', name: 'نوبیتکس (لیست همه‌ی بازارها)', state: 'هنوز جواب نداده…', ok: null }].concat(SRC_ORDER.map(id => ({ id, name: CRYPTO_SRC[id].name, state: 'هنوز جواب نداده…', ok: null })));
   rows.push({ id: 'td', name: 'Twelve Data (فارکس)', state: cfg.tdKey ? 'هنوز جواب نداده…' : 'کلید وارد نشده', ok: cfg.tdKey ? null : false });
   const draw = () => {
     body.innerHTML = `<p class="small">هر منبع با چند کندل BTC/USDT (و EUR/USD برای فارکس) از همین مرورگر امتحان می‌شود.</p>
@@ -2598,6 +2960,12 @@ async function runDiag() {
   draw();
   const probe = { src: 'BTCUSDT', base: 'BTC', quote: 'USDT' };
   await Promise.all(rows.map(async r => {
+    if (r.id === 'nbstats') {
+      const t0 = Date.now();
+      try { const j = await fetchJSON('https://apiv2.nobitex.ir/market/stats?dstCurrency=usdt', 12000); const k = j && j.stats ? Object.keys(j.stats).length : 0; r.ok = k > 0; r.state = r.ok ? `${Date.now() - t0} ms · ${k} بازار تتری` : 'جواب خالی بود'; }
+      catch (e) { r.ok = false; r.state = why(e); }
+      draw(); return;
+    }
     if (r.id === 'td') {
       if (!cfg.tdKey) return;
       const t0 = Date.now();
@@ -2616,7 +2984,7 @@ async function runDiag() {
     }
     draw();
   }));
-  const okIds = rows.filter(r => r.ok && r.id !== 'td').map(r => r.id);
+  const okIds = rows.filter(r => r.ok && r.id !== 'td' && r.id !== 'nbstats').map(r => r.id);
   if (okIds.length) {
     body.insertAdjacentHTML('beforeend', `<p style="font-size:14px">باز: ${okIds.map(id => esc(CRYPTO_SRC[id].name)).join('، ')}. داشبورد خودکار از اولی استفاده می‌کند؛ در تنظیمات می‌توانی یکی را ثابت کنی.</p>`);
     if (!okIds.includes(cryptoPick)) { cryptoPick = okIds[0]; saveSrc(); }
@@ -2634,11 +3002,81 @@ $('#diagCopy').onclick = () => { try { navigator.clipboard.writeText(diagText).t
 // loads run one after another per market, so two clicks never fetch the same history twice
 const loadChain = { crypto: Promise.resolve(), forex: Promise.resolve() };
 function loadMarket(mkt, force) {
+  if (mkt === 'crypto') {
+    syncInsts('crypto');
+    insts.crypto.forEach(i => { if (force || i.status === 'error') i.status = 'idle'; });
+    pollStats(); pump(); scheduleRender();
+    return Promise.resolve();
+  }
   loadChain[mkt] = loadChain[mkt].then(() => runLoad(mkt, force)).catch(() => {});
   return loadChain[mkt];
 }
+// ---- the crypto queue: one candle request at a time (Nobitex allows 20 a minute), most urgent first.
+//   1. symbols never loaded, the opening range the moment it completes
+//   2. every new 5-minute bar for the focus, open trades, triggered symbols and anything near its range edge
+//   3. every 15 minutes for the rest (30 outside the session)
+//   4. leftover slots: history, focus first, then triggered and near ones, then by volume
+function nearEdge(inst) {
+  const st = inst.a && inst.a.st;
+  if (!st || !st.rng || st.state === 'triggered') return false;
+  const p = pxNow(inst) || st.last;
+  if (!(p > 0)) return false;
+  return p >= st.rng.hi * 0.996 || (inst.a.allowShort && p <= st.rng.lo * 1.004);
+}
+function headDue(inst, now) {
+  if (inst.status === 'idle') return now;
+  if (inst.status === 'error') return (inst.errAt || 0) + 3 * 60000;
+  if (inst.status !== 'ready') return Infinity;
+  const S = sessFor('crypto'), ph = phaseOf(now, S), last = inst.lastFetch || 0;
+  const nextClose = (Math.floor((last - 8000) / MIN5) + 1) * MIN5 + 8000;   // the first bar close (+8 s) after the last fetch
+  const st = inst.a && inst.a.st;
+  const hot = inst.key === ui.focus.crypto || openKeys('crypto').has(inst.key) || (st && st.state === 'triggered') || nearEdge(inst);
+  if (ph.phase === 'open') {
+    const orEnd = ph.start + ruleNow().orBars * MIN5 + 8000;
+    if (now >= orEnd && last < orEnd) return orEnd;
+    return hot ? nextClose : last + 15 * 60000;
+  }
+  return last + (hot ? 5 : 30) * 60000;
+}
+function nextJob(now) {
+  let best = null, bestK = Infinity;
+  insts.crypto.forEach(inst => {
+    if (!inst.tracked) return;
+    const d = headDue(inst, now);
+    if (d > now) return;
+    const k = d - (inst.key === ui.focus.crypto ? 600000 : 0) + (inst.volRank != null ? inst.volRank : 200) * 1000;
+    if (k < bestK) { bestK = k; best = inst; }
+  });
+  if (best) return { kind: 'head', inst: best };
+  let h = null, hk = Infinity;
+  insts.crypto.forEach(inst => {
+    if (!inst.tracked || inst.status !== 'ready' || !inst.partial || inst.histPauseUntil > now) return;
+    const st = inst.a && inst.a.st;
+    const k = (inst.key === ui.focus.crypto ? 0 : 1e6) + (st && st.state === 'triggered' ? 0 : 1e5) + (nearEdge(inst) ? 0 : 1e4) + (inst.volRank != null ? inst.volRank : 999);
+    if (k < hk) { hk = k; h = inst; }
+  });
+  return h ? { kind: 'hist', inst: h } : null;
+}
+const sched = { running: false, wake: null };
+function pump() {
+  if (sched.wake) { const w = sched.wake; sched.wake = null; w(); }
+  if (sched.running) return;
+  sched.running = true;
+  (async () => {
+    for (;;) {
+      try {
+        const job = nextJob(Date.now());
+        if (!job) { await new Promise(r => { sched.wake = r; setTimeout(r, 2000); }); sched.wake = null; continue; }
+        const t0 = Date.now();
+        if (job.kind === 'head') { if (job.inst.status === 'ready') await refreshLatest(job.inst); else await loadHead(job.inst); }
+        else await backfillStep(job.inst);
+        analyze(job.inst); checkAlerts(); scheduleRender();
+        if (Date.now() - t0 < 250) await sleep(250 - (Date.now() - t0));
+      } catch (e) { await sleep(1000); }
+    }
+  })();
+}
 async function runLoad(mkt, force) {
-  setTimeout(() => { ui.booted = true; }, 15000);
   syncInsts(mkt);
   scheduleRender();
   if (mkt === 'forex' && !cfg.tdKey) return;
@@ -2657,6 +3095,7 @@ async function runLoad(mkt, force) {
 }
 let refreshing = { crypto: false, forex: false };
 async function refreshMarket(mkt) {
+  if (mkt === 'crypto') { pump(); return; }
   if (refreshing[mkt]) return;
   refreshing[mkt] = true;
   try {
@@ -2674,22 +3113,24 @@ async function refreshMarket(mkt) {
   } finally { refreshing[mkt] = false; }
 }
 let lastForex = 0;
+// Twelve Data's free plan gives 800 credits a day (one per symbol per call): more pairs means slower refreshes
+const tdLeft = () => (tdUse.day === dayKey(Date.now()) ? 800 - tdUse.n : 800);
 function poll() {
-  if (document.hidden) return;
-  if (insts.crypto.size) refreshMarket('crypto');
-  if (cfg.tdKey && insts.forex.size) {
-    const s = sessFor('forex'), ph = phaseOf(Date.now(), s);
+  if (cfg.crypto.source === 'nobitex' && Date.now() - statsAt >= 28000) pollStats();
+  pump();
+  if (cfg.tdKey && insts.forex.size && Array.from(insts.forex.values()).some(i => i.bars.length)) {
+    const s = sessFor('forex'), ph = phaseOf(Date.now(), s), nfx = insts.forex.size;
     const fx = Array.from(insts.forex.values()).filter(i => i.bars.length);
     const allStale = fx.length && fx.every(i => Date.now() - i.bars[i.bars.length - 1].t > 2 * 3600000);
-    const gap = allStale ? 120 * 60000 : ph.phase === 'open' ? 5 * 60000 : 30 * 60000;
-    if (Date.now() - lastForex >= gap) { lastForex = Date.now(); refreshMarket('forex'); }
+    const gap = allStale ? 120 * 60000 : ph.phase === 'open' ? (nfx <= 4 ? 5 : 10) * 60000 : 60 * 60000;
+    if (tdLeft() > 40 && Date.now() - lastForex >= gap) { lastForex = Date.now(); refreshMarket('forex'); }
   }
 }
 function tickCountdowns() {
   document.querySelectorAll('[data-cd]').forEach(el => { el.textContent = dur(+el.dataset.cd - Date.now()); });
 }
 setInterval(() => { $('#clock').textContent = new Date().toLocaleTimeString('en-GB'); tickCountdowns(); }, 1000);
-setInterval(poll, 20000);
+setInterval(poll, 10000);
 setInterval(() => { insts[market].forEach(i => { if (i.bars.length) analyze(i); }); checkAlerts(); scheduleRender(); }, 15000);
 document.addEventListener('visibilitychange', () => { if (!document.hidden) poll(); });
 
@@ -2706,11 +3147,16 @@ $('#boardCard').addEventListener('click', e => {
   const tr = e.target.closest('tr[data-key]');
   if (!tr) return;
   ui.focus[market] = tr.dataset.key; store.set('dtw.focus', ui.focus);
+  if (market === 'crypto') updateTracking();
   scheduleRender();
   setTimeout(() => $('#focusCard').scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' }), 60);
 });
 $('#boardCard').addEventListener('keydown', e => { if ((e.key === 'Enter' || e.key === ' ') && e.target.matches('tr[data-key]')) { e.preventDefault(); e.target.click(); } });
-$('#refreshBtn').onclick = () => { insts[market].forEach(i => { if (i.status === 'error') i.status = 'idle'; }); loadMarket(market); refreshMarket(market); if (market === 'forex') lastForex = Date.now(); };
+$('#refreshBtn').onclick = () => {
+  insts[market].forEach(i => { if (i.status === 'error') i.status = 'idle'; i.histPauseUntil = 0; });
+  if (market === 'crypto') { insts.crypto.forEach(i => { if (i.tracked && i.status === 'ready') i.lastFetch = 0; }); pollStats(); pump(); }
+  else { loadMarket('forex'); refreshMarket('forex'); lastForex = Date.now(); }
+};
 if (window.ResizeObserver) new ResizeObserver(() => drawFocus(true)).observe($('#focusCard'));
 matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => drawFocus(true));
 
@@ -2719,8 +3165,9 @@ syncInsts('crypto'); syncInsts('forex');
 if (ui.view === 'paper') market = 'crypto';
 $('#clock').textContent = new Date().toLocaleTimeString('en-GB');
 renderAll();
-loadMarket(market);
-if (market === 'forex') setTimeout(() => loadMarket('crypto'), 1000);
+loadMarket('crypto');
+if (market === 'forex') loadMarket('forex');
+setTimeout(() => { ui.booted = true; }, 15000);
 })();
 </script>
 </body>

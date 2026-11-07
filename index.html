@@ -233,6 +233,26 @@ details.skipped ul{margin:6px 0 0;padding-inline-start:18px;font-size:13px}
 .q.s{background:var(--up-soft);color:var(--up)} .q.m{background:var(--warn-soft);color:var(--warn)} .q.w{background:var(--down-soft);color:var(--down)} .q.r{background:var(--up);color:var(--on-accent)}
 .bt{margin:12px 18px 0;padding:10px 12px;border-radius:8px;font-size:14px;border-inline-start:3px solid var(--faint);background:var(--sunk)}
 .bt.good{border-color:var(--up)} .bt.bad{border-color:var(--down)} .bt.mid{border-color:var(--warn)}
+.pick.sh{border-inline-start:3px solid var(--down)} .pick.lg{border-inline-start:3px solid var(--up)}
+.pick .who .state{display:inline-block;margin-inline-end:6px;margin-bottom:4px}
+.pick .money{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:4px 18px;font-size:13px;padding:8px 10px;border-radius:8px;background:var(--sunk)}
+.pick .money .amt{font-size:15px}
+.pick .why span,.pick .money span,.pick .nums .sim{white-space:normal}
+.pick .money .amt b{font-size:17px}
+.pick .why .mut,.mut{color:var(--muted)}
+.how{grid-column:1/-1;font-size:13px}
+.how summary{cursor:pointer;color:var(--accent);font-weight:600;padding:2px 0}
+.how ol{margin:6px 0 4px;padding-inline-start:20px;display:flex;flex-direction:column;gap:4px}
+.basket{margin:12px 18px 0;padding:12px 14px;border:1px solid var(--line);border-radius:10px;background:var(--panel)}
+.basket h3{font-size:15px;margin-bottom:4px}
+.basket ul{margin:8px 0;padding-inline-start:18px;display:flex;flex-direction:column;gap:6px;font-size:14px}
+#topCard .sec-h .seg button{font-size:12px;padding:3px 8px}
+#topCard .sec-h .seg button[disabled]{opacity:.4;cursor:not-allowed}
+.calls{list-style:none;margin:0;padding:6px 18px 4px;display:flex;flex-direction:column;gap:8px}
+.call{padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--panel)}
+.call .ch{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;margin-bottom:4px}
+.call p{font-size:14px;margin:2px 0}
+.call a{color:var(--accent)}
 @media (max-width: 820px){ .pick{grid-template-columns:34px minmax(0,1fr)} .pick .nums,.pick .acts{grid-column:1/-1} }
 
 /* paper account */
@@ -347,6 +367,7 @@ a{color:var(--accent)}
     </div>
     <div class="top-meta">
       <div class="clock"><b class="num" id="clock">--:--:--</b><small>به وقت ایران</small></div>
+      <span class="chip" id="usdtChip" hidden></span>
       <span class="chip" id="dataChip"><i></i><span>در حال آماده شدن</span></span>
       <button type="button" class="btn ghost" id="refreshBtn">به‌روزرسانی</button>
       <button type="button" class="btn" id="settingsBtn">تنظیمات</button>
@@ -358,6 +379,8 @@ a{color:var(--accent)}
   <section class="card" id="topCard" aria-labelledby="topH"></section>
   <section class="card" id="sugCard" aria-labelledby="sugH"></section>
   <div class="stack" id="viewDash">
+    <section class="card" id="anaCard" aria-labelledby="anaH"></section>
+    <section class="card" id="recCard" aria-labelledby="recH"></section>
     <section class="card" id="realityCard" aria-labelledby="realityH"></section>
     <section class="card" id="boardCard" aria-labelledby="boardH">
       <div class="sec-h"><h2 id="boardH">تابلوی نمادها</h2><p id="boardSub"></p></div>
@@ -373,11 +396,12 @@ a{color:var(--accent)}
     </section>
     <section class="card" id="focusCard" aria-label="نماد انتخاب‌شده"></section>
     <section class="card" id="logCard" aria-labelledby="logH">
-      <div class="sec-h"><h2 id="logH">ثبت خرید واقعی</h2><p>هر خریدی که خودت در صرافی انجام دادی، با پیشنهاد یا بدون آن</p></div>
+      <div class="sec-h"><h2 id="logH">ثبت معامله‌ی واقعی</h2><p>هر خرید یا شورتی که خودت در صرافی انجام دادی، با پیشنهاد یا بدون آن</p></div>
       <form class="pform logf" id="lForm" novalidate>
         <label class="fld"><span>نماد</span><select id="l_sym"></select></label>
-        <label class="fld" id="l_sideW" hidden><span>سمت</span><select id="l_side"><option value="buy">خرید</option><option value="sell">فروش</option></select></label>
-        <label class="fld"><span>قیمت خرید (همان که پر شد)</span><input type="number" id="l_price" step="any" min="0" dir="ltr"></label>
+        <label class="fld" id="l_sideW" hidden><span>سمت</span><select id="l_side"><option value="buy">خرید (لانگ)</option><option value="sell">فروش (شورت)</option></select></label>
+        <label class="fld" id="l_levW" hidden><span>اهرم</span><select id="l_lev"></select></label>
+        <label class="fld"><span>قیمت ورود (همان که پر شد)</span><input type="number" id="l_price" step="any" min="0" dir="ltr"></label>
         <label class="fld"><span id="l_usdLbl">مبلغ (تتر)</span><input type="number" id="l_usd" step="any" min="0" dir="ltr"></label>
         <label class="fld"><span id="l_unitsLbl">مقدار خریده‌شده</span><input type="number" id="l_units" step="any" min="0" dir="ltr"></label>
         <label class="fld"><span>حد ضرر</span><input type="number" id="l_stop" step="any" min="0" dir="ltr"></label>
@@ -402,14 +426,16 @@ a{color:var(--accent)}
       <div class="paper-grid">
         <div><h3 style="font-size:14px;margin-bottom:6px">رشد حساب</h3><div id="paperCurve"></div></div>
         <div>
-          <h3 style="font-size:14px;margin-bottom:10px">خرید دستی</h3>
+          <h3 style="font-size:14px;margin-bottom:10px">معامله‌ی دستی</h3>
           <form class="pform" id="pForm">
             <label class="fld"><span>نماد</span><select id="p_sym"></select></label>
-            <label class="fld"><span>مبلغ (تتر)</span><input type="number" id="p_amt" min="1" step="1" value="100"></label>
-            <label class="fld"><span>حد ضرر (٪ زیر قیمت)</span><input type="number" id="p_stop" min="0.1" step="0.1" value="1"></label>
+            <label class="fld"><span>سمت</span><select id="p_side"><option value="buy">خرید (لانگ)</option><option value="sell">فروش تعهدی (شورت)</option></select></label>
+            <label class="fld" id="p_levW"><span>اهرم</span><select id="p_lev"></select></label>
+            <label class="fld"><span>مبلغ معامله (تتر)</span><input type="number" id="p_amt" min="1" step="1" value="100"></label>
+            <label class="fld"><span>حد ضرر (٪ فاصله از قیمت)</span><input type="number" id="p_stop" min="0.1" step="0.1" value="1"></label>
             <label class="fld"><span>حد سود (چند برابر ریسک)</span><input type="number" id="p_tr" min="0.5" step="0.5" value="2"></label>
             <p class="small full" id="p_preview"></p>
-            <div class="full row-btns" style="margin-top:0"><button type="submit" class="btn">خرید مجازی</button></div>
+            <div class="full row-btns" style="margin-top:0"><button type="submit" class="btn">باز کردن مجازی</button></div>
           </form>
         </div>
       </div>
@@ -463,7 +489,10 @@ a{color:var(--accent)}
         <label class="fld"><span>جلسه</span><select id="s_crypto_session" class="sessSel"></select></label>
         <label class="fld"><span>منبع داده</span><select id="s_crypto_source"><option value="auto">خودکار (اولین منبعی که جواب بدهد)</option><option value="binance">Binance</option><option value="bybit">Bybit</option><option value="mexc">MEXC</option><option value="gate">Gate</option><option value="nobitex">نوبیتکس (پیشنهاد برای کاربر ایران)</option><option value="wallex">والکس</option></select><small class="hint">اگر در نوبیتکس یا والکس معامله می‌کنی، داده‌ی همان صرافی دقیق‌تر است</small></label>
         <label class="fld"><span>هزینه‌ی رفت و برگشت (٪)</span><input type="number" id="s_crypto_costPct" min="0" step="0.01"><small class="hint">کارمزد خرید + فروش در سطح کاربری خودت؛ از صفحه‌ی کارمزدهای صرافی بخوان</small></label>
-        <label class="fld check"><input type="checkbox" id="s_crypto_allowShort"><span>سمت فروش (شورت) هم نشان بده (نیاز به فیوچرز/مارجین)</span></label>
+        <label class="fld check"><input type="checkbox" id="s_crypto_allowShort"><span>فروش تعهدی (شورت) هم پیشنهاد بده</span></label>
+        <label class="fld"><span>سقف اهرم تعهدی</span><select id="s_crypto_maxLeverage"><option value="1">1 (بدون اهرم)</option><option value="1.5">1.5</option><option value="2">2</option><option value="2.5">2.5</option><option value="3">3</option><option value="4">4</option><option value="5">5</option></select><small class="hint">پیشنهاد: ۲ یا کمتر. نوبیتکس بسته به بازار تا ۳ تا ۵</small></label>
+        <label class="fld"><span>کارمزد تمدید تعهدی (٪ در روز)</span><input type="number" id="s_crypto_marginFeePct" min="0" step="0.01"><small class="hint">نوبیتکس حدود 0.1٪ در روز، پله‌ای</small></label>
+        <label class="fld wide"><span>فقط این ارزها شورت شوند (خالی یعنی همه)</span><input type="text" id="s_crypto_shortList" dir="ltr" placeholder="BTC, ETH, DOGE"><small class="hint">پیش‌فرض: ارزهای بزرگ. در نوبیتکس ببین کدام بازارها «فروش تعهدی» دارند و همین‌جا درستش کن</small></label>
       </fieldset>
       <fieldset>
         <legend>فارکس</legend>
@@ -919,7 +948,7 @@ a{color:var(--accent)}
     var risk = long ? plan.entry - plan.stop : plan.stop - plan.entry;
     if (!(risk > 0)) return { refuse: 'stop_side' };
     var quoteUSD = inst.quote === 'USD' || inst.quote === 'USDT' || inst.quote === 'USDC' || inst.quote === 'FDUSD';
-    var baseUSD = inst.base === 'USD';
+    var baseUSD = inst.base === 'USD' || inst.base === 'USDT';
     if (!quoteUSD && !baseUSD) return { refuse: 'cross' };
     // per unit of the base: the loss in USD at the stop, the gain at the target, the notional
     var lossU = quoteUSD ? risk : risk / plan.stop;
@@ -1016,11 +1045,11 @@ const store = {
 // ------------------------------------------------------------------ settings
 const DEFAULTS = {
   account: 1000, dailyTarget: 50, maxLoss: 10, maxDailyLoss: 30, maxTrades: 3, minRR: 1,
-  cashBufferPct: 10, maxPositionPct: 90, maxLeverage: 3, minOrderUSD: 11, v: 3,
+  cashBufferPct: 10, maxPositionPct: 90, maxLeverage: 3, minOrderUSD: 11, v: 4,
   orMinutes: 15, stopRule: 'or_mid', atrK: 1.5, stopPct: 0.5, targetR: 2,
   historyDays: 45, replays: 10000, seed: 19, sound: true, tdKey: '',
-  crypto: { symbols: 'BTCUSDT, ETHUSDT, SOLUSDT, XRPUSDT, DOGEUSDT, BNBUSDT', session: 'london', costPct: 0.26, allowShort: false, source: 'nobitex',
-    mode: 'all', minVolUSD: 20000, maxSpreadPct: 0.3, maxTracked: 30 },
+  crypto: { symbols: 'BTCUSDT, ETHUSDT, SOLUSDT, XRPUSDT, DOGEUSDT, BNBUSDT', session: 'london', costPct: 0.26, allowShort: true, source: 'nobitex',
+    mode: 'all', minVolUSD: 20000, maxSpreadPct: 0.3, maxTracked: 30, maxLeverage: 2, marginFeePct: 0.1, shortList: 'BTC, ETH, XRP, DOGE, LTC, TRX, ADA, SOL, BNB, LINK, TON' },
   forex: { symbols: 'EUR/USD, GBP/USD, USD/JPY, AUD/USD, USD/CAD, USD/CHF, NZD/USD, XAU/USD', session: 'london', costPct: 0.012, allowShort: true },
   custom: { tz: 'Asia/Tehran', open: '09:00', hours: 8 }
 };
@@ -1037,7 +1066,7 @@ function merge(base, over) {
 let cfg = merge(clone(DEFAULTS), store.get('dtw.cfg', {}));
 (function migrate() {
   const raw = store.get('dtw.cfg', null);
-  if (!raw || raw.v >= 3) return;
+  if (!raw || raw.v >= 4) return;
   const c = cfg.crypto;
   if (!(raw.v >= 2)) {
     if (c.source === 'auto') c.source = 'nobitex';
@@ -1048,7 +1077,8 @@ let cfg = merge(clone(DEFAULTS), store.get('dtw.cfg', {}));
     if (cfg.historyDays === 60) cfg.historyDays = 45;
   }
   if (cfg.forex.symbols === 'EUR/USD, GBP/USD, USD/JPY, XAU/USD') cfg.forex.symbols = DEFAULTS.forex.symbols;
-  cfg.v = 3;
+  if (!(raw.v >= 4)) c.allowShort = true;
+  cfg.v = 4;
   store.set('dtw.cfg', cfg);
 })();
 let journal = store.get('dtw.journal', []);
@@ -1178,14 +1208,37 @@ function openKeys(mkt) {
   journal.forEach(j => { if (!j.result && j.mkt === mkt) out.add(j.key); });
   return out;
 }
+let tether = { price: null, bid: null, ask: null, chg: null, vol: null, at: 0 };
+// dollars to toman at the tether price, for planning in the money you think in
+function toman(usdAmt, short) {
+  if (!(tether.price > 0) || !isFinite(usdAmt)) return '';
+  const t = usdAmt * tether.price;
+  const s = Math.abs(t) >= 1e6 ? (t / 1e6).toLocaleString('en-US', { maximumFractionDigits: 1 }) + ' میلیون' : Math.round(t).toLocaleString('en-US');
+  return short ? `${s} تومان` : `≈ ${s} تومان`;
+}
+async function pollTether() {
+  try {
+    const j = await fetchJSON('https://apiv2.nobitex.ir/market/stats?srcCurrency=usdt&dstCurrency=rls', 12000);
+    const st = j && j.stats && (j.stats['usdt-rls'] || j.stats['USDT-RLS']);
+    if (!st) throw dataErr('usdt');
+    const num = v => { const x = parseFloat(v); return isFinite(x) && x > 0 ? x / 10 : null; };
+    tether = { price: num(st.latest), bid: num(st.bestBuy), ask: num(st.bestSell), chg: parseFloat(st.dayChange), vol: parseFloat(st.volumeSrc) || 0, closed: !!st.isClosed, at: Date.now() };
+    const mid = tether.bid && tether.ask ? (tether.bid + tether.ask) / 2 : null;
+    statsMap.set('USDTIRT', { base: 'USDT', quote: 'IRT', latest: tether.price, bid: tether.bid, ask: tether.ask, spread: mid ? (tether.ask - tether.bid) / mid * 100 : null,
+      vol: tether.vol, chg: isFinite(tether.chg) ? tether.chg : null, closed: tether.closed });
+  } catch (e) { /* the tether price is a convenience; the page works without it */ }
+}
 async function pollStats() {
   if (cfg.crypto.source !== 'nobitex' || statsBusy) return;
   statsBusy = true;
   try {
+    await pollTether();
     const j = await fetchJSON('https://apiv2.nobitex.ir/market/stats?dstCurrency=usdt', 12000);
     if (!j || j.status !== 'ok' || !j.stats) throw dataErr('stats');
     const num = v => { const x = parseFloat(v); return isFinite(x) ? x : null; };
+    const usdt = statsMap.get('USDTIRT');
     statsMap.clear();
+    if (usdt) statsMap.set('USDTIRT', usdt);
     Object.keys(j.stats).forEach(k => {
       const m = /^(.+)-usdt$/i.exec(k);
       if (!m) return;
@@ -1215,6 +1268,8 @@ function syncCrypto() {
   const defs = allMode() && statsMap.size
     ? Array.from(statsMap.values()).filter(st => !STABLES.has(st.base)).map(st => ({ key: st.base + 'USDT', src: st.base + 'USDT', base: st.base, quote: 'USDT', label: st.base + '/USDT', contract: 1 }))
     : parseSymbols('crypto');
+  // tether itself: USDT/IRT, in toman (Nobitex sends rials, so its candles are scaled by 0.1)
+  if (allMode() && statsMap.has('USDTIRT')) defs.unshift({ key: 'USDTIRT', src: 'USDTIRT', base: 'USDT', quote: 'IRT', label: 'USDT/IRT (تتر)', contract: 1, scale: 0.1 });
   defs.forEach(d => next.set(d.key, old.get(d.key) || Object.assign({ mkt: 'crypto', bars: [], status: 'idle', alerted: {}, cls: 'crypto' }, d)));
   openKeys('crypto').forEach(k => { if (!next.has(k) && old.has(k)) next.set(k, old.get(k)); });   // keep anything with an open trade
   insts.crypto = next;
@@ -1224,7 +1279,7 @@ function syncCrypto() {
 // why a market is shown with its price only (the rule does not run on it)
 function liquidity(inst) {
   if (inst.mkt !== 'crypto' || !statsAt || inst.vol == null) return { ok: true };
-  if (STABLES.has(inst.base)) return { ok: false, why: 'stable' };
+  if (STABLES.has(inst.base) && inst.key !== 'USDTIRT') return { ok: false, why: 'stable' };
   if (inst.closed) return { ok: false, why: 'closed' };
   if (!(inst.vol >= cfg.crypto.minVolUSD)) return { ok: false, why: 'volume' };
   if (inst.spread == null || inst.spread > cfg.crypto.maxSpreadPct) return { ok: false, why: 'spread' };
@@ -1285,7 +1340,8 @@ async function udfHistory(base, inst, end, limit) {
   let out = [];
   if (!(j && j.s === 'no_data')) {
     if (!j || j.s !== 'ok' || !Array.isArray(j.t)) throw dataErr('udf ' + (j && j.s));
-    out = j.t.map((t, i) => ({ t: t * 1000, o: +j.o[i], h: +j.h[i], l: +j.l[i], c: +j.c[i], v: +(j.v ? j.v[i] : 0) }));
+    const k = inst.scale || 1;
+    out = j.t.map((t, i) => ({ t: t * 1000, o: +j.o[i] * k, h: +j.h[i] * k, l: +j.l[i] * k, c: +j.c[i] * k, v: +(j.v ? j.v[i] : 0) }));
   }
   out.from = from * 1000;
   return out;
@@ -1529,7 +1585,7 @@ function fillGaps(bars, maxGap, until) {
 }
 function analyze(inst) {
   const sess = sessFor(inst.mkt), rule = ruleNow(), win = windowFor(sess), now = Date.now();
-  const allowShort = !!cfg[inst.mkt].allowShort;
+  const allowShort = inst.mkt === 'crypto' ? shortOk(inst) : !!cfg.forex.allowShort;
   const ph = phaseOf(now, sess);
   const a = { sess, rule, win, ph, allowShort, now };
   if (!inst.bars.length) { a.st = { state: inst.status === 'error' ? 'error' : 'loading' }; inst.a = a; return a; }
@@ -1701,13 +1757,16 @@ function renderAll() {
   $('#viewGuide').hidden = ui.view !== 'guide';
   $('#sugCard').hidden = ui.view === 'guide';
   $('#topCard').hidden = ui.view === 'guide';
-  if (ui.view === 'dash') { renderReality(); renderBoard(); renderFocus(); syncLogSymbols(); renderScore(); renderJournal(); }
-  else if (ui.view === 'paper') renderPaper();
+  if (ui.view === 'dash') { renderAnalysts(); renderRecord(); renderReality(); renderBoard(); renderFocus(); syncLogSymbols(); renderScore(); renderJournal(); }
+  else if (ui.view === 'paper') { renderPaper(); }
   else renderGuide();
 }
 function renderTop() {
   document.querySelectorAll('#mktSeg button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.mkt === market)));
   document.querySelectorAll('#viewSeg button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.view === ui.view)));
+  const uc = $('#usdtChip');
+  uc.hidden = !(tether.price > 0);
+  if (tether.price > 0) uc.innerHTML = `تتر <b class="num">${Math.round(tether.price).toLocaleString('en-US')}</b> تومان${isFinite(tether.chg) ? ` <span class="num ${tether.chg >= 0 ? 'pos' : 'neg'}">${tether.chg >= 0 ? '+' : '−'}${Math.abs(tether.chg).toFixed(1)}%</span>` : ''}`;
   $('#mktSeg').hidden = ui.view !== 'dash';
   const list = Array.from(insts[market].values()).filter(i => i.tracked !== false);
   const busy = list.filter(i => i.status === 'loading').length, bad = list.filter(i => i.status === 'error').length, ok = list.filter(i => i.status === 'ready').length;
@@ -1725,7 +1784,7 @@ function renderTop() {
 function focusInst() { return insts[market].get(ui.focus[market]) || null; }
 function focusSide(inst) {
   if (!inst) return 'buy';
-  const allow = cfg[market].allowShort;
+  const allow = inst.a ? inst.a.allowShort : market === 'crypto' ? shortOk(inst) : cfg.forex.allowShort;
   let s = ui.side[market + inst.key];
   const st = inst.a && inst.a.st;
   if (!s && st && st.side) s = st.side;
@@ -2010,7 +2069,7 @@ function evaluate(inst, plan, mc, side) {
   const inWindow = a.ph.phase === 'open' && plan.kind !== 'review' && a.ph.since >= a.rule.orBars * 5 && a.ph.since < (a.win.entryLast + 1) * 5;
   const h = inst.hist && inst.hist[side];
   const ctx = {
-    allowShort: cfg[mkt].allowShort, cls: mkt, inWindow,
+    allowShort: a.allowShort, cls: mkt, inWindow,
     tradesToday: tEntries.length, todayRisk: tEntries.reduce((t, j) => t + (j.lossAtStop || 0), 0),
     alreadyToday: tEntries.some(j => j.key === inst.key && j.mkt === mkt),
     dataAgeMin: a.age, freshLimit: mkt === 'forex' ? 16 : 11, histAvgRnet: h && h.triggered ? h.avgRnet : null,
@@ -2075,7 +2134,7 @@ function renderFocus() {
       <p class="small" style="margin-top:8px">حد ضرر یک برنامه است، نه تضمین: در حرکت تند ممکن است بدتر پر شود.</p>`;
   }
   const controls = `<div class="controls">
-      ${cfg[market].allowShort ? `<div class="seg" role="group" aria-label="سمت"><button type="button" data-side="buy" aria-pressed="${side === 'buy'}">خرید ↑</button><button type="button" data-side="sell" aria-pressed="${side === 'sell'}">فروش ↓</button></div>` : ''}
+      ${a.allowShort ? `<div class="seg" role="group" aria-label="سمت"><button type="button" data-side="buy" aria-pressed="${side === 'buy'}">خرید ↑</button><button type="button" data-side="sell" aria-pressed="${side === 'sell'}">فروش ↓</button></div>` : ''}
       <label>حد ضرر <select id="f_stop"><option value="or_mid">وسط رنج</option><option value="or_far">آن طرف رنج</option><option value="atr">ATR×${esc(cfg.atrK)}</option><option value="pct">${esc(cfg.stopPct)}٪</option></select></label>
       <label>حد سود <select id="f_target">${[1, 1.5, 2, 2.5, 3].concat([+cfg.targetR]).filter((x, i, arr) => arr.indexOf(x) === i).sort((x, y) => x - y).map(x => `<option value="${x}">${x}R</option>`).join('')}</select></label></div>`;
   // step 2: the time machine
@@ -2175,6 +2234,8 @@ function defaultExitAt(mkt) {
   return (ph.nextOpen || ph.start + DAY) + (W.exitLast + 1) * 300000;
 }
 function logInst() { return insts[market].get(L$('l_sym').value) || null; }
+let logCtx = null;   // where the trade being logged came from (tier) — kept until the symbol changes
+const logShortOn = () => market === 'forex' || cfg.crypto.allowShort;
 function syncLogSymbols() {
   const sel = L$('l_sym');
   const list = Array.from(insts[market].values()).sort((x, y) => (y.tracked ? 1 : 0) - (x.tracked ? 1 : 0) || (y.vol || 0) - (x.vol || 0) || x.label.localeCompare(y.label));
@@ -2184,15 +2245,20 @@ function syncLogSymbols() {
   sel.innerHTML = list.map(i => `<option value="${esc(i.key)}">${esc(i.label)}</option>`).join('');
   sel.dataset.keys = keys;
   sel.value = list.some(i => i.key === v) ? v : (ui.focus[market] || (list[0] && list[0].key) || '');
-  L$('l_sideW').hidden = market !== 'forex';
-  if (market !== 'forex') L$('l_side').value = 'buy';
+  L$('l_sideW').hidden = !logShortOn();
+  if (!logShortOn()) L$('l_side').value = 'buy';
+  const lv = L$('l_lev'), lk = market + levMax();
+  L$('l_levW').hidden = market !== 'crypto';
+  if (lv.dataset.k !== lk) { const v = lv.value; lv.innerHTML = [1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5].filter(x => x <= Math.max(5, levMax())).map(x => `<option value="${x}">${x === 1 ? '۱× (لانگ: اسپات)' : x + '× تعهدی'}${x > levMax() ? ' — بالاتر از سقف تو' : ''}</option>`).join(''); lv.dataset.k = lk; lv.value = v || '1'; }
   if (!L$('l_price').value) updateLogSummary();
 }
-function logPrefill(inst, plan, sz) {
+function logPrefill(inst, plan, sz, ctx) {
   if (!inst) return;
   L$('l_sym').value = inst.key;
   const side = plan ? plan.side : 'buy', long = side === 'buy';
   L$('l_side').value = side;
+  logCtx = ctx || null;
+  L$('l_lev').value = String(ctx && ctx.lev ? ctx.lev : 1);
   const price = (long ? askPx(inst) : bidPx(inst)) || (plan && plan.entry);
   if (!(price > 0)) { toast('قیمت این نماد هنوز نرسیده.'); return; }
   const dec = E.decimalsFor(price);
@@ -2203,7 +2269,7 @@ function logPrefill(inst, plan, sz) {
   L$('l_stop').value = stop; L$('l_target').value = target;
   const units = sz && sz.units > 0 ? sz.units : null;
   L$('l_units').value = units ? +units.toFixed(8) : '';
-  L$('l_usd').value = units ? +(units * price).toFixed(2) : '';
+  L$('l_usd').value = units ? +(inst.quote === 'IRT' ? units * price : units * price).toFixed(2) : '';
   L$('l_exit').value = hmOf(plan ? plan.exitAt : defaultExitAt(market));
   updateLogSummary();
 }
@@ -2220,7 +2286,8 @@ function prefillFromFocusOr(inst) {
 function logRead() {
   const inst = logInst();
   if (!inst) return null;
-  const side = market === 'forex' ? L$('l_side').value : 'buy', long = side === 'buy';
+  const side = logShortOn() ? L$('l_side').value : 'buy', long = side === 'buy';
+  const lev = market === 'crypto' ? Math.max(1, +L$('l_lev').value || 1) : 1, margin = market === 'crypto' && (!long || lev > 1);
   const price = parseFloat(L$('l_price').value), units = parseFloat(L$('l_units').value);
   const stop = parseFloat(L$('l_stop').value), target = parseFloat(L$('l_target').value);
   const quoteUSD = QUOTE_USD.includes(inst.quote), f = (cfg[market].costPct || 0) / 2 / 100, conv = p => quoteUSD ? 1 : 1 / p;
@@ -2230,47 +2297,54 @@ function logRead() {
   if (price > 0 && (!(stop > 0) || (long ? stop >= price : stop <= price))) errs.push(long ? 'حد ضرر باید زیر قیمت خرید باشد.' : 'حد ضرر باید بالای قیمت باشد.');
   if (price > 0 && (!(target > 0) || (long ? target <= price : target >= price))) errs.push(long ? 'حد سود باید بالای قیمت خرید باشد.' : 'حد سود باید زیر قیمت باشد.');
   const dec = price > 0 ? E.decimalsFor(price) : 2;
-  const r = { inst, side, long, price, units, stop, target, dec, quoteUSD, errs, f };
+  const r = { inst, side, long, price, units, stop, target, dec, quoteUSD, errs, f, lev, margin };
   if (!errs.length) {
-    const feeIn = units * price * f * conv(price);
-    r.loss = units * Math.abs(price - stop) * conv(stop) + feeIn + units * stop * f * conv(stop);
-    r.gain = units * Math.abs(target - price) * conv(target) - feeIn - units * target * f * conv(target);
-    r.costUSD = 2 * feeIn;
-    r.oco = { price: target, stop, stopLimit: E.roundAway(long ? stop * 0.998 : stop * 1.002, long, dec), units: units * (1 - f) };
     const m = /^(\d{1,2}):(\d{2})$/.exec(L$('l_exit').value || '');
     let ex = defaultExitAt(market);
     if (m) { const L = E.local(Date.now(), IR); ex = E.utcOf(L.date, +m[1] * 60 + +m[2], IR); if (ex <= Date.now()) ex = E.utcOf(E.addDays(L.date, 1), +m[1] * 60 + +m[2], IR); }
     r.exitAt = ex;
+    const feeIn = units * price * f * conv(price), notional = units * price * conv(price);
+    const mfee = margin ? notional * marginRate() * marginDays((ex - Date.now()) / 3600000) : 0;
+    r.loss = units * Math.abs(price - stop) * conv(stop) + feeIn + units * stop * f * conv(stop) + mfee;
+    r.gain = units * Math.abs(target - price) * conv(target) - feeIn - units * target * f * conv(target) - mfee;
+    r.costUSD = 2 * feeIn + mfee;
+    r.notional = notional; r.coll = margin ? notional / lev : notional; r.mfee = mfee;
+    r.liq = margin ? liqPrice(price, long, lev) : null;
+    r.oco = { price: target, stop, stopLimit: E.roundAway(long ? stop * 0.998 : stop * 1.002, long, dec), units: margin ? units : units * (1 - f) };
   }
   return r;
 }
 function ocoText(r, base) {
-  return `سفارش فروش OCO\nمقدار: حدود ${+r.oco.units.toFixed(8)} ${base}\nقیمت (معین): ${fmtP(r.oco.price, r.dec)}\nقیمت توقف: ${fmtP(r.oco.stop, r.dec)}\nقیمت حد ضرر: ${fmtP(r.oco.stopLimit, r.dec)}`;
+  return `سفارش ${r.long ? 'فروش' : 'خرید'} OCO${r.margin ? ' روی موقعیت تعهدی' : ''}\nمقدار: ${r.margin ? '' : 'حدود '}${+r.oco.units.toFixed(8)} ${base}\nقیمت (معین): ${fmtP(r.oco.price, r.dec)}\nقیمت توقف: ${fmtP(r.oco.stop, r.dec)}\nقیمت حد ضرر: ${fmtP(r.oco.stopLimit, r.dec)}`;
 }
 function updateLogSummary() {
   const r = logRead(), el = L$('l_sum');
   if (!r) { el.innerHTML = ''; return; }
-  L$('l_unitsLbl').textContent = market === 'crypto' ? `مقدار خریده‌شده (${r.inst.base})` : 'مقدار (واحد)';
-  L$('l_usdLbl').textContent = market === 'crypto' ? 'مبلغ (تتر)' : 'مبلغ (دلار)';
+  L$('l_unitsLbl').textContent = market === 'crypto' ? `مقدار ${r.long ? 'خریده‌شده' : 'فروخته‌شده'} (${r.inst.base})` : 'مقدار (واحد)';
+  L$('l_usdLbl').textContent = market === 'crypto' ? (r.inst.quote === 'IRT' ? 'مبلغ (تومان)' : 'ارزش معامله (تتر)') : 'مبلغ (دلار)';
   if (r.errs.length) { el.innerHTML = `<p class="small">${r.errs.join(' ')} یا دکمه‌ی «پر کردن با قیمت و برنامه‌ی الان» را بزن.</p>`; return; }
   const today = todayEntries(), used = today.reduce((t, j) => t + (j.lossAtStop || 0), 0), warns = [];
   if (r.loss > cfg.maxLoss + 0.005) warns.push(`ضرر در حد ضرر ${usd(r.loss)} از سقف ${usd(cfg.maxLoss)} بیشتر است.`);
   if (used + r.loss > cfg.maxDailyLoss + 0.005) warns.push(`ریسک امروز با این معامله ${usd(used + r.loss)} می‌شود؛ بیشتر از سقف ${usd(cfg.maxDailyLoss)}.`);
   if (today.length >= cfg.maxTrades) warns.push(`سقف ${cfg.maxTrades} معامله‌ی امروز پر شده.`);
   if (r.gain / r.loss < cfg.minRR) warns.push(`سود به ضرر خالص ${(r.gain / r.loss).toFixed(2)} است؛ کمتر از ${cfg.minRR}.`);
-  el.innerHTML = `<div class="logsum"><span>ضرر در حد ضرر <b class="num neg">${usd(-r.loss)}</b></span><span>سود در حد سود <b class="num pos">${usd(r.gain)}</b></span><span>سود به ضرر ${n((r.gain / r.loss).toFixed(2))}</span><span>خروج اجباری ساعت ${n(tm(r.exitAt))}</span><span class="small">کارمزد رفت و برگشت حساب شده</span></div>
+  if (market === 'crypto' && !r.long && !shortOk(r.inst)) warns.push('این بازار در فهرست شورت تو نیست؛ مطمئن شو در صرافی فروش تعهدی دارد.');
+  if (market === 'crypto' && r.margin && r.lev > levMax()) warns.push(`اهرم ${r.lev}× از سقف ${levMax()}× خودت بیشتر است.`);
+  if (r.liq && (r.long ? r.liq >= r.stop : r.liq <= r.stop)) warns.push('قیمت لیکوئید قبل از حد ضرر است؛ اهرم را کم کن.');
+  el.innerHTML = `<div class="logsum"><span>ضرر در حد ضرر <b class="num neg">${usd(-r.loss)}</b></span><span>سود در حد سود <b class="num pos">${usd(r.gain)}</b></span><span>سود به ضرر ${n((r.gain / r.loss).toFixed(2))}</span><span>خروج اجباری ساعت ${n(tm(r.exitAt))}</span>${r.margin ? `<span>وثیقه ${n(usd(r.coll))}</span><span>لیکوئید ≈ ${n(fmtP(r.liq, r.dec))}</span>` : ''}<span class="small">کارمزد رفت و برگشت${r.margin ? ' و تمدید تعهدی' : ''} حساب شده</span></div>
     ${warns.length ? `<p class="logwarn">${warns.join(' ')} اگر خرید انجام شده، باز هم ثبتش کن تا هشدار فروش بگیری؛ ولی این معامله از قانون‌های خودت بیرون است.</p>` : ''}
-    ${market === 'crypto' && r.long ? `<div class="ocobox"><b>بعد از خرید، در ${esc(source.crypto)} سفارش فروش OCO بگذار:</b>
-      <dl class="oco"><dt>مقدار</dt><dd>حدود ${n(+r.oco.units.toFixed(8))} ${esc(r.inst.base)} <span class="small">(موجودی همین ارز؛ بعد از کارمزد خرید کمی کمتر از مقدار سفارش است)</span></dd><dt>قیمت (معین)</dt><dd>${n(fmtP(r.oco.price, r.dec))}</dd><dt>قیمت توقف</dt><dd>${n(fmtP(r.oco.stop, r.dec))}</dd><dt>قیمت حد ضرر</dt><dd>${n(fmtP(r.oco.stopLimit, r.dec))}</dd></dl>
+    ${market === 'crypto' ? `<div class="ocobox"><b>${r.long ? (r.margin ? `بعد از باز شدن خرید تعهدی، روی همان موقعیت در ${esc(source.crypto)} سفارش فروش OCO بگذار:` : `بعد از خرید، در ${esc(source.crypto)} سفارش فروش OCO بگذار:`) : `بعد از باز شدن شورت، برای بستنش در ${esc(source.crypto)} سفارش خرید OCO بگذار (حد سود پایین‌تر، حد ضرر بالاتر از قیمت):`}</b>
+      <dl class="oco"><dt>مقدار</dt><dd>${r.margin ? '' : 'حدود '}${n(+r.oco.units.toFixed(8))} ${esc(r.inst.base)} <span class="small">${r.margin ? '(همان مقدار موقعیت)' : '(موجودی همین ارز؛ بعد از کارمزد خرید کمی کمتر از مقدار سفارش است)'}</span></dd><dt>قیمت (معین)</dt><dd>${n(fmtP(r.oco.price, r.dec))}</dd><dt>قیمت توقف</dt><dd>${n(fmtP(r.oco.stop, r.dec))}</dd><dt>قیمت حد ضرر</dt><dd>${n(fmtP(r.oco.stopLimit, r.dec))}</dd></dl>
       <button type="button" class="btn ghost sm" id="l_copyOco">کپی عددهای OCO</button></div>` : ''}`;
 }
-L$('l_sym').addEventListener('change', () => prefillFromFocusOr(logInst()));
+L$('l_sym').addEventListener('change', () => { logCtx = null; prefillFromFocusOr(logInst()); });
 L$('l_side').addEventListener('change', updateLogSummary);
+L$('l_lev').addEventListener('change', updateLogSummary);
 L$('l_usd').addEventListener('input', () => { const p = parseFloat(L$('l_price').value), u = parseFloat(L$('l_usd').value); if (p > 0 && u >= 0) L$('l_units').value = +(u / p).toFixed(8); updateLogSummary(); });
 L$('l_units').addEventListener('input', () => { const p = parseFloat(L$('l_price').value), q = parseFloat(L$('l_units').value); if (p > 0 && q >= 0) L$('l_usd').value = +(q * p).toFixed(2); updateLogSummary(); });
 L$('l_price').addEventListener('input', () => { const p = parseFloat(L$('l_price').value), q = parseFloat(L$('l_units').value); if (p > 0 && q > 0) L$('l_usd').value = +(q * p).toFixed(2); updateLogSummary(); });
 ['l_stop', 'l_target', 'l_exit'].forEach(id => L$(id).addEventListener('input', updateLogSummary));
-L$('l_fill').onclick = () => prefillFromFocusOr(logInst());
+L$('l_fill').onclick = () => { logCtx = null; prefillFromFocusOr(logInst()); };
 L$('lForm').addEventListener('click', e => {
   if (!e.target.closest('#l_copyOco')) return;
   const r = logRead();
@@ -2282,11 +2356,13 @@ L$('lForm').addEventListener('submit', e => {
   e.preventDefault();
   const r = logRead();
   if (!r || r.errs.length) { toast(r ? r.errs.join(' ') : 'نماد را انتخاب کن.', 'down'); return; }
-  journal.push({ id: Date.now(), mkt: market, key: r.inst.key, label: r.inst.label, side: r.side, entry: r.price, stop: r.stop, target: r.target, units: r.units,
-    lossAtStop: r.loss, gainAtTarget: r.gain, costUSD: r.costUSD, quoteUSD: r.quoteUSD, dec: r.dec, takenAt: Date.now(), exitAt: r.exitAt, result: null, pnl: null, oco: r.oco });
+  journal.push({ id: Date.now(), mkt: market, key: r.inst.key, base: r.inst.base, label: r.inst.label, side: r.side, entry: r.price, stop: r.stop, target: r.target, units: r.units,
+    lossAtStop: r.loss, gainAtTarget: r.gain, costUSD: r.costUSD, quoteUSD: r.quoteUSD, dec: r.dec, takenAt: Date.now(), exitAt: r.exitAt, result: null, pnl: null, oco: r.oco,
+    tier: logCtx && logCtx.tier || null, lev: r.lev, margin: r.margin, coll: market === 'crypto' ? r.coll : null, liq: r.liq });
+  logCtx = null;
   saveJournal();
   if (market === 'crypto') updateTracking();
-  toast(`${esc(r.inst.label)} در ژورنال ثبت شد. اگر هنوز OCO نگذاشتی، همین حالا در صرافی بگذار. هشدار فروش تا وقتی این صفحه باز است کار می‌کند.`, 'up');
+  toast(`${esc(r.inst.label)} در ژورنال ثبت شد. اگر هنوز OCO نگذاشتی، همین حالا در صرافی بگذار. هشدار خروج تا وقتی این صفحه باز است کار می‌کند.`, 'up');
   L$('l_price').value = ''; L$('l_units').value = ''; L$('l_usd').value = '';
   updateLogSummary();
   scheduleRender();
@@ -2396,7 +2472,7 @@ function renderSug() {
     }
   }));
   const last = Math.max(0, ...ready.map(i => i.lastFetch || 0));
-  const exitHTML = exits.map(x => `<div class="sug exit"><div class="who"><b>${esc(x.j.label)}</b><span class="state down">بفروش</span></div>
+  const exitHTML = exits.map(x => `<div class="sug exit"><div class="who"><b>${esc(x.j.label)}</b><span class="state down">${x.j.side === 'sell' ? 'ببند (بخر)' : 'بفروش'}</span></div>
       <div class="nums"><span>${x.why}</span><span>قیمت الان ${n(fmtP(x.p, x.j.dec))}</span><span>معامله‌ی واقعی تو از ${n(tm(x.j.takenAt))}</span></div>
       <div class="acts"><button type="button" class="btn ghost sm" data-view-go="dash" data-scroll="journalCard">ثبت نتیجه در ژورنال</button></div></div>`).join('');
   let body = '';
@@ -2419,12 +2495,17 @@ function renderSug() {
 
 // ------------------------------------------------------------------ the five picks: always five, best first
 // A plain, untuned ranking of every liquid Nobitex market with complete history: the average of three percentile
-// ranks across the market (20-day trend, 7-day return, 24-hour return). A symbol with a full rule signal (5 of 5)
-// goes first, one with 4 of 5 next. Each pick gets a buy-now plan: stop 1.5 hourly ATRs below the ask (at least
-// four times the trading cost), target at the user's R, exit at the session's flat-by time (or the next one).
-// The same ranking is replayed on every past day at this same clock time, with real bars, so the card can say
-// whether its top five did better than buying everything, or lost money anyway.
+// ranks across the market (20-day trend, 7-day return, 24-hour return). The strongest are long candidates; the
+// weakest are short candidates (margin sell), when shorts are on and the coin is on the short list. A symbol with a
+// full rule signal (5 of 5) goes first, one with 4 of 5 next. Three small, capped nudges come on top, each shown on
+// the card: how the same side's top five did on past days at this clock time, the user's own closed trades (real
+// journal and paper account, shrunk toward zero while there are few), and the analysts' current views (weighted by
+// their measured hit rate). Each pick gets a plan for now: stop 1.5 hourly ATRs away (at least four times the
+// trading cost), target at the user's R, exit at the session's flat-by time (or the next one). The basket then
+// turns the user's daily limits into dollars per pick, with the least leverage that fits the cash.
 const TOP_N = 5;
+const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
+ui.topSide = store.get('dtw.topSide', 'both');
 function closedIdx(bars, t) {           // index of the last bar closed by time t, or -1
   let lo = 0, hi = bars.length - 1, ans = -1;
   while (lo <= hi) { const m = (lo + hi) >> 1; if (bars[m].t + MIN5 <= t) { ans = m; lo = m + 1; } else hi = m - 1; }
@@ -2473,7 +2554,7 @@ function scoreRows(rows) {
   });
   rows.forEach(r => { r.score = (r.p_r7 + r.p_r24 + r.p_trend) / 3; });
 }
-// when a trade bought now has to be out: the session's flat-by, or 23:30 your time (tether market closes),
+// when a trade opened now has to be out: the session's flat-by, or 23:30 your time (tether market closes),
 // or else the next session's flat-by
 function pickHorizon(now) {
   const S = sessFor('crypto'), W = windowFor(S), ph = phaseOf(now, S), off = (W.exitLast + 1) * MIN5;
@@ -2484,26 +2565,53 @@ function pickHorizon(now) {
   const next = ph.phase === 'open' ? (phaseOf(flat + 3600000, S).nextOpen || flat + DAY) + off : (ph.nextOpen || ph.start + DAY) + off;
   return { exitAt: Math.min(next, now + DAY), note: 'خروج اجباری جلسه‌ی بعد' };
 }
-const costPctOf = inst => (cfg.crypto.costPct || 0) + (inst.spread || 0);
-function pickStop(entry, f, costPct, hours) {
-  const stopPct = Math.max(1.5 * f.atr * Math.max(1, Math.sqrt(hours / 6)), 4 * costPct / 100, 0.004);
-  const dec = E.decimalsFor(entry), stop = E.roundAway(entry * (1 - stopPct), true, dec);
-  return { stop, target: E.targetFrom(entry, stop, +cfg.targetR, true, dec), dec };
+
+// ---- sides, margin and leverage on Nobitex
+// Shorts are margin sells ("فروش تعهدی") and only exist on some USDT markets; the user's short list narrows them.
+function shortOk(inst) {
+  if (!cfg.crypto.allowShort || inst.quote !== 'USDT') return false;
+  const list = String(cfg.crypto.shortList || '').toUpperCase().split(/[^A-Z0-9]+/).filter(Boolean);
+  return !list.length || list.includes(inst.base);
 }
-// what really happened to a buy at time t, bar by bar (stop checked first; a gap through the stop fills at the open)
-function forwardR(inst, t, entry, stop, target, H, costR) {
-  const bars = inst.bars, end = t + H, risk = entry - stop;
+const levMax = () => clamp(+cfg.crypto.maxLeverage || 1, 1, 5);
+const marginDays = hours => Math.max(1, Math.ceil((hours || 0) / 24 - 1e-9));
+const marginRate = () => (cfg.crypto.marginFeePct || 0) / 100;
+// round-trip cost in % of the position: fees and spread, plus Nobitex's daily margin fee on a margin position
+function costPctOf(inst, margin, hours) {
+  return (cfg.crypto.costPct || 0) + (inst.spread || 0) + (margin ? (cfg.crypto.marginFeePct || 0) * marginDays(hours) : 0);
+}
+// Nobitex closes a margin position when assets / debt falls to 1.1. Opening ratio is 1 + 1/L, so:
+// margin long: (collateral + coins) / borrowed tether = 1.1  →  price = entry × (1.1 − 1/L)
+// margin short: (collateral + sale proceeds) / borrowed coins' value = 1.1  →  price = entry × (1 + 1/L) / 1.1
+const liqPrice = (entry, long, L) => long ? entry * (1.1 - 1 / L) : entry * (1 + 1 / L) / 1.1;
+const liqFar = (plan, L) => Math.abs(liqPrice(plan.entry, plan.long, L) - plan.entry) / plan.entry >= 3 * plan.stopPct;
+// value in dollars of `units` at `price` (USDT/IRT trades tether itself, so its units already are dollars)
+const valUSD = (inst, units, price) => inst.quote === 'IRT' ? units : units * price;
+function pickStop(entry, f, costPct, hours, long = true) {
+  const stopPct = Math.max(1.5 * f.atr * Math.max(1, Math.sqrt(hours / 6)), 4 * costPct / 100, 0.004);
+  const dec = E.decimalsFor(entry), stop = E.roundAway(entry * (long ? 1 - stopPct : 1 + stopPct), long, dec);
+  return { stop, target: E.targetFrom(entry, stop, +cfg.targetR, long, dec), dec };
+}
+// what really happened to a trade opened at time t, bar by bar (stop checked first; a gap through the stop fills at the open)
+function forwardR(inst, t, entry, stop, target, H, costR, long = true) {
+  const bars = inst.bars, end = t + H, risk = Math.abs(entry - stop);
   let exit = entry, out = 'close', k = closedIdx(bars, t) + 1;
   for (; k < bars.length && bars[k].t + MIN5 <= end; k++) {
     const b = bars[k];
-    if (b.l <= stop) { out = 'stop'; exit = Math.min(stop, b.o); break; }
-    if (b.h >= target) { out = 'target'; exit = target; break; }
+    if (long) {
+      if (b.l <= stop) { out = 'stop'; exit = Math.min(stop, b.o); break; }
+      if (b.h >= target) { out = 'target'; exit = target; break; }
+    } else {
+      if (b.h >= stop) { out = 'stop'; exit = Math.max(stop, b.o); break; }
+      if (b.l <= target) { out = 'target'; exit = target; break; }
+    }
     exit = b.c;
   }
-  return { R: (exit - entry) / risk - costR, out };
+  return { R: (long ? exit - entry : entry - exit) / risk - costR, out };
 }
+// the same ranking replayed on every past day at this clock time: top five longs (strongest) and top five shorts (weakest)
 function backtestTop(cands, now, H, hours) {
-  const top = [], all = [];
+  const S = { buy: { top: [], all: [] }, sell: { top: [], all: [] } };
   let days = 0;
   for (let d = 1; d <= 60; d++) {
     const t = now - d * DAY;
@@ -2514,17 +2622,19 @@ function backtestTop(cands, now, H, hours) {
     days++;
     scoreRows(rows);
     rows.sort((x, y) => y.score - x.score);
-    rows.forEach((r, i) => {
-      const c = costPctOf(r.inst), pl = pickStop(r.f.p, r.f, c, hours), costR = (c / 100) / ((r.f.p - pl.stop) / r.f.p);
-      const res = forwardR(r.inst, t, r.f.p, pl.stop, pl.target, H, costR);
-      all.push(res.R);
-      if (i < TOP_N) top.push(res.R);
-    });
+    const run = (r, long) => {
+      const c = costPctOf(r.inst, !long, hours), pl = pickStop(r.f.p, r.f, c, hours, long), costR = (c / 100) / (Math.abs(r.f.p - pl.stop) / r.f.p);
+      return forwardR(r.inst, t, r.f.p, pl.stop, pl.target, H, costR, long).R;
+    };
+    rows.forEach((r, i) => { const R = run(r, true); S.buy.all.push(R); if (i < TOP_N) S.buy.top.push(R); });
+    rows.filter(r => shortOk(r.inst)).reverse().forEach((r, i) => { const R = run(r, false); S.sell.all.push(R); if (i < TOP_N) S.sell.top.push(R); });
   }
   const avg = a => a.length ? a.reduce((x, y) => x + y, 0) / a.length : null;
-  return { days, nTop: top.length, top: avg(top), all: avg(all), winTop: top.length ? top.filter(x => x > 0).length / top.length : null };
+  const out = { days };
+  ['buy', 'sell'].forEach(s => { const x = S[s]; out[s] = { nTop: x.top.length, top: avg(x.top), all: avg(x.all), winTop: x.top.length ? x.top.filter(v => v > 0).length / x.top.length : null }; });
+  return out;
 }
-// buy-now Time Machine on a 24-hour clock: each 5-minute step is drawn from this coin's own bars at the same time of day
+// Time Machine for a trade opened now, on a 24-hour clock: each 5-minute step is drawn from this coin's own bars at the same time of day
 function pool24(inst) {
   const k = inst.bars.length + '|' + (inst.bars.length ? inst.bars[inst.bars.length - 1].t : 0);
   if (inst._p24k === k) return inst._p24;
@@ -2546,123 +2656,290 @@ function pool24(inst) {
   inst._p24 = pool; inst._p24k = k;
   return pool;
 }
-function simNow(inst, entry, stop, target, t0, H, costR) {
+function simNow(inst, entry, stop, target, t0, H, costR, long = true) {
   const pool = pool24(inst), rnd = E.mulberry32(+cfg.seed || 19), steps = Math.max(1, Math.round(H / MIN5)), slot0 = Math.floor((t0 % DAY) / MIN5);
-  const N = 4000, risk = entry - stop, rT = (target - entry) / risk;
+  const N = 4000, risk = Math.abs(entry - stop), rT = Math.abs(target - entry) / risk;
   let cT = 0, cS = 0, sum = 0;
   for (let r = 0; r < N; r++) {
     let p = entry, out = 0;
     for (let j = 1; j <= steps; j++) {
-      let row = pool[(slot0 + j + Math.floor(rnd() * 5) - 2 + 288 * 2) % 288];
+      const row = pool[(slot0 + j + Math.floor(rnd() * 5) - 2 + 288 * 2) % 288];
       if (!row.length) continue;
       const b = row[Math.floor(rnd() * row.length)];
-      if (p * b[1] <= stop) { out = -1; break; }
-      if (p * b[0] >= target) { out = 1; break; }
+      if (long) {
+        if (p * b[1] <= stop) { out = -1; break; }
+        if (p * b[0] >= target) { out = 1; break; }
+      } else {
+        if (p * b[0] >= stop) { out = -1; break; }
+        if (p * b[1] <= target) { out = 1; break; }
+      }
       p *= b[2];
     }
-    if (out === 1) { cT++; sum += rT; } else if (out === -1) { cS++; sum -= 1; } else sum += (p - entry) / risk;
+    if (out === 1) { cT++; sum += rT; } else if (out === -1) { cS++; sum -= 1; } else sum += (long ? p - entry : entry - p) / risk;
   }
   return { pT: cT / N, pS: cS / N, avgR: sum / N - costR };
 }
+
+// ---- the three nudges (each capped and shown on the card)
+const sideWord = s => s === 'buy' ? 'لانگ' : 'شورت';
+function btAdj(bt, side) {
+  const x = bt && bt[side];
+  if (!x || x.nTop < 25 || x.top == null) return { v: 0, parts: [] };
+  const v = clamp(0.3 * x.top * x.nTop / (x.nTop + 60), -0.15, 0.15);
+  return { v, parts: [{ v, txt: `۵ ${sideWord(side)} اول این ساعت در ${bt.days} روز گذشته ${rr(x.top)}` }] };
+}
+const shrunk = (g, k) => g && g.n ? clamp(g.avgR, -1.5, 1.5) * g.n / (g.n + k) : 0;
+function recAdj(inst, side, tier) {
+  const R = myRecord(), s = R.side[side], c = R.coin[inst.base + '|' + side], t = R.tier[tier || 'M'];
+  const a = 0.12 * shrunk(s, 10), b = 0.15 * shrunk(c, 4), d = 0.08 * shrunk(t, 10), parts = [];
+  if (s && s.n) parts.push({ v: a, txt: `کارنامه‌ی تو در ${sideWord(side)}: ${s.n} معامله، ${rr(s.avgR)}` });
+  if (c && c.n) parts.push({ v: b, txt: `تو روی ${inst.base} ${sideWord(side)}: ${c.n} معامله، ${rr(c.avgR)}` });
+  if (t && t.n) parts.push({ v: d, txt: `این نوع پیشنهاد برای تو: ${t.n} معامله، ${rr(t.avgR)}` });
+  return { v: clamp(a + b + d, -0.3, 0.3), parts };
+}
+function anaAdj(inst, side) {
+  const view = anaView(inst.base);
+  if (!view || !view.bias) return { v: 0, parts: [] };
+  const v = clamp(0.06 * view.bias * (side === 'buy' ? 1 : -1) * view.w, -0.06, 0.06);
+  return { v, parts: [{ v, txt: `تحلیل‌گرها روی ${inst.base}: ${view.label}` }] };
+}
+
 const topCache = { at: 0, key: '', res: null, bt: null, btAt: 0, btKey: '', mc: new Map() };
 function buildTop(now) {
   const cands = Array.from(insts.crypto.values()).filter(i => i.tracked && i.status === 'ready' && !i.partial && liquidity(i).ok && i.bars.length);
-  const hz = pickHorizon(now), H = hz.exitAt - now, hours = H / 3600000;
-  const sug = buildSuggestions('crypto'), tierOfKey = new Map();
-  sug.A.forEach(g => tierOfKey.set(g.inst.key, { tier: 'A', g })); sug.B.forEach(g => { if (!tierOfKey.has(g.inst.key)) tierOfKey.set(g.inst.key, { tier: 'B', g }); });
+  const hz = pickHorizon(now), H = hz.exitAt - now, hours = H / 3600000, bt = topCache.bt;
+  const sug = buildSuggestions('crypto'), ruleOf = new Map();
+  sug.A.forEach(g => ruleOf.set(g.inst.key + '|' + g.plan.side, { tier: 'A', g }));
+  sug.B.forEach(g => { const k = g.inst.key + '|' + g.plan.side; if (!ruleOf.has(k)) ruleOf.set(k, { tier: 'B', g }); });
   const rows = [];
-  cands.forEach(inst => {
-    const ask = askPx(inst), f = featuresAt(inst, now, ask);
-    if (f) rows.push({ inst, f, ask });
-  });
+  cands.forEach(inst => { const f = featuresAt(inst, now, askPx(inst)); if (f) rows.push({ inst, f }); });
   if (rows.length) scoreRows(rows);
-  rows.forEach(r => { const t = tierOfKey.get(r.inst.key); r.rule = t || null; r.rank = r.score + (t ? (t.tier === 'A' ? 2 : 1) : 0); });
-  rows.sort((x, y) => y.rank - x.rank);
-  const picks = rows.slice(0, TOP_N).map(r => {
-    const inst = r.inst, c = costPctOf(inst);
-    let plan;
-    if (r.rule && !r.rule.g.plan.none) {
-      const g = r.rule.g;
-      plan = { stop: g.plan.stop, target: g.plan.target, exitAt: g.plan.exitAt, dec: g.plan.dec, src: 'rule' };
-    } else plan = Object.assign(pickStop(r.ask, r.f, c, hours), { exitAt: hz.exitAt, src: 'rank' });
-    plan.entry = r.ask; plan.side = 'buy'; plan.long = true;
-    plan.costR = (c / 100) / ((plan.entry - plan.stop) / plan.entry);
-    const sz = E.size({ side: 'buy', entry: plan.entry, stop: plan.stop, target: plan.target }, { account: cfg.account, maxLoss: cfg.maxLoss, maxPositionPct: cfg.maxPositionPct,
-      cashBufferPct: cfg.cashBufferPct, maxLeverage: cfg.maxLeverage, costPct: cfg.crypto.costPct, minOrderUSD: cfg.minOrderUSD }, { cls: 'crypto', base: inst.base, quote: inst.quote, contract: 1 });
-    return Object.assign(r, { plan, sz });
+  const sel = ui.topSide, opts = [];
+  rows.forEach(r => {
+    const sides = [];
+    if (sel !== 'short') sides.push('buy');
+    if (sel !== 'long' && shortOk(r.inst)) sides.push('sell');
+    sides.forEach(side => {
+      const long = side === 'buy', rule = ruleOf.get(r.inst.key + '|' + side) || null, tier = rule ? rule.tier : 'T';
+      const base = long ? r.score : 1 - r.score;
+      const adj = { bt: btAdj(bt, side), rec: recAdj(r.inst, side, tier), ana: anaAdj(r.inst, side) };
+      const adjV = adj.bt.v + adj.rec.v + adj.ana.v;
+      opts.push({ inst: r.inst, f: r.f, side, long, rule, tier, base, adj, adjV, rank: base + adjV + (rule ? (rule.tier === 'A' ? 2 : 1) : 0) });
+    });
   });
-  return { picks, cands, nRanked: rows.length, hz, H, hours };
+  opts.sort((x, y) => y.rank - x.rank);
+  const seen = new Set(), picks = [];
+  for (const o of opts) { if (picks.length >= TOP_N) break; if (seen.has(o.inst.key)) continue; seen.add(o.inst.key); picks.push(o); }
+  picks.forEach(pk => {
+    const inst = pk.inst, long = pk.long, entry = (long ? askPx(inst) : bidPx(inst)) || pk.f.p;
+    let plan = null;
+    if (pk.rule && !pk.rule.g.plan.none) {
+      const g = pk.rule.g.plan;
+      if (long ? g.stop < entry && g.target > entry : g.stop > entry && g.target < entry) plan = { stop: g.stop, target: g.target, exitAt: g.exitAt, dec: g.dec, src: 'rule' };
+    }
+    if (!plan) plan = Object.assign(pickStop(entry, pk.f, costPctOf(inst, !long, hours), hours, long), { exitAt: hz.exitAt, src: 'rank' });
+    plan.entry = entry; plan.side = pk.side; plan.long = long;
+    plan.hours = Math.max(0.1, (plan.exitAt - now) / 3600000);
+    plan.stopPct = Math.abs(entry - plan.stop) / entry; plan.tgtPct = Math.abs(plan.target - entry) / entry;
+    pk.plan = plan;
+  });
+  return { picks, cands, nRanked: rows.length, hz, H, hours, sel };
+}
+
+// ---- dollars, leverage and the basket
+const QW = { r: 1, s: 0.8, m: 0.5, w: 0.25 };
+// own money already tied up in open real trades (spot cost or margin collateral)
+function openExposure() {
+  return journal.filter(j => !j.result && j.mkt === 'crypto').reduce((t, j) => t + (j.coll != null ? j.coll : j.quoteUSD ? j.units * j.entry : j.units), 0);
+}
+// one position: the dollar size from the loss you accept, then the least leverage that fits the cash you give it
+function moneyFor(inst, plan, lossCap, cashCap) {
+  const Lmax = levMax(), step = inst.quote === 'IRT' ? 0.01 : qtyStep(plan.entry);
+  let margin = !plan.long, L = 1;
+  const mk = () => {
+    const c = costPctOf(inst, margin, plan.hours) / 100;
+    const notional = Math.min(lossCap / (plan.stopPct + c), cfg.account * cfg.maxPositionPct / 100 * L);
+    return { margin, L, c, notional, coll: notional / L };
+  };
+  let m = mk();
+  while (m.coll > cashCap + 1e-6) {
+    const nextL = margin ? L + 0.5 : 1.5;
+    if (nextL > Lmax + 1e-9 || !liqFar(plan, nextL) || (plan.long && inst.quote !== 'USDT')) break;
+    margin = true; L = nextL; m = mk();
+  }
+  if (m.coll > cashCap) { const k = Math.max(0, cashCap / m.coll); m.notional *= k; m.coll *= k; m.capped = true; }
+  m.notional = m.notional >= 20 ? Math.floor(m.notional / 10 + 1e-9) * 10 : Math.floor(m.notional);
+  const unitsRaw = inst.quote === 'IRT' ? m.notional : m.notional / plan.entry;
+  m.units = Math.floor(unitsRaw / step + 1e-9) * step;
+  m.notional = valUSD(inst, m.units, plan.entry);
+  m.coll = m.notional / m.L;
+  m.loss = m.notional * (plan.stopPct + m.c);
+  m.gain = m.notional * (plan.tgtPct - m.c);
+  m.liq = m.margin ? liqPrice(plan.entry, plan.long, m.L) : null;
+  m.ok = m.units > 0 && m.notional >= cfg.minOrderUSD;
+  return m;
+}
+function allocate(picks) {
+  const today = todayEntries(), used = today.reduce((t, j) => t + (j.lossAtStop || 0), 0);
+  const slots = Math.max(0, cfg.maxTrades - today.length), budget = Math.max(0, cfg.maxDailyLoss - used);
+  const cash = Math.max(0, cfg.account * (1 - cfg.cashBufferPct / 100) - openExposure());
+  const res = { slots, budget, cash, used, rows: [], why: null };
+  if (!slots) { res.why = 'trades'; return res; }
+  if (budget < 1) { res.why = 'risk'; return res; }
+  if (cash < cfg.minOrderUSD) { res.why = 'cash'; return res; }
+  const pool = picks.filter(pk => pk.plan && pk.q).map(pk => ({ pk, w: QW[pk.q] * clamp(1 + 2 * pk.adjV, 0.4, 1.5) }));
+  const sel = pool.slice().sort((a, b) => b.w - a.w).slice(0, slots);
+  const W = sel.reduce((t, x) => t + x.w, 0) || 1;
+  sel.forEach(x => { x.lossCap = Math.min(cfg.maxLoss, budget * x.w / W); x.m = moneyFor(x.pk.inst, x.pk.plan, x.lossCap, cash); });
+  const need = sel.reduce((t, x) => t + x.m.coll, 0);
+  if (need > cash + 0.5) sel.forEach(x => { x.m = moneyFor(x.pk.inst, x.pk.plan, x.lossCap, cash * x.m.coll / need); });
+  res.rows = sel.filter(x => x.m.ok);
+  ['notional', 'coll', 'loss', 'gain'].forEach(k => { res[k] = res.rows.reduce((t, x) => t + x.m[k], 0); });
+  return res;
+}
+const fmtU = u => (+u).toLocaleString('en-US', { maximumFractionDigits: 8 });
+const levTxt = m => m.margin ? `${m.L}× تعهدی` : '۱× اسپات (بدون اهرم)';
+function howTo(pk, m) {
+  const { inst, plan } = pk, dec = plan.dec, src = source.crypto, f = feeSide();
+  const irt = inst.quote === 'IRT', q = irt ? 'تومان' : 'تتر';
+  const amt = irt ? `${fmtP(m.notional * plan.entry, 0)} تومان (${fmtP(m.units, 2)} تتر)` : `${fmtP(m.notional, 2)} تتر (≈ ${fmtU(m.units)} ${inst.base})${toman(m.notional) ? ' ' + toman(m.notional) : ''}`;
+  const stopLimit = fmtP(E.roundAway(plan.long ? plan.stop * 0.998 : plan.stop * 1.002, plan.long, dec), dec);
+  const steps = [];
+  if (plan.long && !m.margin) {
+    steps.push(`در ${src} بازار <b>${esc(inst.base)}/${irt ? 'IRT (تتر/تومان)' : 'USDT'}</b> را باز کن (معامله‌ی اسپات).`);
+    steps.push(`<b>خرید</b> با سفارش «بازار»، مبلغ <b>${amt}</b>. یا سفارش «محدود» روی ${n(fmtP(plan.entry, dec))}.`);
+    steps.push(`تا خرید پر شد، سفارش <b>فروش OCO</b> بگذار: مقدار = موجودی ${esc(inst.base)} (حدود ${n(fmtU(m.units * (1 - f)))})، قیمت (معین) <b class="num pos">${fmtP(plan.target, dec)}</b>، قیمت توقف <b class="num neg">${fmtP(plan.stop, dec)}</b>، قیمت حد ضرر ${n(stopLimit)}.`);
+  } else {
+    steps.push(`در ${src} بخش <b>معامله‌ی تعهدی</b> را باز کن، بازار <b>${esc(inst.base)}/USDT</b>، و <b>${plan.long ? 'خرید تعهدی (لانگ)' : 'فروش تعهدی (شورت)'}</b> را بزن.`);
+    steps.push(`ضریب (اهرم) را روی <b>${n(m.L + '×')}</b> بگذار. وثیقه از کیف تتر: <b>${n(fmtP(m.coll, 2))} تتر</b>${toman(m.coll) ? ' ' + toman(m.coll) : ''}. ارزش موقعیت: ${amt}.`);
+    steps.push(plan.long
+      ? `بعد از باز شدن، روی همین موقعیت سفارش <b>فروش OCO</b> بگذار: قیمت (معین) <b class="num pos">${fmtP(plan.target, dec)}</b>، قیمت توقف <b class="num neg">${fmtP(plan.stop, dec)}</b>، قیمت حد ضرر ${n(stopLimit)}.`
+      : `بعد از باز شدن، برای بستن موقعیت سفارش <b>خرید OCO</b> بگذار: قیمت (معین) <b class="num pos">${fmtP(plan.target, dec)}</b> (پایین‌تر از قیمت الان؛ سود تو)، قیمت توقف <b class="num neg">${fmtP(plan.stop, dec)}</b> (بالاتر؛ حد ضرر)، قیمت حد ${n(stopLimit)}.`);
+    steps.push(`قیمت لیکوئید شدن تقریبی ${n(fmtP(m.liq, dec))} است؛ حد ضرر تو خیلی زودتر می‌خورد. کارمزد تمدید حدود ${n(cfg.crypto.marginFeePct + '٪')} ارزش موقعیت در هر ۲۴ ساعت است (در عددها حساب شده).`);
+  }
+  steps.push(`اگر تا ساعت <b>${n(tm(plan.exitAt))}</b> نه حد سود خورد نه حد ضرر، OCO را لغو کن و ${plan.long ? (m.margin ? 'موقعیت را ببند' : 'به قیمت بازار بفروش') : 'موقعیت را با خرید ببند'}.`);
+  steps.push('بعد از انجام، «انجام دادم؛ ثبتش کن» را بزن تا هشدار خروج و کارنامه‌ات کار کند.');
+  const warn = !plan.long ? `<p class="small">فقط اگر این بازار در ${src} «فروش تعهدی» دارد؛ اگر نداشت، این پیشنهاد را رد کن و در تنظیمات فهرست شورت را درست کن. شورت یعنی اگر قیمت بالا برود ضرر می‌کنی.</p>`
+    : irt ? `<p class="small">بازار تتر/تومان ${src} از ۲۳:۳۰ تا ۱۱:۳۰ بسته است و سقف خرید روزانه دارد.</p>` : '';
+  return `<details class="how"><summary>${plan.long ? (m.margin ? 'چطور خرید تعهدی کنم' : 'چطور بخرم') : 'چطور شورت کنم'} (قدم به قدم)</summary><ol>${steps.map(s => `<li>${s}</li>`).join('')}</ol>${warn}</details>`;
+}
+function qualityOf(pk, mc) {
+  const al = x => pk.long ? x > 0 : x < 0, f = pk.f;
+  const pos = [al(f.trend), al(f.r7), al(f.r24), mc && !mc.err ? mc.avgR > 0 : null];
+  const good = pos.filter(x => x === true).length;
+  return pk.rule && pk.rule.tier === 'A' ? 'r' : good >= 4 ? 's' : good === 3 ? 'm' : 'w';
 }
 function renderTop5() {
   if (cfg.crypto.source !== 'nobitex' && !insts.crypto.size) { put('topCard', ''); return; }
   const now = Date.now(), slot = Math.floor(now / 60000);
   const ready = Array.from(insts.crypto.values()).filter(i => i.tracked && i.status === 'ready' && !i.partial).map(i => i.key).join(',');
-  if (topCache.key !== slot + '|' + ready + '|' + statsAt) { topCache.res = buildTop(now); topCache.key = slot + '|' + ready + '|' + statsAt; }
+  const recK = journal.length + '|' + journal.filter(j => j.result).length + '|' + paper.closed.length + '|' + anaState.at;
+  const key = slot + '|' + ready + '|' + statsAt + '|' + ui.topSide + '|' + recK + '|' + topCache.btAt + '|' + (topCache.bt ? 1 : 0);
+  if (topCache.key !== key) { topCache.res = buildTop(now); topCache.key = key; }
   const T = topCache.res;
   // the replay of the same ranking on past days, refreshed every 15 minutes
-  const btKey = ready + '|' + Math.round(T.H / 1800000) + '|' + cfg.targetR + '|' + cfg.crypto.costPct;
+  const btKey = ready + '|' + Math.round(T.H / 1800000) + '|' + cfg.targetR + '|' + cfg.crypto.costPct + '|' + cfg.crypto.shortList + '|' + cfg.crypto.allowShort;
   if (T.cands.length >= 8 && (topCache.btKey !== btKey || now - topCache.btAt > 15 * 60000)) {
     topCache.btKey = btKey; topCache.btAt = now;
-    setTimeout(() => { try { topCache.bt = backtestTop(T.cands, Date.now(), T.H, T.hours); } catch (e) { topCache.bt = null; } scheduleRender(); }, 30);
+    setTimeout(() => { try { topCache.bt = backtestTop(T.cands, Date.now(), T.H, T.hours); } catch (e) { topCache.bt = null; } topCache.key = ''; scheduleRender(); }, 30);
   }
   const bt = T.cands.length >= 8 ? topCache.bt : null;
-  // the buy-now Time Machine for each pick, one at a time
+  // the Time Machine for each pick, one at a time
   T.picks.forEach(pk => {
-    const k = pk.inst.key + '|' + Math.floor(now / 300000) + '|' + pk.plan.stop + '|' + pk.plan.target + '|' + pk.plan.exitAt;
+    const p = pk.plan, k = pk.inst.key + '|' + p.side + '|' + Math.floor(now / 300000) + '|' + p.stop + '|' + p.target + '|' + p.exitAt;
     pk.mcKey = k;
     if (!topCache.mc.has(k)) {
       topCache.mc.set(k, null);
-      setTimeout(() => { try { topCache.mc.set(k, simNow(pk.inst, pk.plan.entry, pk.plan.stop, pk.plan.target, Date.now(), pk.plan.exitAt - Date.now(), pk.plan.costR)); } catch (e) { topCache.mc.set(k, { err: 1 }); } scheduleRender(); }, 40);
+      const costR = (costPctOf(pk.inst, !p.long, p.hours) / 100) / p.stopPct;
+      setTimeout(() => { try { topCache.mc.set(k, simNow(pk.inst, p.entry, p.stop, p.target, Date.now(), p.exitAt - Date.now(), costR, p.long)); } catch (e) { topCache.mc.set(k, { err: 1 }); } scheduleRender(); }, 40);
     }
+    pk.mc = topCache.mc.get(k);
+    pk.q = qualityOf(pk, pk.mc);
   });
-  if (topCache.mc.size > 200) topCache.mc.clear();
+  if (topCache.mc.size > 300) topCache.mc.clear();
+  const cash = Math.max(0, cfg.account * (1 - cfg.cashBufferPct / 100) - openExposure());
+  const basket = allocate(T.picks), inB = new Map(basket.rows.map(x => [x.pk.inst.key, x.m]));
+  T.picks.forEach(pk => { pk.money = inB.get(pk.inst.key) || moneyFor(pk.inst, pk.plan, cfg.maxLoss, cash); pk.inBasket = inB.has(pk.inst.key); });
+  T.basket = basket;
   const filling = Array.from(insts.crypto.values()).filter(i => i.tracked && i.partial).length;
-  let head = '';
-  if (bt && bt.nTop >= 25) {
-    const cls = bt.top > 0 && bt.top > bt.all ? 'good' : bt.top <= 0 ? 'bad' : 'mid';
-    const msg = bt.top <= 0
-      ? `در ${n(bt.days)} روز گذشته، اگر هر روز همین ساعت ۵ تای اول همین رتبه‌بندی را با همین برنامه خریده بودی، به‌طور میانگین <b>ضرر</b> می‌کردی: ${n(rr(bt.top))} در هر معامله (${n(pc(bt.winTop, 0))} برد). یعنی «بهترین‌ها» هم در گذشته معمولاً ضرر داده‌اند؛ خرید نکردن بهتر بوده.`
-      : bt.top > bt.all
-        ? `در ${n(bt.days)} روز گذشته، ۵ تای اول همین ساعت به‌طور میانگین ${n(rr(bt.top))} در هر معامله داده‌اند (${n(pc(bt.winTop, 0))} برد)، در برابر ${n(rr(bt.all))} برای خرید همه‌ی نمادها. کمی بهتر از تصادف بوده، نه تضمین.`
-        : `در ${n(bt.days)} روز گذشته، ۵ تای اول همین ساعت (${n(rr(bt.top))} در هر معامله) از خرید همه‌ی نمادها (${n(rr(bt.all))}) بهتر نبوده‌اند؛ این رتبه‌بندی برتری قابل اتکایی نشان نمی‌دهد.`;
-    head = `<p class="bt ${cls}">${msg}</p>`;
-  } else if (T.cands.length) head = `<p class="bt">هنوز داده‌ی کافی برای سنجیدن این روش روی روزهای گذشته نیست${filling ? ' (تاریخچه در حال تکمیل است)' : ''}.</p>`;
+  // what the same method did on past days, per side
+  const btLine = side => {
+    const x = bt && bt[side];
+    if (!x || x.nTop < 25) return '';
+    const cls = x.top > 0 && x.top > x.all ? 'good' : x.top <= 0 ? 'bad' : 'mid';
+    const what = side === 'buy' ? 'خرید (لانگ) ۵ تای قوی‌تر' : 'شورت ۵ تای ضعیف‌تر';
+    const msg = x.top <= 0
+      ? `<b>${what}</b> در همین ساعت، در ${n(bt.days)} روز گذشته به‌طور میانگین <b>ضرر</b> داده: ${n(rr(x.top))} در هر معامله (${n(pc(x.winTop, 0))} برد). یعنی در گذشته این کار نکردن بهتر بوده.`
+      : x.top > x.all
+        ? `<b>${what}</b> در همین ساعت، در ${n(bt.days)} روز گذشته به‌طور میانگین ${n(rr(x.top))} در هر معامله داده (${n(pc(x.winTop, 0))} برد)، در برابر ${n(rr(x.all))} برای همه‌ی نمادها. کمی بهتر از تصادف، نه تضمین.`
+        : `<b>${what}</b> در همین ساعت (${n(rr(x.top))} در هر معامله) از همه‌ی نمادها (${n(rr(x.all))}) بهتر نبوده؛ برتری قابل اتکایی نشان نمی‌دهد.`;
+    return `<p class="bt ${cls}">${msg}</p>`;
+  };
+  let head = (T.sel !== 'short' ? btLine('buy') : '') + (T.sel !== 'long' && cfg.crypto.allowShort ? btLine('sell') : '');
+  if (!head && T.cands.length) head = `<p class="bt">هنوز داده‌ی کافی برای سنجیدن این روش روی روزهای گذشته نیست${filling ? ' (تاریخچه در حال تکمیل است)' : ''}.</p>`;
   const QL = { r: 'سیگنال کامل قانون', s: 'قوی', m: 'متوسط', w: 'ضعیف' };
+  const chip = (ok, txt) => `<span class="${ok ? 'pos' : 'neg'}">${ok ? '✓' : '✕'} ${txt}</span>`;
+  const nudge = p => `<span class="${p.v > 0.004 ? 'pos' : p.v < -0.004 ? 'neg' : 'mut'}">${p.v > 0.004 ? '▲' : p.v < -0.004 ? '▼' : '•'} ${p.txt}</span>`;
   const picksHTML = T.picks.map((pk, i) => {
-    const { inst, f, plan, sz } = pk, mc = topCache.mc.get(pk.mcKey);
-    const pos = [f.trend > 0, f.r7 > 0, f.r24 > 0, mc && !mc.err ? mc.avgR > 0 : null];
-    const good = pos.filter(x => x === true).length;
-    const q = pk.rule && pk.rule.tier === 'A' ? 'r' : good >= 4 ? 's' : good === 3 ? 'm' : 'w';
-    const chip = (ok, txt) => `<span class="${ok ? 'pos' : 'neg'}">${ok ? '✓' : '✕'} ${txt}</span>`;
-    const why = [chip(f.trend > 0, `${f.trend > 0 ? 'بالای' : 'زیر'} میانگین ۲۰ روزه (${spc(f.trend, 1)})`), chip(f.r7 > 0, `۷ روز ${spc(f.r7, 1)}`), chip(f.r24 > 0, `۲۴ ساعت ${spc(f.r24, 1)}`)];
+    const { inst, f, plan, mc, money: m } = pk, long = plan.long, dec = plan.dec;
+    const al = x => long ? x > 0 : x < 0;
+    const why = [chip(al(f.trend), `${f.trend > 0 ? 'بالای' : 'زیر'} میانگین ۲۰ روزه (${n(spc(f.trend, 1))})`), chip(al(f.r7), `۷ روز ${n(spc(f.r7, 1))}`), chip(al(f.r24), `۲۴ ساعت ${n(spc(f.r24, 1))}`)];
     if (pk.rule) why.unshift(`<span class="pos">★ قانون شکست رنج: ${pk.rule.tier === 'A' ? '۵ از ۵ شرط' : '۴ از ۵ شرط'}</span>`);
+    const nudges = [].concat(pk.adj.bt.parts, pk.adj.rec.parts, pk.adj.ana.parts).map(nudge);
     const mcTxt = !mc ? 'شبیه‌سازی…' : mc.err ? '' : `شبیه‌سازی: اول حد سود ${n(pc(mc.pT, 0))}، اول حد ضرر ${n(pc(mc.pS, 0))}، میانگین <span class="num ${mc.avgR > 0 ? 'pos' : 'neg'}">${rr(mc.avgR)}</span>`;
     const open = paper.positions.some(p => p.key === inst.key);
-    const szOk = sz && !sz.refuse && sz.units > 0;
-    return `<div class="pick"><span class="rk">${n(i + 1)}</span>
-      <div class="who"><b>${esc(inst.label)}</b><span class="q ${q}">${QL[q]}</span></div>
-      <div class="nums"><span>ورود ≈ ${n(fmtP(plan.entry, plan.dec))}</span><span>حد ضرر <span class="num neg">${fmtP(plan.stop, plan.dec)}</span> <span class="small">(${n(pc((plan.entry - plan.stop) / plan.entry, 1))})</span></span><span>حد سود <span class="num pos">${fmtP(plan.target, plan.dec)}</span></span>
-        ${szOk ? `<span>حجم ${n(sz.units.toLocaleString('en-US', { maximumFractionDigits: 8 }))} (${n(usd(sz.notional, 0))})</span><span>ضرر ممکن <span class="num neg">${usd(-sz.lossAtStop)}</span></span><span>سود ممکن <span class="num pos">${usd(sz.gainAtTarget)}</span></span>` : `<span class="neg">با سقف ضرر تو حجم معتبری نمی‌شود</span>`}
-        <span>خروج تا ${n(tm(plan.exitAt))}</span><span>${mcTxt}</span>
-        <span class="why">${why.join('')}</span></div>
-      <div class="acts">${open ? `<button type="button" class="btn ghost sm" data-view-go="paper">روی حساب مجازی باز است</button>` : szOk ? `<button type="button" class="btn sm" data-top-paper="${esc(inst.key)}">باز کردن مجازی</button>` : ''}${szOk ? `<button type="button" class="btn ghost sm" data-top-log="${esc(inst.key)}">خریدم؛ ثبتش کن</button>` : ''}<button type="button" class="btn ghost sm" data-focus="${esc(inst.key)}" data-mkt="crypto">جزئیات</button></div></div>`;
+    const own = x => m.margin ? ` <span class="small">(روی پول خودت ${n(spc(x * m.L, 1))})</span>` : '';
+    const moneyHTML = m.ok
+      ? `<div class="money"><span class="amt">${long ? 'بخر' : 'شورت کن'}: <b class="num">${usd(m.notional, 0)}</b>${toman(m.notional) ? ` <span class="small">${toman(m.notional)}</span>` : ''}</span>
+          <span>اهرم <b>${levTxt(m)}</b>${m.margin ? ` · وثیقه ${n(usd(m.coll, 0))}` : ''}</span>
+          <span>حد سود (TP) <b class="num pos">${fmtP(plan.target, dec)}</b> <span class="small">(${n(spc(long ? plan.tgtPct : -plan.tgtPct, 1))})</span>${own(plan.tgtPct)}</span>
+          <span>حد ضرر (SL) <b class="num neg">${fmtP(plan.stop, dec)}</b> <span class="small">(${n(spc(long ? -plan.stopPct : plan.stopPct, 1))})</span>${own(-plan.stopPct)}</span>
+          ${m.liq ? `<span>لیکوئید ≈ <span class="num">${fmtP(m.liq, dec)}</span></span>` : ''}
+          <span>ضرر ممکن <span class="num neg">${usd(-m.loss)}</span> · سود ممکن <span class="num pos">${usd(m.gain)}</span></span>
+          <span class="small">${pk.inBasket ? '<b class="pos">در سبد امروز</b>' : 'بیرون از سبد امروز؛ مبلغ برای یک معامله‌ی تنها با سقف ضرر هر معامله'}</span></div>`
+      : `<div class="money"><span class="neg">با سقف ضرر و نقد تو، مبلغ معتبری برای این یکی درنمی‌آید.</span></div>`;
+    return `<div class="pick ${long ? 'lg' : 'sh'}"><span class="rk">${n(i + 1)}</span>
+      <div class="who"><b>${esc(inst.label)}</b><span class="state ${long ? 'up' : 'down'}">${long ? '↑ لانگ (خرید)' : '↓ شورت (فروش تعهدی)'}</span><span class="q ${pk.q}">${QL[pk.q]}</span></div>
+      <div class="nums"><span>ورود ≈ ${n(fmtP(plan.entry, dec))}</span><span>خروج تا ${n(tm(plan.exitAt))}</span><span class="sim">${mcTxt}</span>
+        <span class="why">${why.join('')}</span>${nudges.length ? `<span class="why">${nudges.join('')}</span>` : ''}</div>
+      <div class="acts">${open ? `<button type="button" class="btn ghost sm" data-view-go="paper">روی حساب مجازی باز است</button>` : m.ok ? `<button type="button" class="btn sm" data-top-paper="${esc(inst.key)}">باز کردن مجازی</button>` : ''}${m.ok ? `<button type="button" class="btn ghost sm" data-top-log="${esc(inst.key)}">انجام دادم؛ ثبتش کن</button>` : ''}<button type="button" class="btn ghost sm" data-focus="${esc(inst.key)}" data-mkt="crypto">جزئیات</button></div>
+      ${moneyHTML}${m.ok ? howTo(pk, m) : ''}</div>`;
   }).join('');
+  // the basket in plain words
+  let bHTML = '';
+  if (T.picks.length) {
+    const WHY = { trades: `امروز ${n(cfg.maxTrades)} معامله ثبت کرده‌ای؛ سقف روزانه پر است. امروز معامله‌ی تازه نکن.`, risk: `ریسک امروزت (${n(usd(basket.used))} از ${n(usd(cfg.maxDailyLoss))}) پر شده؛ امروز معامله‌ی تازه نکن.`, cash: 'نقد آزاد (بعد از ذخیره و معاملات باز) از حداقل سفارش کمتر است.' };
+    if (basket.why) bHTML = `<p class="bt bad">${WHY[basket.why]}</p>`;
+    else if (!basket.rows.length) bHTML = `<p class="bt">با سقف‌های تو، الان مبلغ معتبری برای هیچ‌کدام درنمی‌آید.</p>`;
+    else {
+      const weak = basket.rows.every(x => x.pk.q === 'w');
+      const line = x => { const p = x.pk.plan, m = x.m; return `<li><b>${esc(x.pk.inst.label)}</b>: ${p.long ? (m.margin ? 'خرید تعهدی' : 'بخر') : 'شورت کن'} <b class="num">${usd(m.notional, 0)}</b>${toman(m.notional) ? ` <span class="small">${toman(m.notional)}</span>` : ''} · اهرم ${levTxt(m)}${m.margin ? `، وثیقه ${n(usd(m.coll, 0))}` : ''} · حد سود ${n(fmtP(p.target, p.dec))} · حد ضرر ${n(fmtP(p.stop, p.dec))} · ضرر ممکن <span class="num neg">${usd(-m.loss)}</span></li>`; };
+      bHTML = `<div class="basket"><h3>سبد پیشنهادی همین الان</h3>
+        <p class="small">اگر امروز حتماً می‌خواهی معامله کنی، با سقف‌های خودت (${n(basket.slots)} معامله‌ی باقی‌مانده، ${n(usd(basket.budget))} ریسک باقی‌مانده، ${n(usd(basket.cash, 0))} نقد آزاد) این‌طور تقسیم کن:</p>
+        <ul>${basket.rows.map(line).join('')}</ul>
+        <p class="small">جمع: ${n(usd(basket.notional, 0))} معامله، ${n(usd(basket.coll, 0))} از پول خودت درگیر، اگر همه حد ضرر بخورند <span class="num neg">${usd(-basket.loss)}</span>، اگر همه حد سود بخورند <span class="num pos">${usd(basket.gain)}</span>.${weak ? ' <b class="neg">هر سه ضعیف‌اند؛ بهترین کار امروز احتمالاً معامله نکردن است.</b>' : ''}</p></div>`;
+    }
+  }
   let body;
   if (!T.picks.length) body = `<p class="sug-empty">${filling ? `تاریخچه‌ی نمادها در حال تکمیل است؛ اولین انتخاب‌ها چند دقیقه‌ی دیگر می‌آیند (${n(filling)} نماد در صف).` : 'منتظر داده…'}</p>`;
-  else body = `<div class="picks">${picksHTML}</div>${T.picks.length < TOP_N ? `<p class="sug-empty">فعلاً ${n(T.picks.length)} نماد تاریخچه‌ی کامل دارد؛ بقیه با کامل شدن تاریخچه اضافه می‌شوند.</p>` : ''}`;
-  const html = `<div class="sec-h"><h2 id="topH">۵ انتخاب برتر الان</h2><p>${esc(source.crypto)} · از بین ${n(T.nRanked)} بازار پرمعامله با تاریخچه‌ی کامل · خروج تا ${n(tm(T.hz.exitAt))} (${esc(T.hz.note)}) · هر دقیقه به‌روز می‌شود</p></div>
+  else body = `${bHTML}<div class="picks">${picksHTML}</div>${T.picks.length < TOP_N ? `<p class="sug-empty">فعلاً ${n(T.picks.length)} انتخاب آماده است؛ بقیه با کامل شدن تاریخچه اضافه می‌شوند.</p>` : ''}`;
+  const seg = `<div class="seg" role="group" aria-label="کدام سمت" id="topSideSeg">${[['both', 'لانگ و شورت'], ['long', 'فقط لانگ'], ['short', 'فقط شورت']].map(([v, t]) => `<button type="button" data-top-side="${v}" aria-pressed="${T.sel === v}"${v !== 'long' && !cfg.crypto.allowShort ? ' disabled' : ''}>${t}</button>`).join('')}</div>`;
+  const html = `<div class="sec-h"><h2 id="topH">۵ انتخاب برتر الان</h2>${seg}<p>${esc(source.crypto)} · از بین ${n(T.nRanked)} بازار پرمعامله با تاریخچه‌ی کامل · خروج تا ${n(tm(T.hz.exitAt))} (${esc(T.hz.note)}) · هر دقیقه به‌روز می‌شود</p></div>
     ${head}${body}
-    <p class="small crit">همیشه پنج نماد نشان داده می‌شود، حتی وقتی هیچ‌کدام خوب نیست؛ برای همین برچسب کیفیت هر کدام و نتیجه‌ی همین روش در روزهای گذشته کنارش آمده. رتبه‌بندی ساده و ثابت است: روند ۲۰ روزه، بازده ۷ روزه و بازده ۲۴ ساعته نسبت به بقیه‌ی بازار؛ نمادی که قانون شکست رنج برایش فعال شده، جلوتر می‌آید. حجم هر کدام طوری حساب شده که اگر حد ضرر بخورد، ضررت از ${n(usd(cfg.maxLoss))} بیشتر نشود. ولی سقف تو ${n(cfg.maxTrades)} معامله و ${n(usd(cfg.maxDailyLoss, 0))} ریسک در روز است؛ پس همه‌ی پنج تا را نخر. این پیش‌بینی نیست و توصیه‌ی مالی هم نیست.</p>`;
+    <p class="small crit">همیشه پنج نماد نشان داده می‌شود، حتی وقتی هیچ‌کدام خوب نیست؛ برای همین برچسب کیفیت هر کدام و نتیجه‌ی همین روش در روزهای گذشته کنارش آمده. رتبه‌بندی ساده است: روند ۲۰ روزه، بازده ۷ روزه و ۲۴ ساعته نسبت به بقیه‌ی بازار؛ قوی‌ترها برای لانگ، ضعیف‌ترها برای شورت. نمادی که قانون شکست رنج برایش فعال شده جلوتر می‌آید، و سه اثر کوچک (▲▼) هم روی آن هست: نتیجه‌ی همین سمت در روزهای گذشته، کارنامه‌ی خودت، و نظر تحلیل‌گرها. مبلغ هر کدام طوری حساب شده که اگر حد ضرر بخورد، ضررت از ${n(usd(cfg.maxLoss))} و جمع امروز از ${n(usd(cfg.maxDailyLoss, 0))} بیشتر نشود؛ اهرم فقط وقتی بالا می‌رود که نقد کافی نباشد، و هیچ‌وقت از ${n(levMax() + '×')} بیشتر نمی‌شود. اهرم بالاتر ضرر هر دلار را بیشتر نمی‌کند، ولی خطای بزرگ‌تر و لیکوئید شدن را ممکن می‌کند. این پیش‌بینی نیست و توصیه‌ی مالی هم نیست.</p>`;
   put('topCard', html);
 }
 document.addEventListener('click', e => {
+  const ts = e.target.closest('[data-top-side]');
+  if (ts) { ui.topSide = ts.dataset.topSide; store.set('dtw.topSide', ui.topSide); topCache.key = ''; scheduleRender(); return; }
   const tp = e.target.closest('[data-top-paper]'), tl = e.target.closest('[data-top-log]');
   if (!tp && !tl) return;
   const key = (tp || tl).dataset[tp ? 'topPaper' : 'topLog'];
   const pk = topCache.res && topCache.res.picks.find(x => x.inst.key === key);
-  if (!pk) { toast('این انتخاب دیگر در لیست نیست.'); return; }
+  if (!pk || !pk.money) { toast('این انتخاب دیگر در لیست نیست.'); return; }
+  const tier = pk.rule ? pk.rule.tier : 'T';
   if (tp) {
-    const err = paperOpen(pk.inst, pk.sz.units, pk.plan.stop, pk.plan.target, pk.plan.exitAt, pk.rule ? pk.rule.tier : 'T');
+    const err = paperOpen(pk.inst, pk.money.units, pk.plan.stop, pk.plan.target, pk.plan.exitAt, tier, pk.plan.side, pk.money.margin ? pk.money.L : 1);
     if (err) toast(esc(err), 'down');
     scheduleRender();
     return;
@@ -2672,11 +2949,11 @@ document.addEventListener('click', e => {
   Object.keys(last).forEach(k => delete last[k]);
   renderAll();
   syncLogSymbols();
-  logPrefill(pk.inst, pk.plan, pk.sz);
+  logPrefill(pk.inst, pk.plan, { units: pk.money.units }, { tier, lev: pk.money.margin ? pk.money.L : 1 });
   setTimeout(() => { L$('logCard').scrollIntoView({ block: 'start' }); L$('l_price').focus({ preventScroll: true }); }, 80);
 });
 
-// ------------------------------------------------------------------ paper account (virtual money, crypto spot)
+// ------------------------------------------------------------------ paper account (virtual money: spot, margin long and short)
 let paper = store.get('dtw.paper', null);
 function paperNew() { paper = { start: cfg.account, cash: cfg.account, positions: [], closed: [], created: Date.now() }; savePaper(); }
 function savePaper() { store.set('dtw.paper', paper); }
@@ -2685,112 +2962,156 @@ const feeSide = () => (cfg.crypto.costPct || 0) / 2 / 100;
 const qtyStep = price => Math.pow(10, -Math.max(0, Math.min(6, Math.floor(Math.log10(price)) + 1)));
 function nextExitAt() { return defaultExitAt('crypto'); }
 function paperToday() { return paper.positions.concat(paper.closed).filter(p => dayKey(p.openedAt) === dayKey(Date.now())); }
-// open a long at the live price; returns an error text or null
-function paperOpen(inst, units, stop, target, exitAt, tier) {
-  const price = askPx(inst);
+const posLong = p => (p.side || 'buy') === 'buy';
+const posInst = p => insts.crypto.get(p.key);
+// dollars gained by a position at `price` (before fees): coins × move, converted when the pair is quoted in toman
+const posMove = (p, price) => (posLong(p) ? price - p.entry : p.entry - price) * p.units * (p.irt ? 1 / price : 1);
+// the price you would close at now: the best bid to sell a long, the best ask to buy back a short
+const closePx = p => { const i = posInst(p); return (i && (posLong(p) ? bidPx(i) : askPx(i))) || p.entry; };
+// open a position at the live price (long at the ask, short at the bid); returns an error text or null
+function paperOpen(inst, units, stop, target, exitAt, tier, side, L) {
+  side = side === 'sell' ? 'sell' : 'buy';
+  const long = side === 'buy';
+  L = Math.max(1, +L || 1);
+  if (!long && !shortOk(inst)) return 'شورت برای این بازار خاموش است (تنظیمات: فهرست شورت).';
+  const margin = !long || L > 1, irt = inst.quote === 'IRT';
+  const price = long ? askPx(inst) : bidPx(inst);
   if (!(price > 0)) return 'قیمت این نماد هنوز نرسیده.';
-  if (!(stop < price)) return 'حد ضرر باید زیر قیمت باشد.';
+  if (long ? !(stop < price) : !(stop > price)) return long ? 'حد ضرر باید زیر قیمت باشد.' : 'حد ضرر باید بالای قیمت باشد.';
+  if (long ? !(target > price) : !(target < price)) return long ? 'حد سود باید بالای قیمت باشد.' : 'حد سود باید زیر قیمت باشد.';
   if (paper.positions.some(p => p.key === inst.key)) return 'روی این نماد یک پوزیشن باز داری.';
-  const step = qtyStep(price);
+  const step = irt ? 0.01 : qtyStep(price), per = irt ? 1 : price;   // dollars per unit
   units = Math.floor(units / step + 1e-9) * step;
-  const maxUnits = Math.floor(paper.cash / (price * (1 + feeSide())) / step + 1e-9) * step;
+  const maxUnits = Math.floor(paper.cash / (per / L + per * feeSide()) / step + 1e-9) * step;
   if (units > maxUnits) units = maxUnits;
-  const notional = units * price, fee = notional * feeSide();
+  const notional = units * per, fee = notional * feeSide(), coll = notional / L;
   if (!(units > 0) || notional < cfg.minOrderUSD) return `مبلغ کمتر از حداقل ${cfg.minOrderUSD} تتر است یا نقد کافی نداری.`;
-  const risk = units * (price - stop) + fee + units * stop * feeSide();
+  const hours = Math.max(0.1, (exitAt - Date.now()) / 3600000), mfee = margin ? notional * marginRate() * marginDays(hours) : 0;
+  const stopMove = Math.abs(price - stop) * units * (irt ? 1 / stop : 1);
+  const risk = stopMove + fee + notional * feeSide() + mfee;
   if (risk > cfg.maxLoss + 0.005) return `ضرر در حد ضرر ${usd(risk)} می‌شود که از سقف ${usd(cfg.maxLoss)} بیشتر است. مبلغ را کم کن یا حد ضرر را نزدیک‌تر بگذار.`;
   const today = paperToday();
   if (today.length >= cfg.maxTrades) return `سقف ${cfg.maxTrades} معامله در روز پر شده.`;
   const used = today.reduce((t, p) => t + (p.risk || 0), 0);
   if (used + risk > cfg.maxDailyLoss + 0.005) return `ریسک امروز از سقف ${usd(cfg.maxDailyLoss)} بیشتر می‌شود.`;
-  paper.cash -= notional + fee;
-  paper.positions.push({ id: Date.now(), key: inst.key, label: inst.label, src: source.crypto, units, entry: price, stop, target, exitAt,
-    openedAt: Date.now(), feeIn: fee, risk, dec: E.decimalsFor(price), checkedTo: Math.ceil(Date.now() / MIN5) * MIN5, tier: tier || null });
+  const liq = margin ? liqPrice(price, long, L) : null;
+  paper.cash -= coll + fee;
+  paper.positions.push({ id: Date.now(), key: inst.key, base: inst.base, label: inst.label, src: source.crypto, side, lev: margin ? L : 1, margin, irt, units, entry: price, stop, target, liq, exitAt,
+    openedAt: Date.now(), feeIn: fee, coll, notional, risk, dec: E.decimalsFor(price), checkedTo: Math.ceil(Date.now() / MIN5) * MIN5, tier: tier || null });
   savePaper();
   updateTracking();
-  toast(`خرید مجازی: ${n(units.toLocaleString('en-US', { maximumFractionDigits: 8 }))} ${esc(inst.base)} در ${n(fmtP(price, E.decimalsFor(price)))}`, 'up');
+  toast(`${long ? (margin ? 'خرید تعهدی' : 'خرید') : 'شورت'} مجازی: ${n(fmtU(units))} ${esc(inst.base)} در ${n(fmtP(price, E.decimalsFor(price)))}${margin ? ` با اهرم ${n(L + '×')}` : ''}`, long ? 'up' : 'down');
   return null;
 }
 function paperClose(pos, price, reason, at) {
-  const notional = pos.units * price, fee = notional * feeSide();
-  paper.cash += notional - fee;
-  const pnl = notional - fee - (pos.units * pos.entry + pos.feeIn);
+  at = at || Date.now();
+  const per = pos.irt ? 1 : price, fee = pos.units * per * feeSide();
+  const mfee = pos.margin ? (pos.notional || pos.units * pos.entry) * marginRate() * marginDays((at - pos.openedAt) / 3600000) : 0;
+  const gross = posMove(pos, price);
+  const coll = pos.coll != null ? pos.coll : pos.units * pos.entry;
+  paper.cash += coll + gross - fee - mfee;
+  const pnl = gross - fee - mfee - pos.feeIn;
   const R = pos.risk > 0 ? pnl / pos.risk : null;
   paper.positions = paper.positions.filter(p => p.id !== pos.id);
-  paper.closed.push(Object.assign({}, pos, { exit: price, closedAt: at || Date.now(), reason, pnl, R }));
+  paper.closed.push(Object.assign({}, pos, { exit: price, closedAt: at, reason, pnl, R, mfee }));
   if (paper.closed.length > 400) paper.closed = paper.closed.slice(-400);
   savePaper();
   setTimeout(updateTracking, 0);
-  const RS = { stop: 'حد ضرر', target: 'حد سود', time: 'زمان خروج', manual: 'فروش دستی' };
-  toast(`فروش مجازی ${esc(pos.label)} (${RS[reason]}): ${n(usd(pnl))}`, pnl >= 0 ? 'up' : 'down');
+  const RS = { stop: 'حد ضرر', target: 'حد سود', time: 'زمان خروج', manual: 'بستن دستی', liq: 'لیکوئید' };
+  toast(`بستن مجازی ${esc(pos.label)} (${RS[reason]}): ${n(usd(pnl))}`, pnl >= 0 ? 'up' : 'down');
 }
-// stops, targets and the flat-by time; closed bars cover the time the page was shut
+// stops, targets, liquidation and the flat-by time; closed bars cover the time the page was shut
 function paperTick() {
   const now = Date.now();
   paper.positions.slice().forEach(pos => {
-    const inst = insts.crypto.get(pos.key);
+    const inst = posInst(pos);
     if (!inst) return;
+    const long = posLong(pos);
     for (const b of inst.bars) {
       if (b.t < pos.checkedTo || b.t + MIN5 > now) continue;
-      if (b.l <= pos.stop) { paperClose(pos, Math.min(pos.stop, b.o), 'stop', b.t + MIN5); return; }
-      if (b.h >= pos.target) { paperClose(pos, Math.max(pos.target, b.o), 'target', b.t + MIN5); return; }
+      if (long) {
+        if (b.l <= pos.stop) { paperClose(pos, Math.min(pos.stop, b.o), 'stop', b.t + MIN5); return; }
+        if (b.h >= pos.target) { paperClose(pos, Math.max(pos.target, b.o), 'target', b.t + MIN5); return; }
+      } else {
+        if (b.h >= pos.stop) { paperClose(pos, Math.max(pos.stop, b.o), 'stop', b.t + MIN5); return; }
+        if (b.l <= pos.target) { paperClose(pos, Math.min(pos.target, b.o), 'target', b.t + MIN5); return; }
+      }
       pos.checkedTo = b.t + MIN5;
       if (pos.checkedTo >= pos.exitAt) { paperClose(pos, b.c, 'time', pos.exitAt); return; }
     }
-    const p = bidPx(inst);
+    const p = long ? bidPx(inst) : askPx(inst);
     if (!(p > 0)) return;
-    if (p <= pos.stop) paperClose(pos, p, 'stop');
-    else if (p >= pos.target) paperClose(pos, pos.target, 'target');
+    if (pos.liq && (long ? p <= pos.liq : p >= pos.liq)) paperClose(pos, pos.liq, 'liq');
+    else if (long ? p <= pos.stop : p >= pos.stop) paperClose(pos, p, 'stop');
+    else if (long ? p >= pos.target : p <= pos.target) paperClose(pos, pos.target, 'target');
     else if (now >= pos.exitAt) paperClose(pos, p, 'time');
   });
   savePaper();
 }
 function paperOpenFromSuggestion(key, tier) {
   const inst = insts.crypto.get(key);
-  if (!inst || !inst.a) return;
-  const plan = planFor(inst, 'buy');
+  if (!inst || !inst.a || !inst.a.st) return;
+  const side = inst.a.st.side || 'buy';
+  const plan = planFor(inst, side);
   if (plan.none || plan.kind !== 'triggered') { toast('این نماد الان سیگنال فعال ندارد.'); return; }
-  const mc = ensureMC(inst, plan), ev = evaluate(inst, plan, mc, 'buy');
+  const mc = ensureMC(inst, plan), ev = evaluate(inst, plan, mc, side);
   if (ev.blocked.some(c => c.key !== 'trigger')) { toast('یکی از قانون‌های ریسک الان رد می‌شود؛ جزئیات را در داشبورد ببین.', 'down'); return; }
-  const err = paperOpen(inst, ev.sz.units, plan.stop, plan.target, plan.exitAt, tier || null);
+  const err = paperOpen(inst, ev.sz.units, plan.stop, plan.target, plan.exitAt, tier || null, side, 1);
   if (err) toast(esc(err), 'down');
   scheduleRender();
 }
-function paperPreview() {
-  const el = $('#p_preview'), inst = insts.crypto.get($('#p_sym').value);
-  if (!el) return;
-  const price = inst ? askPx(inst) : null;
-  if (!(price > 0)) { el.textContent = 'قیمت این نماد هنوز نرسیده.'; return; }
+function paperForm() {
+  const inst = insts.crypto.get($('#p_sym').value), long = $('#p_side').value !== 'sell', L = long ? +$('#p_lev').value || 1 : Math.max(1, +$('#p_lev').value || 1);
+  const price = inst ? (long ? askPx(inst) : bidPx(inst)) : null;
+  if (!(price > 0)) return { inst, err: 'قیمت این نماد هنوز نرسیده.' };
   const dec = E.decimalsFor(price), amt = +$('#p_amt').value || 0, sp = +$('#p_stop').value || 0, R = +$('#p_tr').value || 0;
-  const stop = E.roundAway(price * (1 - sp / 100), true, dec), target = E.targetFrom(price, stop, R, true, dec);
-  const units = amt / price, risk = units * (price - stop) + amt * feeSide() * 2;
-  el.innerHTML = `قیمت ${n(fmtP(price, dec))} · حد ضرر ${n(fmtP(stop, dec))} · حد سود ${n(fmtP(target, dec))} · ضرر در حد ضرر حدود <span class="num ${risk > cfg.maxLoss ? 'neg' : ''}">${usd(risk)}</span> (سقف ${n(usd(cfg.maxLoss))}) · نقد ${n(usd(paper.cash))}`;
+  const stop = E.roundAway(price * (long ? 1 - sp / 100 : 1 + sp / 100), long, dec), target = E.targetFrom(price, stop, R, long, dec);
+  const irt = inst.quote === 'IRT', units = irt ? amt : amt / price, margin = !long || L > 1;
+  const risk = amt * sp / 100 + amt * feeSide() * 2 + (margin ? amt * marginRate() : 0);
+  return { inst, long, L, price, dec, amt, stop, target, units, margin, risk, liq: margin ? liqPrice(price, long, L) : null };
+}
+function paperPreview() {
+  const el = $('#p_preview');
+  if (!el) return;
+  const levW = $('#p_levW'), sideSel = $('#p_side');
+  const inst = insts.crypto.get($('#p_sym').value);
+  const canShort = inst && shortOk(inst);
+  sideSel.querySelector('option[value="sell"]').disabled = !canShort;
+  if (!canShort && sideSel.value === 'sell') sideSel.value = 'buy';
+  levW.hidden = false;
+  const x = paperForm();
+  if (x.err) { el.textContent = x.err; return; }
+  el.innerHTML = `قیمت ${n(fmtP(x.price, x.dec))} · حد ضرر ${n(fmtP(x.stop, x.dec))} · حد سود ${n(fmtP(x.target, x.dec))}${x.liq ? ` · لیکوئید ≈ ${n(fmtP(x.liq, x.dec))}` : ''} · وثیقه/پول درگیر ${n(usd(x.amt / x.L))} · ضرر در حد ضرر حدود <span class="num ${x.risk > cfg.maxLoss ? 'neg' : ''}">${usd(x.risk)}</span> (سقف ${n(usd(cfg.maxLoss))}) · نقد ${n(usd(paper.cash))}`;
 }
 const tierOf = x => x.tier || (x.sug ? 'A' : null);
 const tierTag = x => { const t = tierOf(x); return t === 'A' ? ' <span class="small pos">۵/۵</span>' : t === 'B' ? ' <span class="small" style="color:var(--warn)">۸۰٪</span>' : t === 'T' ? ' <span class="small" style="color:var(--accent)">۵ برتر</span>' : ' <span class="small">دستی</span>'; };
+const sideTag = p => `${posLong(p) ? '<span class="pos">↑</span>' : '<span class="neg">↓ شورت</span>'}${p.margin ? ` <span class="small">${n((p.lev || 1) + '×')}</span>` : ''}`;
 function renderPaper() {
   const list = Array.from(insts.crypto.values()).sort((x, y) => (y.tracked ? 1 : 0) - (x.tracked ? 1 : 0) || (y.vol || 0) - (x.vol || 0) || x.label.localeCompare(y.label));
   const sel = $('#p_sym'), keys = list.map(i => i.key).join(',');
   if (sel.dataset.keys !== keys) { const v = sel.value; sel.innerHTML = list.map(i => `<option value="${esc(i.key)}">${esc(i.label)}</option>`).join(''); sel.dataset.keys = keys; if (v) sel.value = v; }
-  const priceOf = pos => { const i = insts.crypto.get(pos.key); return (i && bidPx(i)) || pos.entry; };
-  const openVal = paper.positions.reduce((t, p) => t + p.units * priceOf(p), 0);
+  const lv = $('#p_lev'), lk = String(levMax());
+  if (lv.dataset.k !== lk) { const v = lv.value; lv.innerHTML = [1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5].filter(x => x <= levMax()).map(x => `<option value="${x}">${x === 1 ? '۱× (اسپات برای لانگ)' : x + '× تعهدی'}</option>`).join(''); lv.dataset.k = lk; lv.value = v && +v <= levMax() ? v : '1'; }
+  const unreal = p => posMove(p, closePx(p)) - p.feeIn - p.units * (p.irt ? 1 : closePx(p)) * feeSide();
+  const openVal = paper.positions.reduce((t, p) => t + (p.coll != null ? p.coll : p.units * p.entry) + posMove(p, closePx(p)), 0);
   const equity = paper.cash + openVal, total = equity - paper.start;
   const today = paper.closed.filter(c => dayKey(c.closedAt) === dayKey(Date.now())).reduce((t, c) => t + c.pnl, 0)
-    + paper.positions.filter(p => dayKey(p.openedAt) === dayKey(Date.now())).reduce((t, p) => t + p.units * (priceOf(p) - p.entry) - p.feeIn, 0);
+    + paper.positions.filter(p => dayKey(p.openedAt) === dayKey(Date.now())).reduce((t, p) => t + posMove(p, closePx(p)) - p.feeIn, 0);
   const wins = paper.closed.filter(c => c.pnl > 0).length, Rs = paper.closed.filter(c => c.R != null);
-  $('#paperSub').textContent = `قیمت لحظه‌ای ${source.crypto}: خرید به بهترین قیمت فروشنده، فروش به بهترین قیمت خریدار، و کارمزد ${cfg.crypto.costPct}٪ رفت و برگشت · سفارش واقعی ثبت نمی‌شود · فقط در همین مرورگر`;
+  $('#paperSub').textContent = `قیمت لحظه‌ای ${source.crypto}: باز کردن لانگ و بستن شورت به بهترین قیمت فروشنده، فروش و شورت به بهترین قیمت خریدار؛ کارمزد ${cfg.crypto.costPct}٪ رفت و برگشت و برای تعهدی ${cfg.crypto.marginFeePct}٪ در روز · سفارش واقعی ثبت نمی‌شود · فقط در همین مرورگر`;
   put('paperStats', `<div class="reality" style="margin-top:12px">
     <div class="stat"><span class="lbl">ارزش حساب</span><b class="num">${usd(equity)}</b><small>شروع ${n(usd(paper.start, 0))}</small></div>
     <div class="stat"><span class="lbl">سود و زیان کل</span><b class="num ${total >= 0 ? 'pos' : 'neg'}">${usd(total)}</b><small>${n(spc(total / paper.start))}</small></div>
     <div class="stat"><span class="lbl">امروز</span><b class="num ${today >= 0 ? 'pos' : 'neg'}">${usd(today)}</b><small>هدف تو ${n(usd(cfg.dailyTarget, 0))}</small></div>
     <div class="stat"><span class="lbl">معاملات بسته</span><b class="num">${paper.closed.length}</b><small>${paper.closed.length ? `${n(pc(wins / paper.closed.length, 0))} برد · میانگین ${n(rr(Rs.reduce((t, c) => t + c.R, 0) / Math.max(1, Rs.length)))}` : 'هنوز معامله‌ای بسته نشده'}</small></div></div>`);
-  const tiers = [['A', 'سیگنال قانون، ۵ از ۵'], ['B', 'سیگنال قانون، ۸۰٪'], ['T', '۵ انتخاب برتر (بدون سیگنال)'], [null, 'خرید دستی']].map(([t, name]) => {
-    const cs = paper.closed.filter(c => tierOf(c) === t), w = cs.filter(c => c.pnl > 0).length, Rr = cs.filter(c => c.R != null);
-    const pnl = cs.reduce((x, c) => x + c.pnl, 0);
+  const rowOf = (name, cs) => {
+    const w = cs.filter(c => c.pnl > 0).length, Rr = cs.filter(c => c.R != null), pnl = cs.reduce((x, c) => x + c.pnl, 0);
     return `<tr><td><b>${name}</b></td><td>${n(cs.length)}</td><td>${n(cs.length ? pc(w / cs.length, 0) : '–')}</td><td><span class="num ${pnl >= 0 ? 'pos' : 'neg'}">${cs.length ? usd(pnl) : '–'}</span></td><td>${n(Rr.length ? rr(Rr.reduce((x, c) => x + c.R, 0) / Rr.length) : '–')}</td></tr>`;
-  }).join('');
+  };
+  const tiers = [['A', 'سیگنال قانون، ۵ از ۵'], ['B', 'سیگنال قانون، ۸۰٪'], ['T', '۵ انتخاب برتر (بدون سیگنال)'], [null, 'معامله‌ی دستی']].map(([t, name]) => rowOf(name, paper.closed.filter(c => tierOf(c) === t))).join('')
+    + rowOf('همه‌ی لانگ‌ها', paper.closed.filter(posLong)) + rowOf('همه‌ی شورت‌ها', paper.closed.filter(c => !posLong(c))) + rowOf('با اهرم (تعهدی)', paper.closed.filter(c => c.margin));
   put('paperTiers', `<div class="tbl"><table class="list"><thead><tr><th>نوع معامله</th><th>بسته‌شده</th><th>برد</th><th>جمع سود و زیان</th><th>میانگین R</th></tr></thead><tbody>${tiers}</tbody></table></div>
-    <p class="small" style="padding:0 18px 10px">با کمتر از ۲۰ معامله در هر ردیف، فرق‌ها بیشتر شانس است تا نشانه.</p>`);
+    <p class="small" style="padding:0 18px 10px">با کمتر از ۲۰ معامله در هر ردیف، فرق‌ها بیشتر شانس است تا نشانه. همین آمار (به‌اضافه‌ی ژورنال واقعی) در رتبه‌بندی و مبلغ «۵ انتخاب برتر» اثر می‌گذارد.</p>`);
   // equity curve over closed trades
   const pts = [paper.start];
   paper.closed.forEach(c => pts.push(pts[pts.length - 1] + c.pnl));
@@ -2804,32 +3125,28 @@ function renderPaper() {
       <polyline fill="none" stroke="${col}" stroke-width="2" vector-effect="non-scaling-stroke" points="${pts.map((v, i) => x(i) + ',' + y(v)).join(' ')}"/></svg>
       <p class="small">از ${n(usd(paper.start, 0))} تا ${n(usd(pts[pts.length - 1]))} در ${n(paper.closed.length)} معامله (فقط معاملات بسته).</p>`);
   }
-  const RS = { stop: 'حد ضرر', target: 'حد سود', time: 'زمان خروج', manual: 'دستی' };
+  const RS = { stop: 'حد ضرر', target: 'حد سود', time: 'زمان خروج', manual: 'دستی', liq: 'لیکوئید' };
   put('paperOpen', paper.positions.length ? `<div class="tbl"><table class="list"><thead><tr><th>نماد</th><th>حجم</th><th>ورود</th><th>الان</th><th>حد ضرر</th><th>حد سود</th><th>سود/زیان</th><th>خروج تا</th><th></th></tr></thead><tbody>
-    ${paper.positions.map(p => { const pr = priceOf(p), u = p.units * (pr - p.entry) - p.feeIn - p.units * pr * feeSide();
-      return `<tr><td><b>${esc(p.label)}</b>${tierTag(p)}</td><td>${n(p.units.toLocaleString('en-US', { maximumFractionDigits: 8 }))}</td><td>${n(fmtP(p.entry, p.dec))}</td><td>${n(fmtP(pr, p.dec))}</td>
-        <td><span class="num neg">${fmtP(p.stop, p.dec)}</span></td><td><span class="num pos">${fmtP(p.target, p.dec)}</span></td><td><span class="num ${u >= 0 ? 'pos' : 'neg'}">${usd(u)}</span></td><td>${n(tm(p.exitAt))}</td>
-        <td><button type="button" class="btn ghost sm" data-paper-sell="${p.id}">فروش</button></td></tr>`; }).join('')}</tbody></table></div>`
-    : `<p class="empty">پوزیشن بازی نداری. از «۵ انتخاب برتر الان»، «سیگنال‌های قانون» یا فرم خرید دستی شروع کن.</p>`);
+    ${paper.positions.map(p => { const pr = closePx(p), u = unreal(p);
+      return `<tr><td><b>${esc(p.label)}</b> ${sideTag(p)}${tierTag(p)}</td><td>${n(fmtU(p.units))}</td><td>${n(fmtP(p.entry, p.dec))}</td><td>${n(fmtP(pr, p.dec))}</td>
+        <td><span class="num neg">${fmtP(p.stop, p.dec)}</span>${p.liq ? `<span class="jsub">لیکوئید ${n(fmtP(p.liq, p.dec))}</span>` : ''}</td><td><span class="num pos">${fmtP(p.target, p.dec)}</span></td><td><span class="num ${u >= 0 ? 'pos' : 'neg'}">${usd(u)}</span></td><td>${n(tm(p.exitAt))}</td>
+        <td><button type="button" class="btn ghost sm" data-paper-sell="${p.id}">${posLong(p) ? 'فروش' : 'بستن (خرید)'}</button></td></tr>`; }).join('')}</tbody></table></div>`
+    : `<p class="empty">پوزیشن بازی نداری. از «۵ انتخاب برتر الان»، «سیگنال‌های قانون» یا فرم معامله‌ی دستی شروع کن.</p>`);
   put('paperClosed', paper.closed.length ? `<div class="tbl"><table class="list"><thead><tr><th>بسته شد</th><th>نماد</th><th>ورود</th><th>خروج</th><th>دلیل</th><th>سود/زیان</th><th>R</th></tr></thead><tbody>
-    ${paper.closed.slice(-30).reverse().map(c => `<tr><td>${stamp(c.closedAt)}</td><td><b>${esc(c.label)}</b>${tierTag(c)}</td>
+    ${paper.closed.slice(-30).reverse().map(c => `<tr><td>${stamp(c.closedAt)}</td><td><b>${esc(c.label)}</b> ${sideTag(c)}${tierTag(c)}</td>
       <td>${n(fmtP(c.entry, c.dec))}</td><td>${n(fmtP(c.exit, c.dec))}</td><td>${RS[c.reason] || ''}</td><td><span class="num ${c.pnl >= 0 ? 'pos' : 'neg'}">${usd(c.pnl)}</span></td><td>${n(c.R != null ? rr(c.R) : '–')}</td></tr>`).join('')}</tbody></table></div>`
     : `<p class="empty">هنوز معامله‌ی بسته‌ای نیست.</p>`);
   paperPreview();
 }
 $('#pForm').addEventListener('submit', e => {
   e.preventDefault();
-  const inst = insts.crypto.get($('#p_sym').value);
-  const price = inst ? askPx(inst) : null;
-  if (!(price > 0)) { toast('قیمت این نماد هنوز نرسیده.'); return; }
-  const dec = E.decimalsFor(price);
-  const stop = E.roundAway(price * (1 - (+$('#p_stop').value || 1) / 100), true, dec);
-  const target = E.targetFrom(price, stop, +$('#p_tr').value || 2, true, dec);
-  const err = paperOpen(inst, (+$('#p_amt').value || 0) / price, stop, target, nextExitAt(), false);
+  const x = paperForm();
+  if (x.err) { toast(x.err); return; }
+  const err = paperOpen(x.inst, x.units, x.stop, x.target, nextExitAt(), null, x.long ? 'buy' : 'sell', x.L);
   if (err) toast(esc(err), 'down');
   scheduleRender();
 });
-['p_sym', 'p_amt', 'p_stop', 'p_tr'].forEach(id => $('#' + id).addEventListener('input', paperPreview));
+['p_sym', 'p_side', 'p_lev', 'p_amt', 'p_stop', 'p_tr'].forEach(id => { $('#' + id).addEventListener('input', paperPreview); $('#' + id).addEventListener('change', paperPreview); });
 $('#paperReset').onclick = e => {
   const b = e.currentTarget;
   if (b.dataset.armed !== '1') { b.dataset.armed = '1'; b.textContent = 'مطمئنی؟ همه‌ی معاملات مجازی پاک می‌شود. دوباره بزن.'; setTimeout(() => { b.dataset.armed = ''; b.textContent = 'شروع دوباره‌ی حساب مجازی'; }, 4000); return; }
@@ -2841,8 +3158,8 @@ document.addEventListener('click', e => {
   if (po) { paperOpenFromSuggestion(po.dataset.paperOpen, po.dataset.tier); return; }
   const ps = e.target.closest('[data-paper-sell]');
   if (ps) {
-    const pos = paper.positions.find(p => String(p.id) === ps.dataset.paperSell), inst = pos && insts.crypto.get(pos.key);
-    const px = inst && bidPx(inst);
+    const pos = paper.positions.find(p => String(p.id) === ps.dataset.paperSell), inst = pos && posInst(pos);
+    const px = inst && (posLong(pos) ? bidPx(inst) : askPx(inst));
     if (pos && px > 0) { paperClose(pos, px, 'manual'); scheduleRender(); }
     return;
   }
@@ -2860,6 +3177,171 @@ document.addEventListener('click', e => {
   if (vg) { setView(vg.dataset.viewGo); if (vg.dataset.scroll) setTimeout(() => document.getElementById(vg.dataset.scroll).scrollIntoView({ block: 'start' }), 80); }
 });
 
+// ------------------------------------------------------------------ your own record: real journal + paper account
+// Every closed trade, in R (profit or loss divided by the loss planned at the stop). The five picks use it through
+// recAdj (rank) and the basket weights; with few trades the effect is shrunk toward zero.
+function tradeRows() {
+  const out = [], baseOf = k => String(k).replace(/(USDT|IRT)$/, '');
+  journal.forEach(j => {
+    if (!j.result || j.mkt !== 'crypto' || !(j.lossAtStop > 0) || !isFinite(j.pnl)) return;
+    out.push({ src: 'real', key: j.key, label: j.label, base: j.base || baseOf(j.key), side: j.side || 'buy', tier: j.tier || null, pnl: j.pnl, R: j.pnl / j.lossAtStop, at: j.takenAt, margin: !!j.margin });
+  });
+  paper.closed.forEach(c => {
+    if (!isFinite(c.R)) return;
+    out.push({ src: 'paper', key: c.key, label: c.label, base: c.base || baseOf(c.key), side: c.side || 'buy', tier: tierOf(c), pnl: c.pnl, R: c.R, at: c.closedAt, margin: !!c.margin });
+  });
+  return out;
+}
+function groupStats(rows) {
+  const cnt = rows.length;
+  if (!cnt) return { n: 0 };
+  return { n: cnt, win: rows.filter(r => r.pnl > 0).length / cnt, avgR: rows.reduce((t, r) => t + r.R, 0) / cnt, pnl: rows.reduce((t, r) => t + r.pnl, 0) };
+}
+let recCache = { k: '', v: null };
+function myRecord() {
+  const k = journal.length + '|' + journal.filter(j => j.result).length + '|' + paper.closed.length + '|' + (paper.closed.length ? paper.closed[paper.closed.length - 1].closedAt : 0);
+  if (recCache.k === k) return recCache.v;
+  const rows = tradeRows();
+  const by = f => { const m = new Map(); rows.forEach(r => { const g = f(r); if (!m.has(g)) m.set(g, []); m.get(g).push(r); }); const o = {}; m.forEach((v, g) => { o[g] = groupStats(v); }); return o; };
+  const v = { rows, all: groupStats(rows), real: groupStats(rows.filter(r => r.src === 'real')), paper: groupStats(rows.filter(r => r.src === 'paper')),
+    side: by(r => r.side), tier: by(r => r.tier || 'M'), coin: by(r => r.base + '|' + r.side), coinAny: by(r => r.base), margin: by(r => r.margin ? 'm' : 's') };
+  recCache = { k, v };
+  return v;
+}
+function renderRecord() {
+  const R = myRecord();
+  const cell = (g, name) => `<tr><td><b>${name}</b></td><td>${n(g && g.n ? g.n : 0)}</td><td>${n(g && g.n ? pc(g.win, 0) : '–')}</td><td><span class="num ${g && g.pnl >= 0 ? 'pos' : 'neg'}">${g && g.n ? usd(g.pnl) : '–'}</span></td><td><span class="num ${g && g.avgR > 0 ? 'pos' : 'neg'}">${g && g.n ? rr(g.avgR) : '–'}</span></td></tr>`;
+  let body;
+  if (!R.all.n) body = `<p class="empty">هنوز معامله‌ی بسته‌ای نداری. هر معامله‌ی واقعی را در «ثبت معامله‌ی واقعی» ثبت کن و نتیجه‌اش را در ژورنال بزن؛ معاملات مجازی هم خودکار حساب می‌شوند. از همین آمار برای رتبه و مبلغ پیشنهادهای بعدی استفاده می‌شود.</p>`;
+  else {
+    const coins = Object.keys(R.coinAny).map(b => Object.assign({ b }, R.coinAny[b])).filter(c => c.n >= 2).sort((x, y) => y.avgR - x.avgR);
+    const best = coins.filter(c => c.avgR > 0).slice(0, 3), worst = coins.filter(c => c.avgR <= 0).slice(-3).reverse();
+    body = `<div class="tbl"><table class="list"><thead><tr><th></th><th>تعداد</th><th>برد</th><th>جمع</th><th>میانگین R</th></tr></thead><tbody>
+      ${cell(R.all, 'همه')}${cell(R.real, 'واقعی (ژورنال)')}${cell(R.paper, 'مجازی')}${cell(R.side.buy, 'لانگ')}${cell(R.side.sell, 'شورت')}${cell(R.margin.m, 'با اهرم')}
+      ${cell(R.tier.A, 'سیگنال ۵ از ۵')}${cell(R.tier.B, 'سیگنال ۸۰٪')}${cell(R.tier.T, '۵ انتخاب برتر')}${cell(R.tier.M, 'دستی')}</tbody></table></div>
+      ${best.length || worst.length ? `<p class="small" style="padding:0 18px">${best.length ? `بهترین نمادهایت: ${best.map(c => `<b>${esc(c.b)}</b> ${n(rr(c.avgR))} در ${n(c.n)} معامله`).join('، ')}. ` : ''}${worst.length ? `بدترین‌ها: ${worst.map(c => `<b>${esc(c.b)}</b> ${n(rr(c.avgR))} در ${n(c.n)} معامله`).join('، ')}.` : ''}</p>` : ''}`;
+  }
+  put('recCard', `<div class="sec-h"><h2 id="recH">کارنامه‌ی معاملات تو</h2><p>واقعی و مجازی، فقط معاملات بسته</p></div>${body}
+    <p class="small" style="padding:6px 18px 14px">اثرش روی پیشنهادها: میانگین R تو در هر سمت (لانگ/شورت)، روی هر نماد و برای هر نوع پیشنهاد، رتبه‌ی «۵ انتخاب برتر» را کمی بالا یا پایین می‌برد (▲▼ روی کارت) و وزن آن در سبد را عوض می‌کند. تا وقتی تعداد کم است، این اثر نزدیک صفر نگه داشته می‌شود، چون ۵ معامله چیزی را ثابت نمی‌کند.</p>`);
+}
+
+// ------------------------------------------------------------------ analysts' views (analysts.json, refreshed daily by a scheduled task)
+// Each call: who, which coin, bull / bear / neutral, the day it was made, how many days it is meant for, the price
+// then (or taken from our own bars), levels and a short Persian summary with the source link. The page grades every
+// call whose time is over (a bull call is right if the price is higher at the end, a bear call if lower, a neutral
+// call if within ±4 %), and each analyst's weight follows that measured hit rate. Only calls of up to 30 days that are
+// running now nudge the five picks, and by at most ±0.06 on a 0–1 rank: a study of 36,000 influencer tweets found
+// the coins they recommended fell on average afterwards.
+const ANA_SNAPSHOT = {"updated":"2026-11-07T13:00:00Z","method_fa":"منبع‌ها: تحلیل‌های عمومی و تاریخ‌دار از پژوهش آن‌چین، ستون‌های تحلیل تکنیکال خبرگزاری‌ها و شرکت‌های کارگزاری کریپتو؛ پیش‌بینی بی‌تاریخ یا بدون سطح قیمت ثبت نمی‌شود.","analysts":[{"id":"glassnode","name":"Glassnode","url":"https://research.glassnode.com/","about_fa":"پژوهش آن‌چین (داده‌ی شبکه‌ی بیت‌کوین)، هفتگی"},{"id":"reuters-spirgel","name":"Paul Spirgel (Reuters)","url":"https://www.kitco.com/news/off-the-wire/2026-11-04/mapping-market-bitcoin-could-extend-losses","about_fa":"ستون تکنیکال «Mapping the Market» رویترز"},{"id":"cryptofinance","name":"Matteo Bottacini (Crypto Finance)","url":"https://www.crypto-finance.com/","about_fa":"تحلیل تکنیکال هفتگی کارگزاری Crypto Finance (گروه Deutsche Börse)"},{"id":"coinedition","name":"Coin Edition","url":"https://coinedition.com/","about_fa":"تحلیل تکنیکال روزانه"},{"id":"analyticsinsight","name":"Analytics Insight","url":"https://www.analyticsinsight.net/","about_fa":"تحلیل تکنیکال آلت‌کوین‌ها"},{"id":"raoulpal","name":"Raoul Pal (Real Vision)","url":"https://www.realvision.com/","about_fa":"دید کلان و بلندمدت؛ در رتبه‌ی روزانه اثر ندارد"}],"calls":[{"id":"2026-11-04-reuters-btc","analyst":"reuters-spirgel","coin":"BTC","bias":"bear","date":"2026-11-04","horizon_days":14,"ref":null,"levels":{"support":[75001,73188,62000],"resistance":[81319,84800],"invalid":81319},"summary_fa":"بهبود اخیر در حال از هم پاشیدن است و افت بیشتر ممکن است: اول ۷۵ هزار (فیبوناچی)، بعد میانگین ۲۰۰ روزه حدود ۷۳٬۲۰۰، و بعد کف اوت بالای ۶۲ هزار. بسته شدن بالای میانگین ۳۰ روزه (۸۱٬۳۱۹) دید نزولی را ضعیف می‌کند.","source":"https://www.kitco.com/news/off-the-wire/2026-11-04/mapping-market-bitcoin-could-extend-losses","source_name":"Kitco / Reuters"},{"id":"2026-11-04-glassnode-btc","analyst":"glassnode","coin":"BTC","bias":"neutral","date":"2026-11-04","horizon_days":7,"ref":null,"levels":{},"summary_fa":"«درجا زدن روی حمایت»: بیت‌کوین حدود ۱۰٪ از سقف سپتامبر عقب نشسته و به ناحیه‌ای برگشته که اوت از آن شکست؛ این ناحیه حمایت اصلی است. بیشتر دارندگان کوتاه‌مدت حالا در ضررند، ولی حجم اسپات هنوز بالای سطح قبل از رشد است.","source":"https://research.glassnode.com/","source_name":"Glassnode – Week On-chain 44"},{"id":"2026-11-03-cryptofinance-btc","analyst":"cryptofinance","coin":"BTC","bias":"bear","date":"2026-11-03","horizon_days":7,"ref":76659,"levels":{"support":[76400,73700],"resistance":[78800]},"summary_fa":"احساسات بازار به‌وضوح ضعیف است و قیمت زیر میانگین ۵۰ روزه مانده. حمایت ۷۶٬۴۰۰ در حال آزمایش است و بعدی ۷۳٬۷۰۰؛ اولین مقاومت جدی ۷۸٬۸۰۰.","source":"https://www.crypto-finance.com/?p=70329","source_name":"Crypto Finance – TA Tuesday"},{"id":"2026-11-03-cryptofinance-eth","analyst":"cryptofinance","coin":"ETH","bias":"bear","date":"2026-11-03","horizon_days":7,"ref":2253,"levels":{"support":[2170],"resistance":[2290]},"summary_fa":"اتریوم هم ضعیف است؛ ۲٬۲۹۰ سطح فوری است و حمایت محکم‌تر ۲٬۱۷۰، یعنی کف ریزش ناشی از لیکوئید شدن‌های اخیر.","source":"https://www.crypto-finance.com/?p=70329","source_name":"Crypto Finance – TA Tuesday"},{"id":"2026-11-02-glassnode-btc","analyst":"glassnode","coin":"BTC","bias":"neutral","date":"2026-11-02","horizon_days":7,"ref":78000,"levels":{"support":[78000],"resistance":[80000]},"summary_fa":"بیت‌کوین بعد از ریزش پنجشنبه به زیر ۸۰ هزار، حدود ۷۸ هزار معامله می‌شود. فروش بیشتر از قراردادهای دائمی بوده و خریداران اسپات ایستاده‌اند؛ معامله‌گران آپشن هم بیمه‌ی نزولی می‌خرند. ۸۰ هزار حالا مقاومت است.","source":"https://research.glassnode.com/","source_name":"Glassnode – BTC Market Pulse 45"},{"id":"2026-11-02-coinedition-eth","analyst":"coinedition","coin":"ETH","bias":"bear","date":"2026-11-02","horizon_days":14,"ref":2283.3,"levels":{"support":[2222,2170,2000],"resistance":[2315,2351,2415]},"summary_fa":"تا وقتی زیر ۲٬۳۱۵ (میانگین ۲۰۰ روزه) است، نزولی. سناریوی پایه برای نوامبر دامنه‌ی ۲٬۲۰۰ تا ۲٬۴۰۰ با دست‌کم یک بار آزمایش ۲٬۲۲۲؛ بسته شدن روزانه زیر ۲٬۲۲۲ راه ۲٬۱۷۰ را باز می‌کند.","source":"https://coinedition.com/ethereum-price-prediction-november-2026-can-eth-reach-2415-or-fall-to-2170-in-november/","source_name":"Coin Edition"},{"id":"2026-11-02-raoulpal-eth","analyst":"raoulpal","coin":"ETH","bias":"bull","date":"2026-11-02","horizon_days":180,"ref":2283.3,"levels":{},"summary_fa":"دید بلندمدت صعودی: انتظار دارد قدم‌های بعدی فدرال رزرو کاهش نرخ باشد و در کانال روندش اتریوم تا حدود سه‌ماهه‌ی دوم ۲۰۲۷ بالاتر برود. برای ترید روزانه کاربردی ندارد.","source":"https://coinedition.com/ethereum-price-prediction-november-2026-can-eth-reach-2415-or-fall-to-2170-in-november/","source_name":"Coin Edition (نقل از Raoul Pal)"},{"id":"2026-10-28-ai-xrp","analyst":"analyticsinsight","coin":"XRP","bias":"bear","date":"2026-10-28","horizon_days":14,"ref":1.3261,"levels":{"support":[1.32,1.3],"resistance":[1.333,1.36,1.372]},"summary_fa":"زیر میانگین‌های متحرک اصلی؛ ناحیه‌ی ۱٫۳۰ تا ۱٫۳۳ حمایت است و اولین مقاومت ۱٫۳۳۳. نشانگرها ریسک افت بیشتر را نشان می‌دهند.","source":"https://www.analyticsinsight.net/cryptocurrency-analytics-insight/where-are-xrp-ada-and-sol-prices-heading-in-november-2026","source_name":"Analytics Insight"},{"id":"2026-10-28-ai-sol","analyst":"analyticsinsight","coin":"SOL","bias":"bear","date":"2026-10-28","horizon_days":14,"ref":101.83,"levels":{"support":[99.15,86.87],"resistance":[105.72,122.94]},"summary_fa":"روی میانگین ۲۰۰ روزه (۹۹٫۱۵) ایستاده؛ از دست رفتنش خط روند ۸۶٫۸۷ را هدف می‌کند. مقاومت ۱۰۵٫۷۲ و بعد سقف ۲۵ سپتامبر ۱۲۲٫۹۴.","source":"https://www.analyticsinsight.net/cryptocurrency-analytics-insight/where-are-xrp-ada-and-sol-prices-heading-in-november-2026","source_name":"Analytics Insight"},{"id":"2026-10-28-ai-ada","analyst":"analyticsinsight","coin":"ADA","bias":"bear","date":"2026-10-28","horizon_days":14,"ref":0.2062,"levels":{"support":[0.2,0.1894,0.1533],"resistance":[0.224,0.2398,0.2434]},"summary_fa":"۰٫۲۰ حمایت حیاتی است؛ اگر فروش شدیدتر شود ۰٫۱۸۹۴ و ۰٫۱۵۳۳. مقاومت‌ها میانگین ۵۰ روزه (۰٫۲۲۴) و ۲۰۰ روزه (۰٫۲۴۳۴).","source":"https://www.analyticsinsight.net/cryptocurrency-analytics-insight/where-are-xrp-ada-and-sol-prices-heading-in-november-2026","source_name":"Analytics Insight"}]};
+const anaState = { data: ANA_SNAPSHOT, at: ANA_SNAPSHOT ? 1 : 0, err: null, fetchedAt: 0, cache: { k: '', m: new Map() } };
+async function loadAnalysts() {
+  if (!/^https?:$/.test(location.protocol)) return;
+  try {
+    const r = await fetch('analysts.json?t=' + Math.floor(Date.now() / 600000), { cache: 'no-cache' });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const j = await r.json();
+    if (j && Array.isArray(j.calls)) { anaState.data = j; anaState.at = Date.now(); anaState.err = null; topCache.key = ''; scheduleRender(); }
+  } catch (e) { anaState.err = String(e.message || e); }
+  anaState.fetchedAt = Date.now();
+}
+const BIAS_FA = { bull: 'صعودی', bear: 'نزولی', neutral: 'خنثی' };
+const coinInst = coin => insts.crypto.get(String(coin).toUpperCase() + 'USDT') || null;
+function priceAt(coin, t) {
+  const inst = coinInst(coin);
+  if (!inst || !inst.bars.length || t < inst.bars[0].t) return null;
+  const i = closedIdx(inst.bars, t);
+  return i >= 0 ? inst.bars[i].c : null;
+}
+function priceLive(coin) {
+  const inst = coinInst(coin);
+  if (!inst) return null;
+  return pxNow(inst) || (inst.bars.length ? inst.bars[inst.bars.length - 1].c : null);
+}
+const callStart = c => Date.parse(c.at || (c.date + 'T09:00:00Z'));
+function evalCall(c) {
+  const t0 = callStart(c), end = t0 + (+c.horizon_days || 7) * DAY, now = Date.now(), done = now >= end;
+  const ref = +c.ref || priceAt(c.coin, t0);
+  const px = done ? (+c.close || priceAt(c.coin, end)) : priceLive(c.coin);
+  const move = ref > 0 && px > 0 ? px / ref - 1 : null;
+  let hit = null;
+  if (done && move != null) hit = c.bias === 'bull' ? move > 0 : c.bias === 'bear' ? move < 0 : Math.abs(move) <= 0.04;
+  return { t0, end, ref, px, move, done, hit, active: !done && now >= t0 };
+}
+function anaCalls() {
+  const d = anaState.data;
+  if (!d || !Array.isArray(d.calls)) return [];
+  const k = anaState.at + '|' + Math.floor(Date.now() / 60000) + '|' + statsAt;
+  if (anaState.cache.k !== k) { anaState.cache = { k, list: d.calls.filter(c => c && c.coin && c.date).map(c => ({ c, e: evalCall(c) })) }; }
+  return anaState.cache.list;
+}
+function anaScores() {
+  const m = new Map();
+  anaCalls().forEach(({ c, e }) => {
+    if (!e.done || e.hit == null) return;
+    const s = m.get(c.analyst) || { n: 0, hit: 0 };
+    s.n++; if (e.hit) s.hit++;
+    m.set(c.analyst, s);
+  });
+  return m;
+}
+// weight of an analyst: 0.5 until three calls are graded, then 0 (coin flip or worse) up to 1 (always right)
+const anaRel = s => s && s.n >= 3 ? clamp((s.hit / s.n - 0.5) * 2, 0, 1) : 0.5;
+function anaView(base) {
+  const act = anaCalls().filter(x => String(x.c.coin).toUpperCase() === base && (+x.c.horizon_days || 7) <= 30 && x.e.active);
+  if (!act.length) return null;
+  const sc = anaScores();
+  let sw = 0, sb = 0, bulls = 0, bears = 0;
+  act.forEach(({ c }) => { const w = anaRel(sc.get(c.analyst)), b = c.bias === 'bull' ? 1 : c.bias === 'bear' ? -1 : 0; if (b > 0) bulls++; if (b < 0) bears++; sw += w; sb += w * b; });
+  const neu = act.length - bulls - bears;
+  const label = [bulls ? `${bulls} صعودی` : '', bears ? `${bears} نزولی` : '', neu ? `${neu} خنثی` : ''].filter(Boolean).join('، ');
+  return { bias: sw ? sb / sw : 0, w: sw / act.length, label, n: act.length, bulls, bears };
+}
+function renderAnalysts() {
+  const d = anaState.data;
+  if (!d) { put('anaCard', `<div class="sec-h"><h2 id="anaH">نظر تحلیل‌گرها</h2></div><p class="empty">فایل نظر تحلیل‌گرها هنوز نرسیده${anaState.err ? ` (${esc(anaState.err)})` : ''}.</p>`); return; }
+  const who = new Map((d.analysts || []).map(a => [a.id, a]));
+  const sc = anaScores(), list = anaCalls().slice().sort((x, y) => y.e.t0 - x.e.t0);
+  const coins = Array.from(new Set(list.filter(x => x.e.active).map(x => String(x.c.coin).toUpperCase())));
+  const fl = v => (+v).toLocaleString('en-US', { maximumFractionDigits: v >= 100 ? 0 : v >= 1 ? 3 : 6 });
+  const lv = arr => (arr || []).map(fl).join('، ');
+  const consRows = coins.map(coin => {
+    const v = anaView(coin), act = list.filter(x => x.e.active && String(x.c.coin).toUpperCase() === coin);
+    const sup = [], res = [];
+    act.forEach(({ c }) => { ((c.levels || {}).support || []).forEach(x => sup.push(+x)); ((c.levels || {}).resistance || []).forEach(x => res.push(+x)); });
+    const uniq = a => Array.from(new Set(a.filter(x => x > 0))).sort((x, y) => y - x);
+    const px = priceLive(coin), cls = !v ? '' : v.bias > 0.2 ? 'pos' : v.bias < -0.2 ? 'neg' : 'mut';
+    const eff = v && v.bias ? clamp(0.06 * v.bias * v.w, -0.06, 0.06) : 0;
+    return `<tr><td><b>${esc(coin)}</b></td><td>${px ? n(fmtP(px, E.decimalsFor(px))) : '–'}</td><td><span class="${cls}">${v ? esc(v.label) : 'کوتاه‌مدت ندارد'}</span></td>
+      <td class="small">${n(lv(uniq(sup)) || '–')}</td><td class="small">${n(lv(uniq(res)) || '–')}</td>
+      <td><span class="num ${eff > 0 ? 'pos' : eff < 0 ? 'neg' : ''}">${eff ? (eff > 0 ? '+' : '−') + Math.abs(eff).toFixed(3) : '0'}</span> <span class="small">برای لانگ</span></td></tr>`;
+  }).join('');
+  const callHTML = list.slice(0, 24).map(({ c, e }) => {
+    const a = who.get(c.analyst) || { name: c.analyst }, dec = e.ref ? E.decimalsFor(e.ref) : 2;
+    const status = e.done ? (e.hit == null ? '<span class="small">قیمت شروع یا پایان در داده نیست</span>' : `<span class="${e.hit ? 'pos' : 'neg'}">${e.hit ? '✓ درست درآمد' : '✕ اشتباه درآمد'}</span> <span class="small">(${spc(e.move, 1)} تا ${faDate(e.end)})</span>`)
+      : !e.active ? '<span class="small">هنوز شروع نشده</span>'
+      : `<span class="small">در جریان تا ${faDate(e.end)}: ${e.move != null ? `از ${n(fmtP(e.ref, dec))} تا الان <span class="num ${e.move >= 0 ? 'pos' : 'neg'}">${spc(e.move, 1)}</span>` : 'قیمت شروع در داده نیست'}</span>`;
+    const L = c.levels || {};
+    const lvTxt = [L.support && L.support.length ? `حمایت ${n(lv(L.support))}` : '', L.resistance && L.resistance.length ? `مقاومت ${n(lv(L.resistance))}` : '', L.invalid ? `باطل شدن: ${n(fl(L.invalid))}` : ''].filter(Boolean).join(' · ');
+    return `<li class="call"><div class="ch"><b>${esc(String(c.coin).toUpperCase())}</b><span class="state ${c.bias === 'bull' ? 'up' : c.bias === 'bear' ? 'down' : ''}">${BIAS_FA[c.bias] || c.bias}</span>
+        <span class="small">${esc(a.name)} · ${faDate(e.t0)} · ${(+c.horizon_days || 7) <= 30 ? `${n(+c.horizon_days || 7)} روزه` : 'بلندمدت؛ در رتبه اثر ندارد'}</span></div>
+      <p>${esc(c.summary_fa || '')}</p>
+      <p class="small">${lvTxt}${lvTxt ? ' · ' : ''}${status}${c.source ? ` · <a href="${esc(c.source)}" target="_blank" rel="noopener">${esc(c.source_name || 'منبع')}</a>` : ''}</p></li>`;
+  }).join('');
+  const scRows = (d.analysts || []).map(a => {
+    const s = sc.get(a.id), w = anaRel(s), cnt = list.filter(x => x.c.analyst === a.id).length;
+    return `<tr><td><b>${a.url ? `<a href="${esc(a.url)}" target="_blank" rel="noopener">${esc(a.name)}</a>` : esc(a.name)}</b><span class="jsub">${esc(a.about_fa || '')}</span></td><td>${n(cnt)}</td><td>${n(s ? s.n : 0)}</td><td>${n(s && s.n ? pc(s.hit / s.n, 0) : '–')}</td><td>${n(w.toFixed(2))}${s && s.n >= 3 ? '' : ' <span class="small">پیش‌فرض</span>'}</td></tr>`;
+  }).join('');
+  const html = `<div class="sec-h"><h2 id="anaH">نظر تحلیل‌گرها</h2><p>به‌روزرسانی ${d.updated ? stamp(Date.parse(d.updated)) : '–'} · هر روز خودکار جمع می‌شود${anaState.err && anaState.at <= 1 ? ' · نسخه‌ی ذخیره‌شده در صفحه' : ''}</p></div>
+    <p class="bt mid">پژوهش Merkley، Pacelli، Piorkowski و Williams (دانشگاه ایندیانا و هاروارد) روی حدود ۳۶ هزار توییت از ۱۸۰ اینفلوئنسر کریپتو نشان داد قیمت ارزهایی که توصیه کرده بودند، به‌طور میانگین ${n('−2.24%')} در ۱۰ روز و ${n('−6.53%')} در ۳۰ روز بعد افت کرده. برای همین این‌جا نظر تحلیل‌گرها فقط اثر کوچکی روی رتبه‌ی «۵ انتخاب برتر» دارد (حداکثر ${n('±0.06')} روی رتبه‌ی ۰ تا ۱) و وزن هر تحلیل‌گر با درصد درستی پیش‌بینی‌هایش، که همین صفحه با قیمت‌های نوبیتکس می‌سنجد، بالا و پایین می‌رود. ${esc(d.method_fa || '')}</p>
+    ${consRows ? `<h3 class="sub-h">جمع‌بندی هر ارز (پیش‌بینی‌های کوتاه‌مدتِ در جریان)</h3><div class="tbl"><table class="list"><thead><tr><th>ارز</th><th>قیمت الان</th><th>نظرها</th><th>حمایت‌ها</th><th>مقاومت‌ها</th><th>اثر روی رتبه</th></tr></thead><tbody>${consRows}</tbody></table></div>` : '<p class="empty">الان پیش‌بینی کوتاه‌مدتِ در جریانی نیست.</p>'}
+    <h3 class="sub-h">آخرین تحلیل‌ها</h3><ul class="calls">${callHTML || '<li class="small">هنوز تحلیلی ثبت نشده.</li>'}</ul>
+    <h3 class="sub-h">کارنامه‌ی تحلیل‌گرها (سنجیده با قیمت واقعی)</h3><div class="tbl"><table class="list"><thead><tr><th>تحلیل‌گر</th><th>تحلیل‌ها</th><th>سنجیده‌شده</th><th>درست</th><th>وزن الان</th></tr></thead><tbody>${scRows}</tbody></table></div>
+    <p class="small" style="padding:0 18px 14px">«درست» یعنی در پایان بازه‌ی خودِ تحلیل، قیمت در جهتی بود که گفته بود (برای خنثی: کمتر از ۴٪ حرکت). تا سه تحلیل سنجیده نشده، وزن پیش‌فرض ۰٫۵ است؛ با درصد درستی ۵۰٪ یا کمتر، وزن صفر می‌شود. این خلاصه‌ی نظر دیگران است، نه نظر این صفحه و نه توصیه‌ی مالی.</p>`;
+  put('anaCard', html);
+}
+loadAnalysts();
+setInterval(loadAnalysts, 3 * 3600000);
+
 // ------------------------------------------------------------------ the guide (numbers come from the user's own settings)
 function renderGuide() {
   const now = Date.now(), T0 = sessTimes('crypto', now), S = T0.S, sh = nextShift('crypto', now);
@@ -2869,8 +3351,10 @@ function renderGuide() {
   const MUST = 'خیلی مهم', IMP = 'مهم', TIP = 'نکته';
   const sec = (id, num, title) => `<h3 id="g-${id}"><span class="n">${num}</span>${title}</h3>`;
   const toc = [['golden', 'قانون‌های طلایی'], ['what', 'این صفحه چیست'], ['setup', 'تنظیم اول'], ['time', 'ساعت‌ها به وقت ایران'], ['board', 'تابلوی نمادها'],
-    ['top', '۵ انتخاب برتر'], ['sug', 'سیگنال‌های قانون'], ['before', 'قبل از خرید'], ['buy', 'خرید و OCO'], ['log', 'ثبت خرید واقعی'], ['sell', 'کی بفروشم'],
+    ['top', '۵ انتخاب برتر'], ['money', 'مبلغ، اهرم، حد سود و ضرر'], ['short', 'لانگ و شورت'], ['tether', 'تتر'], ['ana', 'نظر تحلیل‌گرها'], ['record', 'کارنامه‌ی تو'],
+    ['sug', 'سیگنال‌های قانون'], ['before', 'قبل از معامله'], ['buy', 'سفارش و OCO'], ['log', 'ثبت معامله‌ی واقعی'], ['sell', 'کی ببندم'],
     ['journal', 'ژورنال و سقف روزانه'], ['paper', 'حساب مجازی'], ['tm', 'خواندن آمار'], ['alerts', 'هشدارها'], ['forex', 'فارکس'], ['fix', 'عیب‌یابی'], ['risk', 'ریسک‌ها'], ['words', 'واژه‌ها']];
+  const LM = levMax(), liqS = L => ((1 + 1 / L) / 1.1 - 1), liqL = L => (1.1 - 1 / L - 1);
   const sessRows = ['london', 'newyork', 'tokyo', 'iran', 'utc'].map(k => `<tr><td><b>${SESSIONS[k].name}</b>${k === S.key ? ' <span class="small pos">(انتخاب فعلی)</span>' : ''}</td><td>${sessIRLabel(k, now, n)}</td></tr>`).join('');
   const html = `<div class="guide">
   <h2 id="guideH">راهنمای دیده‌بان ترید روزانه</h2>
@@ -2880,17 +3364,20 @@ function renderGuide() {
   <div class="golden" id="g-golden"><h4>قانون‌های طلایی: اگر فقط یک بخش را می‌خوانی، این را بخوان</h4><ol>
     <li>این صفحه آینده را پیش‌بینی نمی‌کند و هیچ سفارشی ثبت نمی‌کند. خروجی‌اش یک قانون است، نه توصیه‌ی مالی.</li>
     <li>فقط با پولی معامله کن که از دست دادنش زندگی‌ات را به هم نمی‌زند.</li>
-    <li>حد ضرر و حد سود را <u>قبل از خرید</u> تعیین کن و بعد از خرید، حد ضرر را هرگز پایین‌تر نبر.</li>
-    <li>درست بعد از هر خرید، در نوبیتکس سفارش فروش OCO بگذار و خرید را در «ثبت خرید واقعی» ثبت کن.</li>
-    <li>ساعت ${n(tExit)} به وقت ایران هر چیزی که باز است را بفروش؛ شب نگه ندار.</li>
+    <li>حد ضرر و حد سود را <u>قبل از ورود</u> تعیین کن و بعد از ورود، حد ضرر را هرگز دورتر نبر.</li>
+    <li>درست بعد از هر معامله، در نوبیتکس سفارش OCO بگذار (برای لانگ OCO فروش، برای شورت OCO خرید) و معامله را در «ثبت معامله‌ی واقعی» ثبت کن.</li>
+    <li>اهرم پیش‌فرض ۱× است (بدون اهرم). داشبورد فقط وقتی اهرم پیشنهاد می‌کند که نقد کافی نباشد، و هیچ‌وقت بیشتر از ${n(LM + '×')}. اهرم را برای سود بیشتر بالا نبر.</li>
+    <li>شورت یعنی اگر قیمت بالا برود ضرر می‌کنی، و بالا رفتن قیمت سقف ندارد. شورت بدون OCO خرید و حد ضرر باز نکن.</li>
+    <li>ساعت ${n(tExit)} به وقت ایران هر چیزی که باز است را ببند؛ شب نگه ندار.</li>
     <li>وقتی سقف ضرر روزانه (${n(usd(cfg.maxDailyLoss, 0))}) یا سقف ${n(cfg.maxTrades)} معامله پر شد، آن روز تمام است.</li>
-    <li>«۵ انتخاب برتر» همیشه پنج اسم دارد، حتی در بدترین روز. قبل از خرید، جمله‌ی رنگی بالایش را بخوان و همه‌ی پنج تا را نخر.</li>
+    <li>«۵ انتخاب برتر» همیشه پنج اسم دارد، حتی در بدترین روز. قبل از معامله، جمله‌های رنگی بالایش را بخوان و از «سبد پیشنهادی» بیشتر نگیر.</li>
+    <li>نظر تحلیل‌گرها را دلیل معامله نکن؛ پژوهش‌ها نشان می‌دهد پیروی از توصیه‌های اینفلوئنسرها به‌طور میانگین ضرر داده.</li>
     <li>قبل از پول واقعی، چند هفته با حساب مجازی کار کن.</li>
     <li>روزهایی که نشانه‌ی خوبی نیست، معامله نکردن خودش بهترین معامله است.</li></ol></div>
 
   ${sec('what', 1, 'این صفحه چیست و چه نیست')}
   <p>دیده‌بان، روش «شکست رنج اول جلسه» از اسکیل day-trader-skill را روی همه‌ی بازارهای تتری نوبیتکس اجرا می‌کند: قیمت‌های ${n(cfg.orMinutes)} دقیقه‌ی اول جلسه یک «رنج» می‌سازند؛ اگر یک کندل ۵ دقیقه‌ای بالای سقف این رنج <b>بسته شود</b>، قانون فعال می‌شود. بعد حد ضرر، حد سود، حجم و چک ریسک حساب می‌شود و آمار گذشته‌ی همین قانون روی همین ارز نشان داده می‌شود. کنارش «۵ انتخاب برتر» همیشه پنج نماد را با یک رتبه‌بندی ساده پیشنهاد می‌کند.</p>
-  <p>صفحه سه بخش دارد که از دکمه‌های بالای صفحه باز می‌شوند: <b>داشبورد</b> (پیشنهادها، تابلو، جزئیات، ثبت خرید، ژورنال)، <b>حساب مجازی</b> (تمرین با پول غیرواقعی) و <b>راهنما</b> (همین صفحه).</p>
+  <p>صفحه سه بخش دارد که از دکمه‌های بالای صفحه باز می‌شوند: <b>داشبورد</b> (۵ انتخاب برتر با مبلغ و اهرم، سیگنال‌ها، نظر تحلیل‌گرها، کارنامه‌ی تو، تابلو، جزئیات، ثبت معامله، ژورنال)، <b>حساب مجازی</b> (تمرین با پول غیرواقعی، لانگ و شورت) و <b>راهنما</b> (همین صفحه). قیمت تتر به تومان هم همیشه بالای صفحه است.</p>
   ${C('must', MUST, 'این صفحه نمی‌داند قیمت فردا چه می‌شود. «فعال شدن قانون» یا «انتخاب برتر» یعنی یک الگو یا رتبه دیده شده، نه این‌که سود حتمی است. بیشتر کسانی که ترید روزانه می‌کنند ضرر می‌کنند.')}
   ${C('imp', IMP, `هدف ${n(usd(cfg.dailyTarget, 0))} در روز با ${n(usd(cfg.account, 0))} یعنی ${n(pc(cfg.dailyTarget / cfg.account))} در روز؛ این عدد واقع‌بینانه نیست. کارت «هدف تو در برابر حساب و کتاب» در داشبورد همیشه نشان می‌دهد این قانون در گذشته واقعاً چقدر داده است.`)}
 
@@ -2901,6 +3388,7 @@ function renderGuide() {
     <li>«تنظیمات» را باز کن و این‌ها را با واقعیت خودت پر کن: <b>سرمایه</b>، <b>حداکثر ضرر هر معامله</b> (پیشنهاد: حداکثر ۱٪ سرمایه؛ الان ${n(riskPct + '%')})، <b>سقف ضرر روزانه</b> و <b>حداکثر معامله در روز</b>.</li>
     <li><b>هزینه‌ی رفت و برگشت:</b> کارمزد خرید به‌علاوه‌ی فروش در سطح کاربری خودت در نوبیتکس. پیش‌فرض ${n(cfg.crypto.costPct + '%')} است.</li>
     <li>منبع داده را روی «نوبیتکس» و «کدام نمادها» را روی «همه‌ی بازارهای تتری نوبیتکس» نگه دار.</li>
+    <li><b>شورت و اهرم:</b> «فروش تعهدی (شورت) هم پیشنهاد بده» روشن است؛ اگر نمی‌خواهی شورت ببینی خاموشش کن. «سقف اهرم تعهدی» (پیش‌فرض ۲؛ الان ${n(LM + '×')}) و «فهرست شورت» (ارزهایی که در نوبیتکس فروش تعهدی دارند) را هم ببین.</li>
   </ol>
   ${C('imp', IMP, 'کارمزد اشتباه همه‌ی آمارها را خراب می‌کند. در معاملات کوتاه، کارمزد بخش بزرگی از سود را می‌خورد؛ عدد واقعی‌ات را از صفحه‌ی کارمزدهای نوبیتکس بخوان.')}
   ${C('tip', TIP, 'تنظیمات، ژورنال، حساب مجازی و تاریخچه فقط در همین مرورگر ذخیره می‌شوند. اگر مرورگر یا گوشی را عوض کنی، از صفر شروع می‌شود.')}
@@ -2943,33 +3431,106 @@ function renderGuide() {
   ${C('imp', IMP, 'بازاری که «حجم کم» یا «اسپرد زیاد» دارد را با همان برنامه نخر. قیمت واقعی خرید و فروشش با عدد صفحه فرق زیادی دارد و ضرر از همان لحظه‌ی خرید شروع می‌شود.')}
 
   ${sec('top', 5, '«۵ انتخاب برتر الان»')}
-  <p>اولین کارت بالای صفحه. <b>همیشه پنج نماد</b> را به ترتیب نشان می‌دهد و هر دقیقه به‌روز می‌شود. فقط از بازارهای پرمعامله‌ای انتخاب می‌کند که تاریخچه‌شان کامل است.</p>
-  <p><b>رتبه‌بندی</b> ساده و ثابت است: سه چیز هر نماد با بقیه‌ی بازار مقایسه می‌شود و میانگین رتبه‌ها حساب می‌شود: روند ۲۰ روزه (فاصله از میانگین ۲۰ روزه)، بازده ۷ روزه و بازده ۲۴ ساعته. نمادی که قانون شکست رنج برایش فعال شده (★) جلوتر از همه می‌آید.</p>
+  <p>اولین کارت بالای صفحه. <b>همیشه پنج نماد</b> را به ترتیب نشان می‌دهد و هر دقیقه به‌روز می‌شود. فقط از بازارهای پرمعامله‌ای انتخاب می‌کند که تاریخچه‌شان کامل است. بالای کارت سه دکمه هست: <b>«لانگ و شورت»</b> (پیش‌فرض)، <b>«فقط لانگ»</b> و <b>«فقط شورت»</b>.</p>
+  <p><b>رتبه‌بندی</b> ساده و ثابت است: سه چیز هر نماد با بقیه‌ی بازار مقایسه می‌شود و میانگین رتبه‌ها حساب می‌شود: روند ۲۰ روزه (فاصله از میانگین ۲۰ روزه)، بازده ۷ روزه و بازده ۲۴ ساعته. <b>قوی‌ترین‌ها</b> برای لانگ (خرید) و <b>ضعیف‌ترین‌ها</b> برای شورت (فروش تعهدی) نامزد می‌شوند؛ شورت فقط برای ارزهای «فهرست شورت» در تنظیمات. نمادی که قانون شکست رنج برایش فعال شده (★) جلوتر از همه می‌آید. هر نماد فقط یک بار، با سمتی که رتبه‌ی بهتری دارد، در لیست می‌آید.</p>
+  <p>روی رتبه سه <b>اثر کوچک</b> هم هست که با ▲ (بالا برد) و ▼ (پایین آورد) زیر هر نماد نوشته شده:</p>
+  <ul>
+    <li><b>نتیجه‌ی همین سمت در گذشته:</b> پنج لانگ یا پنج شورت اول همین ساعت در روزهای گذشته چقدر دادند (حداکثر ${n('±0.15')}).</li>
+    <li><b>کارنامه‌ی خودت:</b> معاملات بسته‌ی واقعی و مجازی تو در همین سمت، روی همین ارز و برای همین نوع پیشنهاد (حداکثر ${n('±0.3')}؛ بخش ۱۰).</li>
+    <li><b>نظر تحلیل‌گرها:</b> پیش‌بینی‌های کوتاه‌مدت در جریان برای همان ارز، با وزن درصد درستی خود هر تحلیل‌گر (حداکثر ${n('±0.06')}؛ بخش ۹).</li>
+  </ul>
+  <p>این عددها روی رتبه‌ای از ۰ تا ۱ اثر می‌گذارند؛ یعنی اثرشان واقعی ولی محدود است.</p>
   <p>برای هر انتخاب یک برنامه‌ی کامل آماده است:</p>
   <ul>
-    <li><b>ورود:</b> بهترین قیمت فروشنده در نوبیتکس، یعنی قیمتی که خرید فوری پر می‌شود.</li>
-    <li><b>حد ضرر:</b> ۱٫۵ برابر نوسان ساعتی همان ارز زیر قیمت ورود (حداقل ۰٫۴٪، و حداقل چهار برابر هزینه‌ی معامله).</li>
-    <li><b>حد سود:</b> ${n(cfg.targetR + 'R')}، یعنی ${n(cfg.targetR)} برابر فاصله‌ی حد ضرر.</li>
-    <li><b>حجم:</b> طوری که اگر حد ضرر بخورد، ضررت با کارمزد از ${n(usd(cfg.maxLoss))} بیشتر نشود.</li>
+    <li><b>سمت:</b> «↑ لانگ (خرید)» یا «↓ شورت (فروش تعهدی)».</li>
+    <li><b>ورود:</b> برای لانگ بهترین قیمت فروشنده و برای شورت بهترین قیمت خریدار در نوبیتکس؛ یعنی قیمتی که سفارش فوری پر می‌شود.</li>
+    <li><b>حد ضرر (SL):</b> ۱٫۵ برابر نوسان ساعتی همان ارز، برای لانگ زیر قیمت و برای شورت بالای قیمت (حداقل ۰٫۴٪، و حداقل چهار برابر هزینه‌ی معامله).</li>
+    <li><b>حد سود (TP):</b> ${n(cfg.targetR + 'R')}، یعنی ${n(cfg.targetR)} برابر فاصله‌ی حد ضرر، در جهت معامله.</li>
+    <li><b>مبلغ و اهرم:</b> «بخر: ۳۸۰ دلار» یا «شورت کن: ۳۵۰ دلار»، با معادل تومانی، اهرم، وثیقه و قیمت لیکوئید؛ بخش ۶.</li>
     <li><b>ساعت خروج:</b> طبق قانون بخش ۳.</li>
     <li><b>شبیه‌سازی:</b> چند درصد حالت‌ها اول به حد سود یا حد ضرر رسیدند و میانگین R، از کندل‌های گذشته‌ی خود همان ارز در همین ساعت‌های روز.</li>
+    <li><b>«چطور بخرم» / «چطور شورت کنم»:</b> قدم به قدم در نوبیتکس، با عددهای OCO همان نماد؛ بخش ۷.</li>
   </ul>
-  <p><b>برچسب کیفیت</b> کنار هر نماد: «سیگنال کامل قانون» (هر پنج شرط قانون برقرار است)، «قوی» (روند، ۷ روزه، ۲۴ ساعته و شبیه‌سازی هر چهار مثبت)، «متوسط» (سه تا) و «ضعیف» (دو تا یا کمتر). چک‌مارک‌های سبز و قرمز زیر هر نماد همین‌ها را نشان می‌دهند.</p>
-  <p><b>جمله‌ی رنگی بالای کارت</b> همین رتبه‌بندی را روی روزهای گذشته در همین ساعت، با همین برنامه‌ها و کندل‌های واقعی، اجرا می‌کند: <span class="pos">سبز</span> یعنی پنج تای اول از خرید همه‌ی نمادها بهتر بوده‌اند؛ <span style="color:var(--warn)">نارنجی</span> یعنی فرقی نداشته‌اند؛ <span class="neg">قرمز</span> یعنی حتی پنج تای اول هم به‌طور میانگین ضرر داده‌اند.</p>
-  <p>دکمه‌ها: <b>«باز کردن مجازی»</b> روی حساب مجازی می‌خرد. <b>«خریدم؛ ثبتش کن»</b> کارت «ثبت خرید واقعی» را با همین برنامه پر می‌کند. <b>«جزئیات»</b> پنج قدم کامل همان نماد را نشان می‌دهد.</p>
-  ${C('must', MUST, '«همیشه پنج تا» یعنی حتی در بدترین روز هم پنج اسم می‌آید. قبل از خرید، جمله‌ی رنگی بالای همین کارت را بخوان. اگر قرمز است، یعنی بهترین‌ها هم در گذشته ضرر داده‌اند و خرید نکردن بهتر بوده.')}
-  ${C('imp', IMP, `همه‌ی پنج تا را نخر: سقف تو ${n(cfg.maxTrades)} معامله و ${n(usd(cfg.maxDailyLoss, 0))} ریسک در روز است. اگر می‌خری، از بالای لیست شروع کن و برچسب «ضعیف» را رد کن.`)}
+  <p><b>برچسب کیفیت</b> کنار هر نماد: «سیگنال کامل قانون» (هر پنج شرط قانون برقرار است)، «قوی» (روند، ۷ روزه، ۲۴ ساعته و شبیه‌سازی هر چهار در جهت معامله)، «متوسط» (سه تا) و «ضعیف» (دو تا یا کمتر). برای شورت، «در جهت معامله» یعنی زیر میانگین و بازده منفی. چک‌مارک‌های سبز و قرمز زیر هر نماد همین‌ها را نشان می‌دهند.</p>
+  <p><b>جمله‌های رنگی بالای کارت</b> همین رتبه‌بندی را روی روزهای گذشته در همین ساعت، با همین برنامه‌ها و کندل‌های واقعی، اجرا می‌کنند؛ یکی برای لانگ پنج تای قوی‌تر و یکی برای شورت پنج تای ضعیف‌تر: <span class="pos">سبز</span> یعنی پنج تای اول از همه‌ی نمادها بهتر بوده‌اند؛ <span style="color:var(--warn)">نارنجی</span> یعنی فرقی نداشته‌اند؛ <span class="neg">قرمز</span> یعنی حتی پنج تای اول هم به‌طور میانگین ضرر داده‌اند.</p>
+  <p><b>«سبد پیشنهادی همین الان»</b> بالای پنج نماد، جواب «از کدام چقدر بخرم» است؛ بخش ۶.</p>
+  <p>دکمه‌ها: <b>«باز کردن مجازی»</b> همان معامله را با همان مبلغ و اهرم روی حساب مجازی باز می‌کند. <b>«انجام دادم؛ ثبتش کن»</b> کارت «ثبت معامله‌ی واقعی» را با همین برنامه، سمت و اهرم پر می‌کند. <b>«جزئیات»</b> پنج قدم کامل همان نماد را نشان می‌دهد.</p>
+  ${C('must', MUST, '«همیشه پنج تا» یعنی حتی در بدترین روز هم پنج اسم می‌آید. قبل از معامله، جمله‌های رنگی بالای همین کارت را بخوان. اگر قرمز است، یعنی بهترین‌ها هم در گذشته ضرر داده‌اند و معامله نکردن بهتر بوده.')}
+  ${C('imp', IMP, `همه‌ی پنج تا را نگیر: سقف تو ${n(cfg.maxTrades)} معامله و ${n(usd(cfg.maxDailyLoss, 0))} ریسک در روز است. «سبد پیشنهادی» همین سقف‌ها را رعایت می‌کند؛ بیشتر از آن نگیر و برچسب «ضعیف» را رد کن.`)}
   ${C('tip', TIP, 'بار اول، تا تاریخچه‌ی نمادها کامل نشده، ممکن است کمتر از پنج نماد بیاید.')}
 
-  ${sec('sug', 6, '«سیگنال‌های قانون»')}
+  ${sec('money', 6, 'مبلغ هر نماد، اهرم، حد سود و حد ضرر')}
+  <p><b>سبد پیشنهادی</b> می‌گوید از هر نماد چند دلار بگیری؛ مثلاً «BTC/USDT: بخر ۵۳۰ دلار، ADA/USDT: شورت کن ۳۸۰ دلار». این‌طور حساب می‌شود:</p>
+  <ol>
+    <li><b>چند معامله:</b> تعداد معاملات باقی‌مانده‌ی امروز (سقف ${n(cfg.maxTrades)} منهای معاملات ثبت‌شده‌ی امروز در ژورنال).</li>
+    <li><b>کدام‌ها:</b> از پنج نماد، آن‌هایی که وزن بیشتری دارند: سیگنال کامل ۱، قوی ۰٫۸، متوسط ۰٫۵، ضعیف ۰٫۲۵، ضرب در اثر کارنامه‌ی تو، تحلیل‌گرها و نتیجه‌ی گذشته.</li>
+    <li><b>ریسک هر کدام:</b> ریسک باقی‌مانده‌ی امروز (سقف ${n(usd(cfg.maxDailyLoss, 0))} منهای ریسک معاملات امروز) به نسبت وزن‌ها تقسیم می‌شود؛ هیچ‌کدام بیشتر از سقف ضرر هر معامله (${n(usd(cfg.maxLoss))}) نمی‌شود.</li>
+    <li><b>مبلغ:</b> ریسک ÷ (فاصله‌ی حد ضرر + هزینه‌ها). مثال: ریسک ${n('$10')}، حد ضرر ${n('1.5%')}، هزینه‌ها ${n('0.3%')} → مبلغ حدود ${n('$555')}. حد ضرر نزدیک‌تر یعنی مبلغ بیشتر، با همان ضرر.</li>
+    <li><b>نقد:</b> جمع پولی که درگیر می‌شود نباید از نقد آزاد (سرمایه منهای ${n(cfg.cashBufferPct + '%')} ذخیره و منهای معاملات باز) بیشتر شود. اگر شد، اول اهرم یک پله (۰٫۵) بالا می‌رود تا سقف ${n(LM + '×')}، و اگر باز هم جا نشد، مبلغ‌ها کوچک می‌شوند.</li>
+    <li>مبلغ‌ها به پایین گرد می‌شوند (ده دلار) و کمتر از حداقل سفارش نوبیتکس پیشنهاد نمی‌شود. کنار هر مبلغ، معادل تومانی با قیمت لحظه‌ای تتر آمده.</li>
+  </ol>
+  <p><b>اهرم:</b></p>
+  <ul>
+    <li><b>لانگ:</b> اول همیشه <b>۱× اسپات</b> (خرید معمولی، بدون اهرم و بدون لیکوئید). فقط اگر نقد کافی نباشد، «خرید تعهدی» با ۱٫۵× یا بیشتر.</li>
+    <li><b>شورت:</b> همیشه «فروش تعهدی» است. با ۱× وثیقه برابر مبلغ معامله است؛ با ۲× نصف آن.</li>
+    <li><b>اهرم ضرر هر دلار را بیشتر نمی‌کند.</b> ضرر را مبلغ و حد ضرر تعیین می‌کنند. اهرم فقط پول کمتری از تو درگیر می‌کند و قیمت لیکوئید را نزدیک‌تر می‌آورد. برای همین کنار درصد حد سود و ضرر، «روی پول خودت» هم نوشته شده (درصد × اهرم).</li>
+    <li><b>قیمت لیکوئید:</b> نوبیتکس موقعیت تعهدی را وقتی می‌بندد که نسبت دارایی به بدهی به ۱٫۱ برسد. تقریباً: شورت با ۱× در ${n(spc(liqS(1), 0))}، با ۲× در ${n(spc(liqS(2), 0))}، با ۳× در ${n(spc(liqS(3), 0))}، با ۵× در ${n(spc(liqS(5), 0))}؛ خرید تعهدی با ۲× در ${n(spc(liqL(2), 0))} و با ۳× در ${n(spc(liqL(3), 0))}. داشبورد اهرمی را پیشنهاد نمی‌کند که لیکوئیدش کمتر از سه برابر فاصله‌ی حد ضرر باشد.</li>
+    <li><b>کارمزد تمدید:</b> برای هر موقعیت تعهدی حدود ${n(cfg.crypto.marginFeePct + '%')} ارزش موقعیت در هر ۲۴ ساعت (پله‌ای). در عددهای ضرر و سود حساب شده.</li>
+  </ul>
+  <p><b>حد سود و حد ضرر:</b> روی هر نماد هم قیمت و هم درصد آمده؛ مثلاً «حد سود (TP) ۲٬۳۱۸ (+۳٫۱٪)، حد ضرر (SL) ۲٬۲۱۵ (−۱٫۵٪)». همین دو عدد را در OCO می‌گذاری.</p>
+  ${C('must', MUST, `برای ترید روزانه با این حساب، اهرم بالاتر از ${n('2×')} لازم نیست. نوبیتکس بسته به بازار و سطح کاربری تا ۳ تا ۵ برابر می‌دهد؛ سقف خودت را در تنظیمات («سقف اهرم تعهدی») پایین نگه دار. الان ${n(LM + '×')} است.`)}
+  ${C('imp', IMP, 'اگر می‌خواهی اصلاً اهرم نداشته باشی، سقف اهرم را روی ۱ بگذار. آن‌وقت لانگ‌ها همه اسپات‌اند و شورت‌ها با وثیقه‌ی کامل؛ اگر نقد کم باشد، فقط مبلغ‌ها کوچک‌تر می‌شوند.')}
+  ${C('tip', TIP, 'عددهای سبد با هر بار ثبت معامله در ژورنال دوباره حساب می‌شوند (معاملات و ریسک باقی‌مانده کم می‌شود).')}
+
+  ${sec('short', 7, 'لانگ و شورت: چطور در نوبیتکس باز کنم')}
+  <p><b>لانگ</b> یعنی می‌خری چون انتظار داری قیمت بالا برود. <b>شورت</b> یعنی ارزی را که قرض گرفته‌ای می‌فروشی چون انتظار داری پایین بیاید، و بعد ارزان‌تر پس می‌خری. در نوبیتکس شورت در بخش <b>«معامله‌ی تعهدی»</b> (فروش تعهدی) است و فقط برای بعضی بازارهای تتری.</p>
+  <p><b>لانگ اسپات (۱×):</b></p>
+  <ol><li>بازار همان ارز (مثلاً BTC/USDT) را باز کن.</li><li>«خرید» با سفارش «بازار»، به مبلغی که داشبورد گفته (به تتر).</li><li>بلافاصله <b>OCO فروش</b>: قیمت (معین) = حد سود، قیمت توقف = حد ضرر، قیمت حد ضرر = کمی پایین‌تر (۰٫۲٪).</li></ol>
+  <p><b>خرید تعهدی (لانگ با اهرم):</b></p>
+  <ol><li>بخش «معامله‌ی تعهدی»، همان بازار، «خرید تعهدی».</li><li>ضریب (اهرم) و وثیقه را همان که داشبورد گفته بگذار.</li><li>روی موقعیت باز، <b>OCO فروش</b> با همان عددها.</li></ol>
+  <p><b>شورت (فروش تعهدی):</b></p>
+  <ol><li>بخش «معامله‌ی تعهدی»، همان بازار تتری، «فروش تعهدی».</li><li>ضریب (اهرم) را روی عدد داشبورد بگذار (پیش‌فرض‌ها ۱× تا ${n(LM + '×')})؛ وثیقه از کیف تتر برداشته می‌شود.</li><li>بلافاصله <b>OCO خرید</b> برای بستن: <b>قیمت (معین) = حد سود، که پایین‌تر از قیمت الان است</b>؛ <b>قیمت توقف = حد ضرر، که بالاتر است</b>؛ قیمت حد = کمی بالاتر از حد ضرر (۰٫۲٪).</li><li>اگر تا ساعت خروج باز ماند، OCO را لغو کن و موقعیت را با خرید ببند.</li></ol>
+  <p>همه‌ی این قدم‌ها با عددهای دقیق هر نماد زیر «چطور بخرم» یا «چطور شورت کنم» روی کارت آمده. قانون شکست رنج هم برای ارزهای فهرست شورت، شکست کف رنج را به‌عنوان سیگنال فروش (شورت) نشان می‌دهد.</p>
+  ${C('must', MUST, 'ضرر شورت سقف ندارد: اگر قیمت دو برابر شود، ضرر دو برابر مبلغ است. پس شورت بدون OCO خرید باز نکن، و اگر قیمت به حد ضرر رسید و سفارش پر نشد، دستی ببند.')}
+  ${C('imp', IMP, `فهرست شورت در تنظیمات پیش‌فرض ارزهای بزرگ است (${esc(cfg.crypto.shortList || 'همه')}). همه‌ی این‌ها لزوماً در نوبیتکس فروش تعهدی ندارند و بستگی به استخر وکالت هر ارز دارد. در نوبیتکس ببین و فهرست را درست کن. معامله‌ی تعهدی شرایط و قوانین خودش را دارد (حداکثر ۳۰ روز، کارمزد روزانه) و باید جداگانه در نوبیتکس فعالش کنی.`)}
+  ${C('tip', TIP, 'قبل از اولین شورت واقعی، چند بار در حساب مجازی شورت کن. فرم «معامله‌ی دستی» حالا سمت و اهرم دارد.')}
+
+  ${sec('tether', 8, 'تتر (USDT) و تومان')}
+  <ul>
+    <li><b>قیمت تتر</b> بالای صفحه است، به تومان، از بازار تتر/تومان نوبیتکس، با تغییر ۲۴ ساعته. هر ۳۰ ثانیه به‌روز می‌شود.</li>
+    <li><b>معادل تومانی:</b> کنار مبلغ‌های پیشنهادی (مبلغ دلاری × قیمت تتر).</li>
+    <li><b>خود بازار تتر</b> هم در تابلو هست: «USDT/IRT (تتر)»، با قیمت به تومان. قانون شکست رنج و ۵ انتخاب برتر رویش کار می‌کنند، فقط لانگ (خرید تتر با تومان). وقتی پیشنهاد می‌شود، «بخر: ۳۰۰ دلار» یعنی ۳۰۰ تتر، که با تومان می‌خری.</li>
+    <li>بازار تتر/تومان صرافی‌های ایرانی ${n('23:30')} تا ${n('11:30')} بسته است و هر نفر روزی حداکثر ۲۰۰۰ تتر می‌تواند بخرد (طبق خبرهای مهر ۱۴۰۵؛ ممکن است عوض شود).</li>
+  </ul>
+  ${C('imp', IMP, 'خرید تتر با تومان یعنی شرط بستن روی گران شدن دلار در برابر تومان. نوسانش معمولاً از کریپتوها کمتر است، ولی کارمزد و اسپرد بازار تومانی را جدی بگیر؛ اگر کارمزد بازار تومانی سطح تو فرق دارد، عدد صفحه را با آن مقایسه کن.')}
+
+  ${sec('ana', 9, 'نظر تحلیل‌گرها')}
+  <p>کارت «نظر تحلیل‌گرها» در داشبورد، خلاصه‌ی فارسی تحلیل‌های عمومی و تاریخ‌دار چند منبع شناخته‌شده را نشان می‌دهد: پژوهش آن‌چین <b>Glassnode</b>، ستون تکنیکال <b>رویترز</b>، تحلیل هفتگی کارگزاری <b>Crypto Finance</b> (گروه بورس آلمان)، و تحلیل‌های تکنیکال روزانه‌ی چند رسانه‌ی کریپتو. دید بلندمدت (مثلاً Raoul Pal) هم نشان داده می‌شود ولی در رتبه‌ی روزانه اثر ندارد. فقط تحلیلی ثبت می‌شود که تاریخ و سطح قیمت یا جهت روشن دارد.</p>
+  <ul>
+    <li><b>به‌روزرسانی:</b> هر روز یک کار زمان‌بندی‌شده تحلیل‌های تازه را جست‌وجو و خلاصه می‌کند و به سایت اضافه می‌کند؛ صفحه هر سه ساعت فایلش را دوباره می‌خواند. زمان آخرین به‌روزرسانی بالای کارت است.</li>
+    <li><b>جمع‌بندی هر ارز:</b> چند تحلیل در جریان صعودی، نزولی یا خنثی است، سطح‌های حمایت و مقاومتی که گفته‌اند، و اثرش روی رتبه.</li>
+    <li><b>کارنامه‌ی تحلیل‌گرها:</b> هر تحلیل بعد از پایان بازه‌ی خودش با قیمت نوبیتکس سنجیده می‌شود: صعودی درست است اگر قیمت بالاتر رفته باشد، نزولی اگر پایین‌تر، خنثی اگر کمتر از ۴٪ حرکت کرده باشد.</li>
+    <li><b>وزن:</b> تا سه تحلیل سنجیده نشده ۰٫۵؛ بعد از آن از صفر (درستی ۵۰٪ یا کمتر، یعنی مثل شیر یا خط) تا ۱ (همیشه درست). اثر روی رتبه = ${n('0.06')} × جهت × وزن.</li>
+  </ul>
+  ${C('must', MUST, 'پژوهش Merkley، Pacelli، Piorkowski و Williams روی حدود ۳۶ هزار توییت ۱۸۰ اینفلوئنسر کریپتو نشان داد ارزهای توصیه‌شده به‌طور میانگین ۲٫۲۴٪ در ۱۰ روز و ۶٫۵۳٪ در ۳۰ روز بعد افت کرده‌اند. هیچ‌وقت فقط به خاطر نظر یک تحلیل‌گر معامله نکن؛ برای همین وزنش در این صفحه کوچک است.')}
+  ${C('tip', TIP, 'سطح‌های جدول را با حد سود و حد ضرر پیشنهادی مقایسه کن. اگر حد سود یک لانگ درست بالای مقاومتی است که چند نفر به آن اشاره کرده‌اند، رسیدنش سخت‌تر است.')}
+
+  ${sec('record', 10, 'کارنامه‌ی معاملات تو')}
+  <p>کارت «کارنامه‌ی معاملات تو» همه‌ی معاملات بسته‌ی <b>واقعی</b> (ژورنال، وقتی نتیجه را ثبت کنی) و <b>مجازی</b> را جمع می‌کند: تعداد، درصد برد، جمع سود و زیان و میانگین R، به تفکیک لانگ و شورت، با اهرم، و نوع پیشنهاد (سیگنال ۵ از ۵، ۸۰٪، ۵ انتخاب برتر، دستی)؛ به‌علاوه‌ی بهترین و بدترین نمادهایت.</p>
+  <p><b>اثرش روی پیشنهادهای بعدی:</b> رتبه‌ی هر نماد در «۵ انتخاب برتر» با سه عدد از کارنامه‌ات بالا و پایین می‌رود: میانگین R تو در همان سمت (لانگ یا شورت)، روی همان ارز و همان سمت، و برای همان نوع پیشنهاد. هر کدام با تعداد معامله‌ها «کوچک» می‌شود: با ۵ معامله فقط حدود یک‌سوم، با ۴۰ معامله نزدیک کامل. مثال: ۱۰ شورت با میانگین ${n('−0.5R')} رتبه‌ی همه‌ی شورت‌ها را حدود ${n('0.03')} پایین می‌آورد. همین عددها وزن هر نماد در سبد را هم بین ۰٫۴ تا ۱٫۵ برابر عوض می‌کنند.</p>
+  ${C('imp', IMP, 'نتیجه‌ی هر معامله‌ی واقعی را در ژورنال بزن («حد سود»، «حد ضرر» یا قیمت خروج). معامله‌ای که نتیجه ندارد، در کارنامه و در پیشنهادهای بعدی حساب نمی‌شود.')}
+  ${C('tip', TIP, 'کارنامه با چند معامله چیزی را ثابت نمی‌کند. برای همین اثرش تا وقتی تعداد کم است نزدیک صفر نگه داشته می‌شود.')}
+
+  ${sec('sug', 11, '«سیگنال‌های قانون»')}
   <p>کارت دوم، سخت‌گیرتر. فقط وقتی چیزی نشان می‌دهد که قانون شکست رنج همین الان روی یک نماد فعال شده باشد. هر سیگنال اول باید از <b>همه‌ی قانون‌های ریسک</b> تو رد شود: سقف ضرر هر معامله، حداقل نسبت سود به ضرر، سقف روزانه، پنجره‌ی ورود، تازه بودن داده، و نقدینگی (حجم ۲۴ ساعته حداقل ${n(usdK(cfg.crypto.minVolUSD))} و اسپرد حداکثر ${n(cfg.crypto.maxSpreadPct + '%')}). این‌ها در هیچ سطحی کم نمی‌شوند. بعد پنج شرط کیفیت شمرده می‌شود:</p>
   <ol><li>سیگنال تازه است (حداکثر یک کندل پیش).</li><li>همین قانون روی همین ارز حداقل ${n(SUG_MIN_N)} بار در گذشته فعال شده.</li><li>میانگین نتیجه‌ی گذشته بعد از کارمزد مثبت است.</li><li>میانگین شبیه‌سازی‌های ماشین زمان مثبت است.</li><li>قیمت بالای میانگین ۲۰ روزه است (هم‌جهت با روند).</li></ol>
   <p><b>بخش سبز (۵ از ۵):</b> همه‌ی شرط‌ها برقرار است. <b>بخش نارنجی (۴ از ۵، ۸۰٪):</b> یکی کم است و روی کارت با ✕ مشخص شده. پایین کارت «نزدیک به فعال شدن» نمادهایی را نشان می‌دهد که نزدیک سقف رنج‌اند، و نمادهایی که فعال شده‌اند ولی پیشنهاد نمی‌شوند با دلیلشان می‌آیند.</p>
-  <p>اگر خریدی را در ژورنال ثبت کرده باشی و به حد سود، حد ضرر یا ساعت خروج برسد، همین کارت یک کارت قرمز <b>«بفروش»</b> با دلیلش نشان می‌دهد.</p>
+  <p>برای ارزهای فهرست شورت، شکست <b>کف</b> رنج هم سیگنال «↓ فروش» (شورت) است و همین شرط‌ها برایش در جهت عکس شمرده می‌شود (مثلاً قیمت زیر میانگین ۲۰ روزه).</p>
+  <p>اگر معامله‌ای را در ژورنال ثبت کرده باشی و به حد سود، حد ضرر یا ساعت خروج برسد، همین کارت یک کارت قرمز <b>«بفروش»</b> (برای شورت: <b>«ببند (بخر)»</b>) با دلیلش نشان می‌دهد.</p>
   ${C('imp', IMP, 'سیگنال‌های ۸۰٪ طبق تعریف ضعیف‌ترند. اول فقط روی حساب مجازی امتحانشان کن و جدول «نتیجه به تفکیک نوع پیشنهاد» را ببین.')}
   ${C('tip', TIP, 'بیشتر روزها هیچ سیگنالی نمی‌آید. این ایراد نیست؛ یعنی شرط‌ها سخت‌گیرند.')}
 
-  ${sec('before', 7, 'قبل از خرید: پنج قدم جزئیات')}
+  ${sec('before', 12, 'قبل از معامله: پنج قدم جزئیات')}
   <p>روی «جزئیات» یا روی ردیف نماد در تابلو بزن. پایین صفحه پنج قدم به ترتیب می‌آید:</p>
   <ol>
     <li><b>برنامه‌ی خروج:</b> قیمت ورود، حد ضرر (پیش‌فرض: وسط رنج)، حد سود (پیش‌فرض: ${n(cfg.targetR + 'R')}) و ساعت خروج اجباری.</li>
@@ -2980,47 +3541,51 @@ function renderGuide() {
   </ol>
   ${C('must', MUST, 'اگر کارت «چک ریسک» حتی یک ✕ قرمز دارد، آن معامله را نگیر. قبول شدن همه‌ی چک‌ها هم یعنی قانون‌های خودت رعایت شده، نه این‌که معامله سود می‌دهد.')}
 
-  ${sec('buy', 8, 'خرید در نوبیتکس و گذاشتن OCO')}
+  ${sec('buy', 13, 'سفارش در نوبیتکس و گذاشتن OCO')}
   <ol>
-    <li>در بازار تتری همان ارز (مثلاً BTC/USDT) به قیمت بازار، <b>همان حجمی را بخر که داشبورد گفته</b>؛ نه بیشتر.</li>
-    <li><b>بلافاصله</b> یک سفارش فروش OCO ثبت کن. OCO دو سفارش است: اگر یکی اجرا شود، دیگری خودکار لغو می‌شود.</li>
-    <li>خرید را در کارت «ثبت خرید واقعی» ثبت کن (بخش ۱۰).</li>
+    <li>در بازار تتری همان ارز (مثلاً BTC/USDT) به قیمت بازار، <b>همان مبلغ و اهرمی را بگیر که داشبورد گفته</b>؛ نه بیشتر. برای شورت و خرید تعهدی، بخش ۷.</li>
+    <li><b>بلافاصله</b> یک سفارش OCO ثبت کن: برای لانگ <b>OCO فروش</b>، برای شورت <b>OCO خرید</b>. OCO دو سفارش است: اگر یکی اجرا شود، دیگری خودکار لغو می‌شود.</li>
+    <li>معامله را در کارت «ثبت معامله‌ی واقعی» ثبت کن (بخش ۱۴).</li>
   </ol>
   <p>فیلدهای OCO فروش، با یک مثال (خرید بیت‌کوین در 77,000، حد ضرر 76,400، حد سود 78,200). کارت «ثبت خرید واقعی» همین عددها را برای خرید خودت آماده می‌دهد:</p>
   <dl class="oco"><dt>مقدار</dt><dd>موجودی همان ارز در کیف پولت (بعد از کارمزد خرید کمی کمتر از مقدار سفارش است)</dd><dt>قیمت (معین)</dt><dd>حد سود: ${n('78,200')}</dd><dt>قیمت توقف</dt><dd>حد ضرر: ${n('76,400')}</dd><dt>قیمت حد ضرر</dt><dd>کمی پایین‌تر از حد ضرر، ۰٫۲٪: ${n('76,247')}</dd></dl>
+  <p>برای <b>شورت</b> همه چیز برعکس است (شورت بیت‌کوین در 77,000، حد ضرر 77,600، حد سود 75,800). OCO <b>خرید</b> روی همان موقعیت تعهدی:</p>
+  <dl class="oco"><dt>مقدار</dt><dd>همان مقداری که فروختی</dd><dt>قیمت (معین)</dt><dd>حد سود، پایین‌تر از قیمت: ${n('75,800')}</dd><dt>قیمت توقف</dt><dd>حد ضرر، بالاتر از قیمت: ${n('77,600')}</dd><dt>قیمت حد</dt><dd>کمی بالاتر از حد ضرر، ۰٫۲٪: ${n('77,756')}</dd></dl>
   ${C('must', MUST, 'OCO مهم‌ترین قدم است. با آن، حتی اگر کامپیوترت خاموش شود یا اینترنت قطع شود، فروش در حد سود یا حد ضرر انجام می‌شود.')}
   ${C('imp', IMP, 'در ریزش خیلی تند، قیمت ممکن است از قیمت توقف و قیمت حد ضرر هر دو رد شود و سفارش پر نشود. آن‌وقت باید دستی به قیمت بازار بفروشی. حد ضرر یک برنامه است، نه تضمین.')}
 
-  ${sec('log', 9, 'ثبت خرید واقعی')}
-  <p>کارت «ثبت خرید واقعی» زیر جزئیات نماد است. هر خریدی که خودت در صرافی کردی، با پیشنهاد یا بدون آن، همین‌جا ثبت کن. سه راه برای پر کردنش هست: دکمه‌ی «خرید کردم؛ ثبتش کن» در قدم ۵ جزئیات، دکمه‌ی «خریدم؛ ثبتش کن» روی «۵ انتخاب برتر»، یا خود کارت.</p>
+  ${sec('log', 14, 'ثبت معامله‌ی واقعی')}
+  <p>کارت «ثبت معامله‌ی واقعی» زیر جزئیات نماد است. هر خرید یا شورتی که خودت در صرافی کردی، با پیشنهاد یا بدون آن، همین‌جا ثبت کن. سه راه برای پر کردنش هست: دکمه‌ی «خرید کردم؛ ثبتش کن» در قدم ۵ جزئیات، دکمه‌ی «انجام دادم؛ ثبتش کن» روی «۵ انتخاب برتر» (سمت، اهرم و نوع پیشنهاد هم پر می‌شود)، یا خود کارت.</p>
   <dl class="gl">
-    <dt>نماد</dt><dd>ارزی که خریدی. با عوض کردنش، بقیه‌ی فیلدها با قیمت همان ارز پر می‌شوند.</dd>
-    <dt>قیمت خرید</dt><dd>قیمتی که <b>واقعاً</b> پر شد؛ از تاریخچه‌ی سفارش‌های نوبیتکس بخوان، نه عدد صفحه.</dd>
+    <dt>نماد</dt><dd>ارزی که معامله کردی. با عوض کردنش، بقیه‌ی فیلدها با قیمت همان ارز پر می‌شوند.</dd>
+    <dt>سمت</dt><dd>خرید (لانگ) یا فروش (شورت).</dd>
+    <dt>اهرم</dt><dd>۱× برای خرید اسپات؛ برای خرید یا فروش تعهدی همان ضریبی که در نوبیتکس گذاشتی. وثیقه، کارمزد تمدید و قیمت لیکوئید از همین حساب می‌شود.</dd>
+    <dt>قیمت ورود</dt><dd>قیمتی که <b>واقعاً</b> پر شد؛ از تاریخچه‌ی سفارش‌های نوبیتکس بخوان، نه عدد صفحه.</dd>
     <dt>مبلغ یا مقدار</dt><dd>یکی را بنویس (مبلغ به تتر یا تعداد واحد)؛ آن یکی خودش حساب می‌شود.</dd>
     <dt>حد ضرر و حد سود</dt><dd>همان‌هایی که در OCO گذاشتی.</dd>
     <dt>ساعت خروج اجباری</dt><dd>به وقت ایران. پیش‌فرض: ${n(tExit)}.</dd>
   </dl>
   <p>بعد از پر کردن، کارت ضرر در حد ضرر و سود در حد سود را با کارمزد نشان می‌دهد. اگر معامله از سقف ضرر هر معامله، سقف روزانه، سقف تعداد معامله یا حداقل نسبت سود به ضرر بیرون باشد، هشدار نارنجی می‌دهد. یک جعبه هم عددهای OCO را آماده نشان می‌دهد، با دکمه‌ی «کپی عددهای OCO». دکمه‌ی «پر کردن با قیمت و برنامه‌ی الان» همه چیز را با قیمت لحظه‌ای و برنامه‌ی همان نماد دوباره پر می‌کند.</p>
-  <p>با زدن <b>«ثبت در ژورنال»</b> خرید در ژورنال می‌نشیند، کنارش حد ضرر، حد سود، ساعت خروج و عددهای OCO می‌ماند، هشدار فروش روشن می‌شود و در سقف‌های روزانه حساب می‌شود.</p>
-  ${C('must', MUST, 'هر خرید واقعی را ثبت کن. خریدی که ثبت نشده، هشدار فروش نمی‌گیرد و در سقف‌های روزانه هم حساب نمی‌شود.')}
+  <p>با زدن <b>«ثبت در ژورنال»</b> معامله در ژورنال می‌نشیند، کنارش حد ضرر، حد سود، قیمت لیکوئید، ساعت خروج و عددهای OCO می‌ماند، هشدار خروج روشن می‌شود، در سقف‌های روزانه و سبد پیشنهادی حساب می‌شود، و بعد از ثبت نتیجه وارد کارنامه‌ات می‌شود.</p>
+  ${C('must', MUST, 'هر معامله‌ی واقعی را ثبت کن. معامله‌ای که ثبت نشده، هشدار خروج نمی‌گیرد، در سقف‌های روزانه حساب نمی‌شود و کارنامه‌ات را هم ناقص می‌کند.')}
   ${C('tip', TIP, 'اگر هشدار نارنجی آمد ولی خرید انجام شده، باز هم ثبتش کن تا هشدار فروش بگیری؛ فقط بدان که این معامله از قانون‌های خودت بیرون است.')}
 
-  ${sec('sell', 10, 'کی بفروشم')}
-  <p>هر خرید سه راه خروج دارد که قبل از خرید تعیین شده‌اند. <b>هر کدام زودتر برسد</b>، می‌فروشی:</p>
-  <ol><li><b>حد سود:</b> قیمت به هدف رسید. OCO خودش می‌فروشد.</li><li><b>حد ضرر:</b> قیمت به حد ضرر رسید. OCO خودش می‌فروشد، حتی اگر حس کنی «برمی‌گردد».</li><li><b>ساعت خروج (${n(tExit)} به وقت ایران):</b> اگر هنوز هیچ‌کدام نشده، OCO را لغو کن و به قیمت بازار بفروش.</li></ol>
-  <p>اگر خرید را ثبت کرده باشی، وقتی یکی از این سه برسد، بالای صفحه کارت قرمز «بفروش» با دلیلش می‌آید و صفحه بوق می‌زند.</p>
-  ${C('must', MUST, 'حد ضرر را بعد از خرید هرگز پایین‌تر نبر و شب نگه ندار. بیشترِ ضررهای بزرگ از همین دو کار می‌آیند.')}
+  ${sec('sell', 15, 'کی ببندم')}
+  <p>هر معامله سه راه خروج دارد که قبل از ورود تعیین شده‌اند. <b>هر کدام زودتر برسد</b>، می‌بندی (لانگ را می‌فروشی، شورت را با خرید می‌بندی):</p>
+  <ol><li><b>حد سود:</b> قیمت به هدف رسید (لانگ بالاتر، شورت پایین‌تر). OCO خودش می‌بندد.</li><li><b>حد ضرر:</b> قیمت به حد ضرر رسید. OCO خودش می‌بندد، حتی اگر حس کنی «برمی‌گردد».</li><li><b>ساعت خروج (${n(tExit)} به وقت ایران):</b> اگر هنوز هیچ‌کدام نشده، OCO را لغو کن و به قیمت بازار ببند.</li></ol>
+  <p>اگر معامله را ثبت کرده باشی، وقتی یکی از این سه برسد، بالای صفحه کارت قرمز «بفروش» یا «ببند (بخر)» با دلیلش می‌آید و صفحه بوق می‌زند.</p>
+  ${C('must', MUST, 'حد ضرر را بعد از ورود هرگز دورتر نبر و شب نگه ندار. در تعهدی، شب نگه داشتن کارمزد روز بعد را هم دارد. بیشترِ ضررهای بزرگ از همین کارها می‌آیند.')}
 
-  ${sec('journal', 11, 'ژورنال و سقف‌های روزانه')}
+  ${sec('journal', 16, 'ژورنال و سقف‌های روزانه')}
   <p>کارت ژورنال تعداد معاملات امروز، ریسک مصرف‌شده و نتیجه‌ی روز را نشان می‌دهد. کنار هر معامله‌ی باز حد ضرر، حد سود، ساعت خروج و عددهای OCO آمده. بعد از فروش، نتیجه را بزن: «حد سود»، «حد ضرر» یا قیمت خروج دستی و «ثبت». با ✕ هم می‌توانی یک ردیف را پاک کنی (دو بار بزن).</p>
   ${C('must', MUST, `وقتی ریسک مصرف‌شده‌ی امروز به ${n(usd(cfg.maxDailyLoss, 0))} یا تعداد معاملات به ${n(cfg.maxTrades)} رسید، داشبورد معامله‌ی تازه را رد می‌کند. آن روز را تمام کن؛ «جبران ضرر» با معامله‌ی بیشتر معمولاً ضرر را بزرگ‌تر می‌کند.`)}
 
-  ${sec('paper', 12, 'حساب مجازی')}
-  <p>دکمه‌ی «حساب مجازی» بالای صفحه. با ${n(usd(cfg.account, 0))} تتر مجازی شروع می‌شود و با قیمت لحظه‌ای نوبیتکس معامله می‌کند: خرید به بهترین قیمت فروشنده، فروش به بهترین قیمت خریدار، با کارمزد واقعی. از روی «۵ انتخاب برتر» یا «سیگنال‌های قانون» «باز کردن مجازی» را بزن، یا از فرم «خرید دستی» برای هر نمادی استفاده کن. حد ضرر، حد سود و ساعت خروج خودکار اجرا می‌شوند؛ اگر صفحه بسته بوده، دفعه‌ی بعد از روی کندل‌ها حساب می‌شوند. همان سقف‌های ریسک حساب واقعی این‌جا هم هست.</p>
-  <p>جدول <b>«نتیجه به تفکیک نوع پیشنهاد»</b> چهار ردیف دارد: سیگنال قانون ۵ از ۵، سیگنال قانون ۸۰٪، ۵ انتخاب برتر، و خرید دستی. هر ردیف تعداد معامله‌ی بسته، درصد برد، جمع سود و زیان و میانگین R را جدا نشان می‌دهد تا ببینی کدام روش برای تو کار می‌کند.</p>
+  ${sec('paper', 17, 'حساب مجازی')}
+  <p>دکمه‌ی «حساب مجازی» بالای صفحه. با ${n(usd(cfg.account, 0))} تتر مجازی شروع می‌شود و با قیمت لحظه‌ای نوبیتکس معامله می‌کند: خرید به بهترین قیمت فروشنده، فروش به بهترین قیمت خریدار، با کارمزد واقعی. از روی «۵ انتخاب برتر» یا «سیگنال‌های قانون» «باز کردن مجازی» را بزن (با همان سمت، مبلغ و اهرم)، یا از فرم «معامله‌ی دستی» برای هر نمادی استفاده کن: سمت (لانگ یا شورت)، اهرم، مبلغ، فاصله‌ی حد ضرر و حد سود. شورت و تعهدی با وثیقه، کارمزد تمدید روزانه و قیمت لیکوئید حساب می‌شوند. حد ضرر، حد سود، لیکوئید و ساعت خروج خودکار اجرا می‌شوند؛ اگر صفحه بسته بوده، دفعه‌ی بعد از روی کندل‌ها حساب می‌شوند. همان سقف‌های ریسک حساب واقعی این‌جا هم هست.</p>
+  <p>جدول <b>«نتیجه به تفکیک نوع پیشنهاد»</b> این ردیف‌ها را دارد: سیگنال قانون ۵ از ۵، سیگنال قانون ۸۰٪، ۵ انتخاب برتر، معامله‌ی دستی، همه‌ی لانگ‌ها، همه‌ی شورت‌ها، و با اهرم. هر ردیف تعداد معامله‌ی بسته، درصد برد، جمع سود و زیان و میانگین R را جدا نشان می‌دهد تا ببینی کدام روش برای تو کار می‌کند. همین آمار وارد کارنامه‌ی تو و پیشنهادهای بعدی می‌شود (بخش ۱۰).</p>
   ${C('imp', IMP, 'پیشنهاد: حداقل ۳ تا ۴ هفته و حداقل ۲۰ معامله‌ی بسته فقط مجازی. اگر منحنی رشد حساب مجازی بعد از کارمزد مثبت نشد، با پول واقعی هم مثبت نمی‌شود.')}
 
-  ${sec('tm', 13, 'خواندن آمار: ماشین زمان و کارنامه')}
+  ${sec('tm', 18, 'خواندن آمار: ماشین زمان و کارنامه')}
   <ul>
     <li><b>اول حد سود / اول حد ضرر / هیچ‌کدام:</b> در چند درصد شبیه‌سازی‌ها قیمت اول به حد سود رسید، اول به حد ضرر، یا تا ساعت خروج به هیچ‌کدام.</li>
     <li><b>جمله‌ی رنگی زیرش (حکم):</b> با در نظر گرفتن اندازه‌ی حد سود و کارمزد می‌گوید نتیجه «نزدیک به سر به سر» است یا به سمت سود یا ضرر می‌رود.</li>
@@ -3030,11 +3595,11 @@ function renderGuide() {
   </ul>
   ${C('imp', IMP, 'وقتی نمونه کمتر از ۲۰ بار است، به عددها زیاد تکیه نکن؛ فرقشان با شانس معلوم نیست. شبیه‌سازی هم از گذشته ساخته شده و خبر، تحریم یا ریزش ناگهانی را نمی‌بیند.')}
 
-  ${sec('alerts', 14, 'هشدارها و باز بودن صفحه')}
+  ${sec('alerts', 19, 'هشدارها و باز بودن صفحه')}
   <p>هشدار صوتی و پیام‌ها فقط تا وقتی کار می‌کنند که صفحه باز است: پیشنهاد تازه، فعال شدن قانون روی نمادی که انتخاب کرده‌ای، و رسیدن خریدهای ثبت‌شده به حد سود، حد ضرر یا ساعت خروج. یک بار روی صفحه کلیک کن تا مرورگر اجازه‌ی پخش صدا بدهد. کامپیوتر را در ساعت جلسه روی حالت خواب نگذار.</p>
   ${C('tip', TIP, 'برای همین است که OCO مهم است: OCO در خود صرافی اجرا می‌شود و به باز بودن این صفحه وابسته نیست.')}
 
-  ${sec('forex', 15, 'فارکس')}
+  ${sec('forex', 20, 'فارکس')}
   <p>تب «فارکس» ${n(insts.forex.size || 8)} جفت‌ارز دارد: شش جفت اصلی، USD/CHF و طلا (XAU/USD). داده از Twelve Data می‌آید و یک کلید رایگان لازم دارد که در «تنظیمات» یا همان تب وارد می‌شود. ساعت جلسه‌ی فارکس هم به وقت ایران نشان داده می‌شود.</p>
   <ul>
     <li><b>چرا همه‌ی جفت‌ارزها نه:</b> پلن رایگان Twelve Data روزی ۸۰۰ درخواست می‌دهد؛ این برای حدود ۸ جفت‌ارز با به‌روزرسانی هر ۱۰ دقیقه کافی است.</li>
@@ -3042,7 +3607,7 @@ function renderGuide() {
   </ul>
   ${C('must', MUST, 'فارکس در نوبیتکس معامله نمی‌شود و فقط از کارگزار خارجی ممکن است؛ یعنی همان ریسک بسته شدن حساب کاربر ایرانی که به خاطرش صرافی ایرانی را انتخاب کردی.')}
 
-  ${sec('fix', 16, 'عیب‌یابی')}
+  ${sec('fix', 21, 'عیب‌یابی')}
   <ul>
     <li><b>داده نمی‌آید:</b> «تنظیمات» و بعد «عیب‌یابی اتصال» را بزن تا معلوم شود کدام منبع از اینترنت تو باز است. ردیف اول، لیست همه‌ی بازارهای نوبیتکس است.</li>
     <li><b>بعد از به‌روزرسانی سایت چیزی عوض نشد:</b> صفحه را با Ctrl+F5 دوباره باز کن.</li>
@@ -3052,15 +3617,19 @@ function renderGuide() {
     <li><b>ساعت‌ها اشتباه به نظر می‌رسد:</b> همه به وقت ایران است. اگر ساعت گوشی‌ات روی منطقه‌ی دیگری است، صفحه باز هم ساعت ایران را نشان می‌دهد.</li>
   </ul>
 
-  ${sec('risk', 17, 'ریسک‌هایی که باید بدانی')}
+  ${sec('risk', 22, 'ریسک‌هایی که باید بدانی')}
   <ul>
     <li><b>کارمزد:</b> در هر معامله‌ی رفت و برگشت حدود ${n(cfg.crypto.costPct + '%')} از مبلغ کم می‌شود.</li>
     <li><b>اسپرد و لغزش قیمت:</b> قیمتی که واقعاً پر می‌شود ممکن است بدتر از عدد صفحه باشد، مخصوصاً در ارزهای کم‌معامله.</li>
     <li><b>صرافی:</b> نوبیتکس و چند صرافی بزرگ ایرانی در خرداد ۱۴۰۵ تحریم آمریکا شده‌اند و بانک مرکزی هم گاهی برداشت ریالی را محدود می‌کند.</li>
+    <li><b>اهرم و لیکوئید:</b> در جهش تند قیمت، موقعیت تعهدی ممکن است قبل از پر شدن حد ضرر لیکوئید شود و وثیقه از دست برود. اهرم کمتر، لیکوئید دورتر.</li>
+    <li><b>شورت:</b> ضرر شورت سقف ندارد و جهش‌های ناگهانی (مثلاً با یک خبر) در کریپتو زیاد است.</li>
+    <li><b>کارمزد تعهدی:</b> حدود ${n(cfg.crypto.marginFeePct + '%')} در روز؛ نگه داشتن چندروزه‌ی موقعیت تعهدی گران می‌شود.</li>
+    <li><b>نظر دیگران:</b> تحلیل‌گرها و اینفلوئنسرها هم اشتباه می‌کنند؛ کارنامه‌شان در خود داشبورد سنجیده می‌شود.</li>
   </ul>
   ${C('must', MUST, 'بیشتر از پولی که همان روز با آن معامله می‌کنی را روی صرافی نگه ندار. اگر تتر را به صرافی خارجی بفرستی، ممکن است به خاطر منشأ ایرانی بررسی یا محدود شود.')}
 
-  ${sec('words', 18, 'واژه‌ها')}
+  ${sec('words', 23, 'واژه‌ها')}
   <dl class="gl">
     <dt>جلسه</dt><dd>بازه‌ی ساعتی که قانون در آن اجرا می‌شود؛ پیش‌فرض باز شدن لندن، ${sessIRLabel('london', now, n)} به وقت ایران.</dd>
     <dt>رنج اول جلسه</dt><dd>بالاترین و پایین‌ترین قیمت ${n(cfg.orMinutes)} دقیقه‌ی اول جلسه.</dd>
@@ -3068,7 +3637,16 @@ function renderGuide() {
     <dt>R</dt><dd>واحد ریسک: فاصله‌ی ورود تا حد ضرر. ${n('2R')} یعنی حد سود دو برابر فاصله‌ی حد ضرر است. ${n('+1R')} یعنی به اندازه‌ی ریسکت سود کردی.</dd>
     <dt>حد ضرر</dt><dd>قیمتی که اگر رسید، می‌فروشی چون برنامه شکست خورده.</dd>
     <dt>حد سود</dt><dd>قیمتی که اگر رسید، می‌فروشی و سود را برمی‌داری.</dd>
-    <dt>OCO</dt><dd>دو سفارش فروش با هم (حد سود و حد ضرر)؛ اجرای یکی، دیگری را لغو می‌کند.</dd>
+    <dt>OCO</dt><dd>دو سفارش با هم (حد سود و حد ضرر)؛ اجرای یکی، دیگری را لغو می‌کند. برای لانگ فروش، برای شورت خرید.</dd>
+    <dt>لانگ</dt><dd>خرید، به امید بالا رفتن قیمت.</dd>
+    <dt>شورت (فروش تعهدی)</dt><dd>فروش ارز قرضی، به امید پایین آمدن قیمت و خرید ارزان‌ترِ بعدی.</dd>
+    <dt>معامله‌ی تعهدی</dt><dd>معامله با دارایی وکالتی (قرضی) در نوبیتکس؛ برای شورت و خرید با اهرم.</dd>
+    <dt>اهرم (ضریب)</dt><dd>نسبت ارزش معامله به پولی که خودت می‌گذاری. ۲× یعنی با ۱۰۰ تتر وثیقه، معامله‌ی ۲۰۰ تتری.</dd>
+    <dt>وثیقه</dt><dd>پول خودت که برای معامله‌ی تعهدی کنار گذاشته می‌شود.</dd>
+    <dt>لیکوئید شدن</dt><dd>بسته شدن اجباری موقعیت تعهدی وقتی ضرر به وثیقه نزدیک شود.</dd>
+    <dt>کارمزد تمدید</dt><dd>کارمزد روزانه‌ی موقعیت تعهدی (حدود ${n(cfg.crypto.marginFeePct + '%')}).</dd>
+    <dt>TP و SL</dt><dd>Take-profit (حد سود) و Stop-loss (حد ضرر).</dd>
+    <dt>سبد پیشنهادی</dt><dd>تقسیم ریسک و نقد امروز بین بهترین‌های «۵ انتخاب برتر»، به دلار و تومان.</dd>
     <dt>کارمزد رفت و برگشت</dt><dd>کارمزد خرید به‌علاوه‌ی کارمزد فروش.</dd>
     <dt>بهترین قیمت فروشنده و خریدار</dt><dd>ارزان‌ترین پیشنهاد فروش و گران‌ترین پیشنهاد خرید در دفتر سفارش. خرید فوری به اولی پر می‌شود و فروش فوری به دومی.</dd>
     <dt>اسپرد</dt><dd>فاصله‌ی این دو قیمت. اسپرد بزرگ یعنی همان لحظه‌ی خرید ضرر کرده‌ای.</dd>
@@ -3077,6 +3655,7 @@ function renderGuide() {
     <dt>میانگین ۲۰ روزه</dt><dd>میانگین قیمت پایانی ۲۰ روز گذشته. قیمت بالای آن یعنی روند کوتاه‌مدت رو به بالاست.</dd>
     <dt>ماشین زمان</dt><dd>شبیه‌سازی هزاران حالت از بقیه‌ی روز، ساخته‌شده از کندل‌های گذشته‌ی خود همان ارز. پیش‌بینی نیست.</dd>
     <dt>حساب مجازی</dt><dd>تمرین با پول غیرواقعی و قیمت واقعی.</dd>
+    <dt>تتر (USDT)</dt><dd>ارز دیجیتالی که قیمتش به دلار وصل است؛ همه‌ی بازارهای این صفحه به تتر حساب می‌شوند.</dd>
   </dl>
   <p class="small" style="margin-top:18px">روش: day-trader-skill از Jake Schincariol (MIT). این راهنما توصیه‌ی مالی نیست.</p>
   </div>`;
@@ -3236,8 +3815,8 @@ function renderJournal() {
   const rows = journal.slice(-12).reverse().map(j => {
     const res = j.result ? `<span class="num ${j.pnl >= 0 ? 'pos' : 'neg'}">${usd(j.pnl)}</span> <span class="small">${{ target: 'حد سود', stop: 'حد ضرر', manual: 'دستی' }[j.result]}</span>`
       : `<div class="jbtns"><button type="button" class="btn ghost sm" data-j="${j.id}" data-r="target">حد سود</button><button type="button" class="btn ghost sm" data-j="${j.id}" data-r="stop">حد ضرر</button><input type="number" step="any" placeholder="قیمت خروج" id="jx${j.id}" dir="ltr"><button type="button" class="btn ghost sm" data-j="${j.id}" data-r="manual">ثبت</button></div>`;
-    const sub = j.result ? '' : `<span class="jsub">حد ضرر ${n(fmtP(j.stop, j.dec))} · حد سود ${n(fmtP(j.target, j.dec))} · خروج ${n(tm(j.exitAt))}${j.oco ? ` · OCO: معین ${n(fmtP(j.oco.price, j.dec))}، توقف ${n(fmtP(j.oco.stop, j.dec))}، حد ضرر ${n(fmtP(j.oco.stopLimit, j.dec))}` : ''}</span>`;
-    return `<tr><td>${stamp(j.takenAt)}</td><td><b>${esc(j.label)}</b> ${j.side === 'buy' ? '↑' : '↓'}${sub}</td><td>${n(fmtP(j.entry, j.dec))}</td><td>${res}</td><td><button type="button" class="btn ghost sm" data-del="${j.id}" aria-label="حذف">✕</button></td></tr>`;
+    const sub = j.result ? '' : `<span class="jsub">حد ضرر ${n(fmtP(j.stop, j.dec))} · حد سود ${n(fmtP(j.target, j.dec))}${j.liq ? ` · لیکوئید ${n(fmtP(j.liq, j.dec))}` : ''} · خروج ${n(tm(j.exitAt))}${j.oco ? ` · OCO: معین ${n(fmtP(j.oco.price, j.dec))}، توقف ${n(fmtP(j.oco.stop, j.dec))}، حد ضرر ${n(fmtP(j.oco.stopLimit, j.dec))}` : ''}</span>`;
+    return `<tr><td>${stamp(j.takenAt)}</td><td><b>${esc(j.label)}</b> ${j.side === 'buy' ? '↑ لانگ' : '↓ شورت'}${j.margin ? ` <span class="small">${n((j.lev || 1) + '×')}</span>` : ''}${sub}</td><td>${n(fmtP(j.entry, j.dec))}</td><td>${res}</td><td><button type="button" class="btn ghost sm" data-del="${j.id}" aria-label="حذف">✕</button></td></tr>`;
   }).join('');
   const html = `<div class="sec-h"><h2 id="journalH">ژورنال و سقف‌های امروز</h2><p>فقط در همین مرورگر ذخیره می‌شود</p></div>
     <div class="reality" style="grid-template-columns:repeat(3,minmax(0,1fr))">
@@ -3266,7 +3845,7 @@ function renderJournal() {
 // ------------------------------------------------------------------ settings dialog
 const FIELDS = ['account', 'dailyTarget', 'maxLoss', 'maxDailyLoss', 'maxTrades', 'minRR', 'cashBufferPct', 'maxPositionPct', 'maxLeverage', 'minOrderUSD',
   'orMinutes', 'stopRule', 'atrK', 'stopPct', 'targetR', 'tdKey', 'historyDays', 'replays', 'seed', 'sound',
-  'crypto.symbols', 'crypto.session', 'crypto.costPct', 'crypto.allowShort', 'crypto.source', 'crypto.mode', 'crypto.minVolUSD', 'crypto.maxSpreadPct', 'crypto.maxTracked', 'forex.symbols', 'forex.session', 'forex.costPct', 'forex.allowShort',
+  'crypto.symbols', 'crypto.session', 'crypto.costPct', 'crypto.allowShort', 'crypto.source', 'crypto.mode', 'crypto.minVolUSD', 'crypto.maxSpreadPct', 'crypto.maxTracked', 'crypto.maxLeverage', 'crypto.marginFeePct', 'crypto.shortList', 'forex.symbols', 'forex.session', 'forex.costPct', 'forex.allowShort',
   'custom.tz', 'custom.open', 'custom.hours'];
 const getP = (o, p) => p.split('.').reduce((x, k) => x[k], o);
 const setP = (o, p, v) => { const ks = p.split('.'); const last = ks.pop(); ks.reduce((x, k) => x[k], o)[last] = v; };
@@ -3300,6 +3879,8 @@ function readSettings() {
   next.crypto.minVolUSD = Math.max(0, next.crypto.minVolUSD);
   next.crypto.maxSpreadPct = Math.max(0.01, next.crypto.maxSpreadPct);
   next.crypto.maxTracked = Math.max(1, Math.min(200, Math.round(next.crypto.maxTracked)));
+  next.crypto.maxLeverage = Math.max(1, Math.min(5, +next.crypto.maxLeverage || 1));
+  next.crypto.marginFeePct = Math.max(0, next.crypto.marginFeePct);
   if (!validTz(next.custom.tz)) next.custom.tz = 'UTC';
   if (hm(next.custom.open) == null) next.custom.open = '09:00';
   return next;
@@ -3314,6 +3895,7 @@ $('#setForm').addEventListener('submit', e => {
   store.set('dtw.cfg', cfg);
   $('#settings').close();
   mcCache.clear();
+  topCache.key = ''; topCache.btKey = ''; topCache.mc.clear();
   ['crypto', 'forex'].forEach(m => {
     const srcChanged = m === 'crypto' && prev.crypto.source !== next.crypto.source;
     if (srcChanged) { cryptoPick = null; insts.crypto.forEach(i => { i.status = 'idle'; i.bars = []; }); }
